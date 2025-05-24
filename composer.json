@@ -16,17 +16,17 @@
     },
     "autoload": {
         "psr-4": {
-            "Dtyq\\Mcp\\": "src/"
+            "Dtyq\\PhpMcp\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Dtyq\\Mcp\\Tests\\": "tests/"
+            "Dtyq\\PhpMcp\\Tests\\": "tests/"
         }
     },
     "scripts": {
-        "cs-fix": "php-cs-fixer fix --config=.php-cs-fixer.php",
-        "cs-check": "php-cs-fixer check --config=.php-cs-fixer.php",
-        "cs-format": "php-cs-fixer fix --config=.php-cs-fixer.php --dry-run --diff"
+        "test": "phpunit -c phpunit.xml --colors=always",
+        "analyse": "phpstan analyse --memory-limit 1024M -l 6 ./src",
+        "cs-fix": "php-cs-fixer fix $1"
     }
 } 
