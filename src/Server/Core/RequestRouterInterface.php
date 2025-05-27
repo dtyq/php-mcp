@@ -22,7 +22,7 @@ interface RequestRouterInterface
      * @param JsonRpcRequest $request The request to route
      * @return null|JsonRpcError|JsonRpcResponse The response or null if not handled
      */
-    public function route(JsonRpcRequest $request): null|JsonRpcError|JsonRpcResponse;
+    public function route(JsonRpcRequest $request);
 
     /**
      * Register a route handler.

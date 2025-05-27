@@ -340,7 +340,7 @@ class McpServer implements McpServerInterface
      * @param JsonRpcRequest $request The incoming request
      * @return JsonRpcError|JsonRpcResponse The response
      */
-    public function processRequest(JsonRpcRequest $request): JsonRpcError|JsonRpcResponse
+    public function processRequest(JsonRpcRequest $request)
     {
         ++$this->stats['requests_processed'];
 

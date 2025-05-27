@@ -30,7 +30,13 @@ class DefaultRequestRouter implements RequestRouterInterface
         $this->logger = $logger;
     }
 
-    public function route(JsonRpcRequest $request): null|JsonRpcError|JsonRpcResponse
+    /**
+     * Route request to appropriate handler.
+     *
+     * @param JsonRpcRequest $request The request to route
+     * @return null|JsonRpcError|JsonRpcResponse The response or null if not handled
+     */
+    public function route(JsonRpcRequest $request)
     {
         $method = $request->getMethod();
 

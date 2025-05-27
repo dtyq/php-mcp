@@ -33,12 +33,24 @@ class ServerCapabilities
         return $this->capabilities;
     }
 
-    public function setCapability(string $name, mixed $value): void
+    /**
+     * Set a capability value.
+     *
+     * @param string $name Capability name
+     * @param mixed $value Capability value
+     */
+    public function setCapability(string $name, $value): void
     {
         $this->capabilities[$name] = $value;
     }
 
-    public function getCapability(string $name): mixed
+    /**
+     * Get a capability value.
+     *
+     * @param string $name Capability name
+     * @return mixed Capability value or null if not set
+     */
+    public function getCapability(string $name)
     {
         return $this->capabilities[$name] ?? null;
     }

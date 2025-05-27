@@ -396,16 +396,23 @@ class ServerConfig
 
     /**
      * Get custom setting by key.
+     *
+     * @param string $key Setting key
+     * @param mixed $default Default value if key not found
+     * @return mixed Setting value or default
      */
-    public function getCustomSetting(string $key, mixed $default = null): mixed
+    public function getCustomSetting(string $key, $default = null)
     {
         return $this->custom[$key] ?? $default;
     }
 
     /**
      * Set custom setting.
+     *
+     * @param string $key Setting key
+     * @param mixed $value Setting value
      */
-    public function setCustomSetting(string $key, mixed $value): void
+    public function setCustomSetting(string $key, $value): void
     {
         $this->custom[$key] = $value;
     }
