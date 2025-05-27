@@ -2,6 +2,8 @@
 
 本目录包含了 Model Context Protocol (MCP) 2025-03-26 规范的完整 PHP 实现。所有类型都按逻辑分组到子目录中，并遵循官方 MCP 协议要求。
 
+> **📖 官方文档**: 本实现遵循 [MCP 2025-03-26 规范](https://modelcontextprotocol.io/specification/2025-03-26/)
+
 ## 📁 目录结构
 
 ```
@@ -149,10 +151,14 @@ LLM 交互和消息生成的类型：
 - 正确的请求/响应 ID 处理
 - 标准错误码实现
 
+> **📋 参考文档**: [JSON-RPC 2.0 消息](https://modelcontextprotocol.io/specification/2025-03-26/basic#messages) | [错误处理](https://modelcontextprotocol.io/specification/2025-03-26/basic#responses)
+
 ### 分页支持
 列表操作支持基于游标的分页：
 - `nextCursor` 用于前向导航
 - 所有列表结果的一致分页接口
+
+> **📋 参考文档**: [资源分页](https://modelcontextprotocol.io/specification/2025-03-26/server/resources) | [工具分页](https://modelcontextprotocol.io/specification/2025-03-26/server/tools)
 
 ### 可扩展性
 - 元字段支持（`_meta`）用于附加信息
@@ -197,6 +203,12 @@ LLM 交互和消息生成的类型：
 
 - [MCP 规范 2025-03-26](https://modelcontextprotocol.io/specification/2025-03-26/)
 - [JSON-RPC 2.0 规范](https://www.jsonrpc.org/specification)
+- [MCP 基础协议](https://modelcontextprotocol.io/specification/2025-03-26/basic)
+- [MCP 服务器资源](https://modelcontextprotocol.io/specification/2025-03-26/server/resources)
+- [MCP 服务器工具](https://modelcontextprotocol.io/specification/2025-03-26/server/tools)
+- [MCP 服务器提示](https://modelcontextprotocol.io/specification/2025-03-26/server/prompts)
+- [MCP 客户端采样](https://modelcontextprotocol.io/specification/2025-03-26/client/sampling)
+- [MCP 更新日志](https://modelcontextprotocol.io/specification/2025-03-26/changelog)
 - 项目开发标准和编码指南
 
 ---

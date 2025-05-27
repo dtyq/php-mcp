@@ -2,6 +2,8 @@
 
 This directory contains the complete implementation of Model Context Protocol (MCP) 2025-03-26 specification types for PHP. All types are organized into logical subdirectories and follow the official MCP protocol requirements.
 
+> **📖 Official Documentation**: This implementation follows the [MCP 2025-03-26 Specification](https://modelcontextprotocol.io/specification/2025-03-26/)
+
 ## 📁 Directory Structure
 
 ```
@@ -149,10 +151,14 @@ All types implement appropriate interfaces (`RequestInterface`, `ResultInterface
 - Proper request/response ID handling
 - Standard error code implementation
 
+> **📋 Reference**: [JSON-RPC 2.0 Messages](https://modelcontextprotocol.io/specification/2025-03-26/basic#messages) | [Error Handling](https://modelcontextprotocol.io/specification/2025-03-26/basic#responses)
+
 ### Pagination Support
 List operations support cursor-based pagination:
 - `nextCursor` for forward navigation
 - Consistent pagination interface across all list results
+
+> **📋 Reference**: [Resource Pagination](https://modelcontextprotocol.io/specification/2025-03-26/server/resources) | [Tool Pagination](https://modelcontextprotocol.io/specification/2025-03-26/server/tools)
 
 ### Extensibility
 - Meta field support (`_meta`) for additional information
@@ -197,6 +203,12 @@ Server -> ResourceUpdatedNotification -> Client
 
 - [MCP Specification 2025-03-26](https://modelcontextprotocol.io/specification/2025-03-26/)
 - [JSON-RPC 2.0 Specification](https://www.jsonrpc.org/specification)
+- [MCP Basic Protocol](https://modelcontextprotocol.io/specification/2025-03-26/basic)
+- [MCP Server Resources](https://modelcontextprotocol.io/specification/2025-03-26/server/resources)
+- [MCP Server Tools](https://modelcontextprotocol.io/specification/2025-03-26/server/tools)
+- [MCP Server Prompts](https://modelcontextprotocol.io/specification/2025-03-26/server/prompts)
+- [MCP Client Sampling](https://modelcontextprotocol.io/specification/2025-03-26/client/sampling)
+- [MCP Changelog](https://modelcontextprotocol.io/specification/2025-03-26/changelog)
 - Project development standards and coding guidelines
 
 ---

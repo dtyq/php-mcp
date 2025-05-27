@@ -34,7 +34,7 @@ final class ErrorCodes
 
     public const TRANSPORT_ERROR = -32001;
 
-    public const PROTOCOL_ERROR = -32002;
+    public const RESOURCE_NOT_FOUND = -32002;
 
     public const AUTHENTICATION_ERROR = -32003;
 
@@ -42,11 +42,11 @@ final class ErrorCodes
 
     public const VALIDATION_ERROR = -32005;
 
-    public const RESOURCE_NOT_FOUND = -32006;
+    public const TOOL_NOT_FOUND = -32006;
 
-    public const TOOL_NOT_FOUND = -32007;
+    public const PROMPT_NOT_FOUND = -32007;
 
-    public const PROMPT_NOT_FOUND = -32008;
+    public const PROTOCOL_ERROR = -32008;
 
     public const CAPABILITY_NOT_SUPPORTED = -32009;
 
@@ -151,20 +151,20 @@ final class ErrorCodes
                 return 'MCP error: General MCP protocol error';
             case self::TRANSPORT_ERROR:
                 return 'Transport error: Error in the transport layer';
-            case self::PROTOCOL_ERROR:
-                return 'Protocol error: MCP protocol violation';
+            case self::RESOURCE_NOT_FOUND:
+                return 'Resource not found: The requested resource does not exist';
             case self::AUTHENTICATION_ERROR:
                 return 'Authentication error: Authentication failed';
             case self::AUTHORIZATION_ERROR:
                 return 'Authorization error: Insufficient permissions';
             case self::VALIDATION_ERROR:
                 return 'Validation error: Input validation failed';
-            case self::RESOURCE_NOT_FOUND:
-                return 'Resource not found: The requested resource does not exist';
             case self::TOOL_NOT_FOUND:
                 return 'Tool not found: The requested tool does not exist';
             case self::PROMPT_NOT_FOUND:
                 return 'Prompt not found: The requested prompt does not exist';
+            case self::PROTOCOL_ERROR:
+                return 'Protocol error: MCP protocol violation';
             case self::CAPABILITY_NOT_SUPPORTED:
                 return 'Capability not supported: The requested capability is not supported';
             case self::SESSION_ERROR:

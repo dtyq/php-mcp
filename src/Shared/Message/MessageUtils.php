@@ -22,7 +22,7 @@ class MessageUtils
     /**
      * MCP protocol version.
      */
-    public const MCP_PROTOCOL_VERSION = '2024-11-05';
+    public const MCP_PROTOCOL_VERSION = '2025-03-26';
 
     /**
      * Common MCP methods.
@@ -49,6 +49,10 @@ class MessageUtils
 
     public const METHOD_LIST_ROOTS = 'roots/list';
 
+    public const METHOD_SUBSCRIBE_RESOURCE = 'resources/subscribe';
+
+    public const METHOD_UNSUBSCRIBE_RESOURCE = 'resources/unsubscribe';
+
     /**
      * Notification methods.
      */
@@ -63,6 +67,8 @@ class MessageUtils
     public const NOTIFICATION_TOOL_LIST_CHANGED = 'notifications/tools/list_changed';
 
     public const NOTIFICATION_PROMPT_LIST_CHANGED = 'notifications/prompts/list_changed';
+
+    public const NOTIFICATION_CANCELLED = 'notifications/cancelled';
 
     /**
      * Create an MCP initialize request.
@@ -202,6 +208,85 @@ class MessageUtils
         $params = ['uri' => $uri];
 
         return JsonRpcMessage::createRequest(self::METHOD_READ_RESOURCE, $params, $requestId);
+    }
+
+    /**
+     * Create a resources/subscribe request.
+     *
+     * @param int|string $requestId Request ID
+     * @param string $uri Resource URI to subscribe to
+     */
+    public static function createSubscribeRequest($requestId, string $uri): JsonRpcMessage
+    {
+        $params = ['uri' => $uri];
+
+        return JsonRpcMessage::createRequest(self::METHOD_SUBSCRIBE_RESOURCE, $params, $requestId);
+    }
+
+    /**
+     * Create a resources/unsubscribe request.
+     *
+     * @param int|string $requestId Request ID
+     * @param string $uri Resource URI to unsubscribe from
+     */
+    public static function createUnsubscribeRequest($requestId, string $uri): JsonRpcMessage
+    {
+        $params = ['uri' => $uri];
+
+        return JsonRpcMessage::createRequest(self::METHOD_UNSUBSCRIBE_RESOURCE, $params, $requestId);
+    }
+
+    /**
+     * Create a prompts/list request.
+     *
+     * @param int|string $requestId Request ID
+     * @param null|string $cursor Optional cursor for pagination
+     */
+    public static function createListPromptsRequest($requestId, ?string $cursor = null): JsonRpcMessage
+    {
+        $params = [];
+        if ($cursor !== null) {
+            $params['cursor'] = $cursor;
+        }
+
+        return JsonRpcMessage::createRequest(
+            self::METHOD_LIST_PROMPTS,
+            empty($params) ? null : $params,
+            $requestId
+        );
+    }
+
+    /**
+     * Create a prompts/get request.
+     *
+     * @param int|string $requestId Request ID
+     * @param string $name Prompt name
+     * @param array<string, string> $arguments Prompt arguments
+     */
+    public static function createGetPromptRequest($requestId, string $name, array $arguments = []): JsonRpcMessage
+    {
+        $params = ['name' => $name];
+        if (! empty($arguments)) {
+            $params['arguments'] = $arguments;
+        }
+
+        return JsonRpcMessage::createRequest(self::METHOD_GET_PROMPT, $params, $requestId);
+    }
+
+    /**
+     * Create a cancelled notification.
+     *
+     * @param int|string $requestId The ID of the request being cancelled
+     * @param null|string $reason Optional reason for cancellation
+     */
+    public static function createCancelledNotification($requestId, ?string $reason = null): JsonRpcMessage
+    {
+        $params = ['requestId' => $requestId];
+        if ($reason !== null) {
+            $params['reason'] = $reason;
+        }
+
+        return JsonRpcMessage::createNotification(self::NOTIFICATION_CANCELLED, $params);
     }
 
     /**
@@ -354,6 +439,8 @@ class MessageUtils
             self::METHOD_CALL_TOOL,
             self::METHOD_LIST_RESOURCES,
             self::METHOD_READ_RESOURCE,
+            self::METHOD_SUBSCRIBE_RESOURCE,
+            self::METHOD_UNSUBSCRIBE_RESOURCE,
             self::METHOD_LIST_PROMPTS,
             self::METHOD_GET_PROMPT,
             self::METHOD_CREATE_MESSAGE,

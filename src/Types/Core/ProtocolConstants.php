@@ -35,23 +35,23 @@ final class ProtocolConstants
     // MCP-specific error codes (starting from -32000)
     public const MCP_ERROR = -32000;
 
-    public const AUTHENTICATION_ERROR = -32001;
+    public const TRANSPORT_ERROR = -32001;
 
-    public const AUTHORIZATION_ERROR = -32002;
+    public const RESOURCE_NOT_FOUND = -32002;
 
-    public const RESOURCE_NOT_FOUND = -32003;
+    public const AUTHENTICATION_ERROR = -32003;
 
-    public const TOOL_NOT_FOUND = -32004;
+    public const AUTHORIZATION_ERROR = -32004;
 
-    public const PROMPT_NOT_FOUND = -32005;
+    public const VALIDATION_ERROR = -32005;
 
-    public const INVALID_URI = -32006;
+    public const TOOL_NOT_FOUND = -32006;
 
-    public const TRANSPORT_ERROR = -32007;
+    public const PROMPT_NOT_FOUND = -32007;
 
     public const PROTOCOL_ERROR = -32008;
 
-    public const VALIDATION_ERROR = -32009;
+    public const CAPABILITY_NOT_SUPPORTED = -32009;
 
     // Message roles
     public const ROLE_USER = 'user';
