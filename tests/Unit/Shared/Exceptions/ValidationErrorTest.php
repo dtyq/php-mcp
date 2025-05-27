@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Copyright (c) The Magic , Distributed under the software license
  */
 
-namespace Tests\Unit\Shared\Exceptions;
+namespace Dtyq\PhpMcp\Tests\Unit\Shared\Exceptions;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ErrorCodes;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;

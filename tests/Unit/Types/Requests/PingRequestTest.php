@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Copyright (c) The Magic , Distributed under the software license
  */
 
-namespace Tests\Unit\Types\Requests;
+namespace Dtyq\PhpMcp\Tests\Unit\Types\Requests;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Requests\PingRequest;

@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Copyright (c) The Magic , Distributed under the software license
  */
 
-namespace Tests\Unit\Shared\Message;
+namespace Dtyq\PhpMcp\Tests\Unit\Shared\Message;
 
 use Dtyq\PhpMcp\Shared\Message\JsonRpcMessage;
 use Dtyq\PhpMcp\Shared\Message\MessageUtils;

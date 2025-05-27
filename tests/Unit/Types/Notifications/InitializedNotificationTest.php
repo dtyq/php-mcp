@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Copyright (c) The Magic , Distributed under the software license
  */
 
-namespace Tests\Unit\Types\Notifications;
+namespace Dtyq\PhpMcp\Tests\Unit\Types\Notifications;
 
 use Dtyq\PhpMcp\Types\Notifications\InitializedNotification;
 use PHPUnit\Framework\TestCase;
