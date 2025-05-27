@@ -7,11 +7,9 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Shared\Exceptions;
 
-use Throwable;
-
 class SystemException extends McpError
 {
-    public function __construct(string $message = 'System Error', int $code = 500, ?Throwable $previous = null)
+    public function __construct(string $message = 'System Error', int $code = 500)
     {
         parent::__construct(new ErrorData($code, $message, null));
     }

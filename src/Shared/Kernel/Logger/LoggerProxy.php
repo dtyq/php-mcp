@@ -35,7 +35,10 @@ class LoggerProxy
         $this->logger = $logger;
     }
 
-    public function __call($name, $arguments)
+    /**
+     * @param array<int, mixed> $arguments
+     */
+    public function __call(string $name, array $arguments): void
     {
         $arguments = array_values($arguments);
         $arguments[0] = "[{$this->sdkName}] " . $arguments[0];
