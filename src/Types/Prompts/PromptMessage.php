@@ -7,13 +7,13 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Prompts;
 
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Content\ContentInterface;
-use Dtyq\PhpMcp\Types\Content\TextContent;
-use Dtyq\PhpMcp\Types\Content\ImageContent;
 use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
+use Dtyq\PhpMcp\Types\Content\ImageContent;
+use Dtyq\PhpMcp\Types\Content\TextContent;
 use Dtyq\PhpMcp\Types\Core\BaseTypes;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
-use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 
 /**
  * A message within a prompt template.
@@ -63,34 +63,6 @@ class PromptMessage
         $content = self::createContentFromArray($data['content']);
 
         return new self($data['role'], $content);
-    }
-
-    /**
-     * Create content object from array data.
-     *
-     * @param array<string, mixed> $contentData
-     */
-    private static function createContentFromArray(array $contentData): ContentInterface
-    {
-        if (! isset($contentData['type'])) {
-            throw ValidationError::requiredFieldMissing('type', 'content');
-        }
-
-        $type = $contentData['type'];
-
-        switch ($type) {
-            case ProtocolConstants::CONTENT_TYPE_TEXT:
-                return TextContent::fromArray($contentData);
-
-            case ProtocolConstants::CONTENT_TYPE_IMAGE:
-                return ImageContent::fromArray($contentData);
-
-            case ProtocolConstants::CONTENT_TYPE_RESOURCE:
-                return EmbeddedResource::fromArray($contentData);
-
-            default:
-                throw ValidationError::invalidContentType('text, image, or resource', $type);
-        }
     }
 
     /**
@@ -265,4 +237,29 @@ class PromptMessage
             $image
         );
     }
-} 
+
+    /**
+     * Create content object from array data.
+     *
+     * @param array<string, mixed> $contentData
+     */
+    private static function createContentFromArray(array $contentData): ContentInterface
+    {
+        if (! isset($contentData['type'])) {
+            throw ValidationError::requiredFieldMissing('type', 'content');
+        }
+
+        $type = $contentData['type'];
+
+        switch ($type) {
+            case ProtocolConstants::CONTENT_TYPE_TEXT:
+                return TextContent::fromArray($contentData);
+            case ProtocolConstants::CONTENT_TYPE_IMAGE:
+                return ImageContent::fromArray($contentData);
+            case ProtocolConstants::CONTENT_TYPE_RESOURCE:
+                return EmbeddedResource::fromArray($contentData);
+            default:
+                throw ValidationError::invalidContentType('text, image, or resource', $type);
+        }
+    }
+}

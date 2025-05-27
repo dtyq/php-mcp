@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Content;
 
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Content\Annotations;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
-use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use PHPUnit\Framework\TestCase;
 
 /**

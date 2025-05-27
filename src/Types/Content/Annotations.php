@@ -7,8 +7,8 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Content;
 
-use Dtyq\PhpMcp\Types\Core\BaseTypes;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Core\BaseTypes;
 
 /**
  * Annotations for MCP content.
@@ -168,4 +168,3 @@ class Annotations
         return ! $this->hasAudience() && ! $this->hasPriority();
     }
 }
- 

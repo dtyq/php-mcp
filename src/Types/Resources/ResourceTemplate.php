@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Resources;
 
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Content\Annotations;
 use Dtyq\PhpMcp\Types\Core\BaseTypes;
-use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 
 /**
  * A template description for resources available on the server.

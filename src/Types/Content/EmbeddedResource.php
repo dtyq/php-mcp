@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Content;
 
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Resources\ResourceContents;
-use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 
 /**
  * Embedded resource content for MCP messages.

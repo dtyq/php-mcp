@@ -7,14 +7,13 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Prompts;
 
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
+use Dtyq\PhpMcp\Types\Content\ImageContent;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Prompts\GetPromptResult;
 use Dtyq\PhpMcp\Types\Prompts\PromptMessage;
-use Dtyq\PhpMcp\Types\Content\TextContent;
-use Dtyq\PhpMcp\Types\Content\ImageContent;
-use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
 use Dtyq\PhpMcp\Types\Resources\TextResourceContents;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
-use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -349,4 +348,4 @@ class GetPromptResultTest extends TestCase
         $this->assertTrue($messages[2]->isUserMessage());
         $this->assertSame('How are you?', $messages[2]->getTextContent());
     }
-} 
+}

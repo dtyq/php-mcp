@@ -1,13 +1,19 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * Copyright (c) The Magic , Distributed under the software license
+ */
 
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Sampling;
 
-use Dtyq\PhpMcp\Types\Sampling\ModelHint;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Sampling\ModelHint;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ */
 class ModelHintTest extends TestCase
 {
     public function testConstructorWithValidName(): void
@@ -99,4 +105,4 @@ class ModelHintTest extends TestCase
 
         $this->assertSame('test-model', (string) $hint);
     }
-} 
+}

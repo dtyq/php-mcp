@@ -7,8 +7,8 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Prompts;
 
-use Dtyq\PhpMcp\Types\Core\BaseTypes;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Core\BaseTypes;
 
 /**
  * Argument definition for MCP prompts.
@@ -185,4 +185,4 @@ class PromptArgument
     {
         return new self($this->name, $this->description, $required);
     }
-} 
+}

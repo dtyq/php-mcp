@@ -1,26 +1,30 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * Copyright (c) The Magic , Distributed under the software license
+ */
 
 namespace Dtyq\PhpMcp\Types\Sampling;
 
-use Dtyq\PhpMcp\Types\Content\ContentInterface;
-use Dtyq\PhpMcp\Types\Content\TextContent;
-use Dtyq\PhpMcp\Types\Content\ImageContent;
-use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
+use Dtyq\PhpMcp\Types\Content\ContentInterface;
+use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
+use Dtyq\PhpMcp\Types\Content\ImageContent;
+use Dtyq\PhpMcp\Types\Content\TextContent;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 
 /**
  * Represents a message used in LLM sampling requests.
- * 
+ *
  * Sampling messages are part of the conversation history sent to language models
  * for completion generation. They support text, image, and embedded resource content.
  */
 class SamplingMessage
 {
     private string $role;
+
     private ContentInterface $content;
 
     /**
@@ -40,24 +44,23 @@ class SamplingMessage
      * Create a sampling message from array data.
      *
      * @param array<string, mixed> $data The message data
-     * @return self
      * @throws ValidationError If data is invalid
      */
     public static function fromArray(array $data): self
     {
-        if (!isset($data['role'])) {
+        if (! isset($data['role'])) {
             throw ValidationError::requiredFieldMissing('role');
         }
 
-        if (!isset($data['content'])) {
+        if (! isset($data['content'])) {
             throw ValidationError::requiredFieldMissing('content');
         }
 
-        if (!is_string($data['role'])) {
+        if (! is_string($data['role'])) {
             throw ValidationError::invalidFieldType('role', 'string', gettype($data['role']));
         }
 
-        if (!is_array($data['content'])) {
+        if (! is_array($data['content'])) {
             throw ValidationError::invalidFieldType('content', 'array', gettype($data['content']));
         }
 
@@ -71,7 +74,6 @@ class SamplingMessage
      * Create a user message with text content.
      *
      * @param string $text The message text
-     * @return self
      */
     public static function createUserMessage(string $text): self
     {
@@ -82,7 +84,6 @@ class SamplingMessage
      * Create an assistant message with text content.
      *
      * @param string $text The message text
-     * @return self
      */
     public static function createAssistantMessage(string $text): self
     {
@@ -94,7 +95,6 @@ class SamplingMessage
      *
      * @param string $data Base64-encoded image data
      * @param string $mimeType The image MIME type
-     * @return self
      */
     public static function createUserImageMessage(string $data, string $mimeType): self
     {
@@ -103,8 +103,6 @@ class SamplingMessage
 
     /**
      * Get the message role.
-     *
-     * @return string
      */
     public function getRole(): string
     {
@@ -113,8 +111,6 @@ class SamplingMessage
 
     /**
      * Get the message content.
-     *
-     * @return ContentInterface
      */
     public function getContent(): ContentInterface
     {
@@ -123,8 +119,6 @@ class SamplingMessage
 
     /**
      * Check if this is a user message.
-     *
-     * @return bool
      */
     public function isUserMessage(): bool
     {
@@ -133,8 +127,6 @@ class SamplingMessage
 
     /**
      * Check if this is an assistant message.
-     *
-     * @return bool
      */
     public function isAssistantMessage(): bool
     {
@@ -143,8 +135,6 @@ class SamplingMessage
 
     /**
      * Check if the content is text.
-     *
-     * @return bool
      */
     public function isTextContent(): bool
     {
@@ -153,8 +143,6 @@ class SamplingMessage
 
     /**
      * Check if the content is an image.
-     *
-     * @return bool
      */
     public function isImageContent(): bool
     {
@@ -163,8 +151,6 @@ class SamplingMessage
 
     /**
      * Check if the content is an embedded resource.
-     *
-     * @return bool
      */
     public function isEmbeddedResourceContent(): bool
     {
@@ -173,8 +159,6 @@ class SamplingMessage
 
     /**
      * Get text content if available.
-     *
-     * @return string|null
      */
     public function getTextContent(): ?string
     {
@@ -187,7 +171,7 @@ class SamplingMessage
     /**
      * Get image data if available.
      *
-     * @return string|null Base64-encoded image data
+     * @return null|string Base64-encoded image data
      */
     public function getImageData(): ?string
     {
@@ -199,8 +183,6 @@ class SamplingMessage
 
     /**
      * Get image MIME type if available.
-     *
-     * @return string|null
      */
     public function getImageMimeType(): ?string
     {
@@ -222,7 +204,7 @@ class SamplingMessage
             throw ValidationError::emptyField('role');
         }
 
-        if (!in_array($role, [ProtocolConstants::ROLE_USER, ProtocolConstants::ROLE_ASSISTANT], true)) {
+        if (! in_array($role, [ProtocolConstants::ROLE_USER, ProtocolConstants::ROLE_ASSISTANT], true)) {
             throw ValidationError::invalidFieldValue('role', 'must be either "user" or "assistant"');
         }
 
@@ -243,7 +225,6 @@ class SamplingMessage
      * Create a new message with a different role.
      *
      * @param string $role The new role
-     * @return self
      */
     public function withRole(string $role): self
     {
@@ -256,7 +237,6 @@ class SamplingMessage
      * Create a new message with different content.
      *
      * @param ContentInterface $content The new content
-     * @return self
      */
     public function withContent(ContentInterface $content): self
     {
@@ -280,8 +260,6 @@ class SamplingMessage
 
     /**
      * Convert to JSON string.
-     *
-     * @return string
      */
     public function toJson(): string
     {
@@ -292,16 +270,15 @@ class SamplingMessage
      * Create content from array data.
      *
      * @param array<string, mixed> $data The content data
-     * @return ContentInterface
      * @throws ValidationError If content type is invalid
      */
     private static function createContentFromArray(array $data): ContentInterface
     {
-        if (!isset($data['type'])) {
+        if (! isset($data['type'])) {
             throw ValidationError::requiredFieldMissing('content.type');
         }
 
-        if (!is_string($data['type'])) {
+        if (! is_string($data['type'])) {
             throw ValidationError::invalidFieldType('content.type', 'string', gettype($data['type']));
         }
 
@@ -316,4 +293,4 @@ class SamplingMessage
                 throw ValidationError::unsupportedContentType($data['type']);
         }
     }
-} 
+}

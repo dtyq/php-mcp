@@ -7,13 +7,13 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Prompts;
 
-use Dtyq\PhpMcp\Types\Prompts\PromptMessage;
-use Dtyq\PhpMcp\Types\Content\TextContent;
-use Dtyq\PhpMcp\Types\Content\ImageContent;
-use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
-use Dtyq\PhpMcp\Types\Resources\TextResourceContents;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
+use Dtyq\PhpMcp\Types\Content\ImageContent;
+use Dtyq\PhpMcp\Types\Content\TextContent;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Prompts\PromptMessage;
+use Dtyq\PhpMcp\Types\Resources\TextResourceContents;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -287,4 +287,4 @@ class PromptMessageTest extends TestCase
         $this->assertTrue($imageMessage->isUserMessage());
         $this->assertTrue($imageMessage->isImageContent());
     }
-} 
+}

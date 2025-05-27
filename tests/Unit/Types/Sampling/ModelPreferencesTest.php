@@ -1,14 +1,20 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * Copyright (c) The Magic , Distributed under the software license
+ */
 
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Sampling;
 
-use Dtyq\PhpMcp\Types\Sampling\ModelPreferences;
-use Dtyq\PhpMcp\Types\Sampling\ModelHint;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Sampling\ModelHint;
+use Dtyq\PhpMcp\Types\Sampling\ModelPreferences;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ */
 class ModelPreferencesTest extends TestCase
 {
     public function testConstructorWithDefaults(): void
@@ -188,4 +194,4 @@ class ModelPreferencesTest extends TestCase
         $this->assertSame('test', $decoded['hints'][0]['name']);
         $this->assertSame(0.5, $decoded['costPriority']);
     }
-} 
+}

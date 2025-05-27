@@ -1,6 +1,9 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * Copyright (c) The Magic , Distributed under the software license
+ */
 
 namespace Dtyq\PhpMcp\Types\Sampling;
 
@@ -9,7 +12,7 @@ use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 
 /**
  * Represents model selection preferences for sampling requests.
- * 
+ *
  * This class encapsulates preferences for model selection including
  * model hints, cost priority, speed priority, and intelligence priority.
  */
@@ -17,17 +20,20 @@ class ModelPreferences
 {
     /** @var ModelHint[] */
     private array $hints;
+
     private ?float $costPriority;
+
     private ?float $speedPriority;
+
     private ?float $intelligencePriority;
 
     /**
      * Create new model preferences.
      *
      * @param ModelHint[] $hints Model name hints
-     * @param float|null $costPriority Cost importance (0.0-1.0)
-     * @param float|null $speedPriority Speed importance (0.0-1.0)
-     * @param float|null $intelligencePriority Intelligence importance (0.0-1.0)
+     * @param null|float $costPriority Cost importance (0.0-1.0)
+     * @param null|float $speedPriority Speed importance (0.0-1.0)
+     * @param null|float $intelligencePriority Intelligence importance (0.0-1.0)
      * @throws ValidationError If parameters are invalid
      */
     public function __construct(
@@ -46,19 +52,18 @@ class ModelPreferences
      * Create preferences from array data.
      *
      * @param array<string, mixed> $data The preferences data
-     * @return self
      * @throws ValidationError If data is invalid
      */
     public static function fromArray(array $data): self
     {
         $hints = [];
         if (isset($data['hints'])) {
-            if (!is_array($data['hints'])) {
+            if (! is_array($data['hints'])) {
                 throw ValidationError::invalidFieldType('hints', 'array', gettype($data['hints']));
             }
 
             foreach ($data['hints'] as $index => $hintData) {
-                if (!is_array($hintData)) {
+                if (! is_array($hintData)) {
                     throw ValidationError::invalidFieldType("hints[{$index}]", 'array', gettype($hintData));
                 }
                 $hints[] = ModelHint::fromArray($hintData);
@@ -77,21 +82,19 @@ class ModelPreferences
      * Create preferences with model hints.
      *
      * @param string[] $modelNames Model name hints
-     * @return self
      */
     public static function createWithHints(array $modelNames): self
     {
-        $hints = array_map(fn($name) => new ModelHint($name), $modelNames);
+        $hints = array_map(fn ($name) => new ModelHint($name), $modelNames);
         return new self($hints);
     }
 
     /**
      * Create preferences with priorities.
      *
-     * @param float|null $costPriority Cost importance (0.0-1.0)
-     * @param float|null $speedPriority Speed importance (0.0-1.0)
-     * @param float|null $intelligencePriority Intelligence importance (0.0-1.0)
-     * @return self
+     * @param null|float $costPriority Cost importance (0.0-1.0)
+     * @param null|float $speedPriority Speed importance (0.0-1.0)
+     * @param null|float $intelligencePriority Intelligence importance (0.0-1.0)
      */
     public static function withPriorities(
         ?float $costPriority = null,
@@ -113,8 +116,6 @@ class ModelPreferences
 
     /**
      * Get the cost priority.
-     *
-     * @return float|null
      */
     public function getCostPriority(): ?float
     {
@@ -123,8 +124,6 @@ class ModelPreferences
 
     /**
      * Get the speed priority.
-     *
-     * @return float|null
      */
     public function getSpeedPriority(): ?float
     {
@@ -133,8 +132,6 @@ class ModelPreferences
 
     /**
      * Get the intelligence priority.
-     *
-     * @return float|null
      */
     public function getIntelligencePriority(): ?float
     {
@@ -143,18 +140,14 @@ class ModelPreferences
 
     /**
      * Check if hints are set.
-     *
-     * @return bool
      */
     public function hasHints(): bool
     {
-        return !empty($this->hints);
+        return ! empty($this->hints);
     }
 
     /**
      * Check if cost priority is set.
-     *
-     * @return bool
      */
     public function hasCostPriority(): bool
     {
@@ -163,8 +156,6 @@ class ModelPreferences
 
     /**
      * Check if speed priority is set.
-     *
-     * @return bool
      */
     public function hasSpeedPriority(): bool
     {
@@ -173,8 +164,6 @@ class ModelPreferences
 
     /**
      * Check if intelligence priority is set.
-     *
-     * @return bool
      */
     public function hasIntelligencePriority(): bool
     {
@@ -183,8 +172,6 @@ class ModelPreferences
 
     /**
      * Get the number of hints.
-     *
-     * @return int
      */
     public function getHintCount(): int
     {
@@ -198,7 +185,7 @@ class ModelPreferences
      */
     public function getHintNames(): array
     {
-        return array_map(fn($hint) => $hint->getName(), $this->hints);
+        return array_map(fn ($hint) => $hint->getName(), $this->hints);
     }
 
     /**
@@ -210,7 +197,7 @@ class ModelPreferences
     public function setHints(array $hints): void
     {
         foreach ($hints as $index => $hint) {
-            if (!$hint instanceof ModelHint) {
+            if (! $hint instanceof ModelHint) {
                 throw ValidationError::invalidFieldType(
                     "hints[{$index}]",
                     ModelHint::class,
@@ -225,7 +212,7 @@ class ModelPreferences
     /**
      * Set the cost priority.
      *
-     * @param float|null $costPriority The priority (0.0-1.0)
+     * @param null|float $costPriority The priority (0.0-1.0)
      * @throws ValidationError If priority is invalid
      */
     public function setCostPriority(?float $costPriority): void
@@ -240,7 +227,7 @@ class ModelPreferences
     /**
      * Set the speed priority.
      *
-     * @param float|null $speedPriority The priority (0.0-1.0)
+     * @param null|float $speedPriority The priority (0.0-1.0)
      * @throws ValidationError If priority is invalid
      */
     public function setSpeedPriority(?float $speedPriority): void
@@ -255,7 +242,7 @@ class ModelPreferences
     /**
      * Set the intelligence priority.
      *
-     * @param float|null $intelligencePriority The priority (0.0-1.0)
+     * @param null|float $intelligencePriority The priority (0.0-1.0)
      * @throws ValidationError If priority is invalid
      */
     public function setIntelligencePriority(?float $intelligencePriority): void
@@ -291,7 +278,6 @@ class ModelPreferences
      * Create new preferences with different hints.
      *
      * @param ModelHint[] $hints The new hints
-     * @return self
      */
     public function withHints(array $hints): self
     {
@@ -303,8 +289,7 @@ class ModelPreferences
     /**
      * Create new preferences with different cost priority.
      *
-     * @param float|null $costPriority The new cost priority
-     * @return self
+     * @param null|float $costPriority The new cost priority
      */
     public function withCostPriority(?float $costPriority): self
     {
@@ -316,8 +301,7 @@ class ModelPreferences
     /**
      * Create new preferences with different speed priority.
      *
-     * @param float|null $speedPriority The new speed priority
-     * @return self
+     * @param null|float $speedPriority The new speed priority
      */
     public function withSpeedPriority(?float $speedPriority): self
     {
@@ -329,8 +313,7 @@ class ModelPreferences
     /**
      * Create new preferences with different intelligence priority.
      *
-     * @param float|null $intelligencePriority The new intelligence priority
-     * @return self
+     * @param null|float $intelligencePriority The new intelligence priority
      */
     public function withIntelligencePriority(?float $intelligencePriority): self
     {
@@ -348,8 +331,8 @@ class ModelPreferences
     {
         $result = [];
 
-        if (!empty($this->hints)) {
-            $result['hints'] = array_map(fn($hint) => $hint->toArray(), $this->hints);
+        if (! empty($this->hints)) {
+            $result['hints'] = array_map(fn ($hint) => $hint->toArray(), $this->hints);
         }
 
         if ($this->costPriority !== null) {
@@ -369,11 +352,9 @@ class ModelPreferences
 
     /**
      * Convert to JSON string.
-     *
-     * @return string
      */
     public function toJson(): string
     {
         return JsonUtils::encode($this->toArray());
     }
-} 
+}

@@ -7,8 +7,8 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Prompts;
 
-use Dtyq\PhpMcp\Types\Core\BaseTypes;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Core\BaseTypes;
 
 /**
  * A prompt template that can be invoked by clients.
@@ -213,7 +213,7 @@ class Prompt
      */
     public function getRequiredArguments(): array
     {
-        return array_filter($this->arguments, fn(PromptArgument $arg) => $arg->isRequired());
+        return array_filter($this->arguments, fn (PromptArgument $arg) => $arg->isRequired());
     }
 
     /**
@@ -223,7 +223,7 @@ class Prompt
      */
     public function getOptionalArguments(): array
     {
-        return array_filter($this->arguments, fn(PromptArgument $arg) => ! $arg->isRequired());
+        return array_filter($this->arguments, fn (PromptArgument $arg) => ! $arg->isRequired());
     }
 
     /**
@@ -242,7 +242,7 @@ class Prompt
         }
 
         // Check for unknown arguments
-        $validArgNames = array_map(fn(PromptArgument $arg) => $arg->getName(), $this->arguments);
+        $validArgNames = array_map(fn (PromptArgument $arg) => $arg->getName(), $this->arguments);
         foreach (array_keys($providedArgs) as $providedArgName) {
             if (! in_array($providedArgName, $validArgNames, true)) {
                 throw ValidationError::invalidFieldValue('arguments', "unknown argument '{$providedArgName}'");
@@ -266,7 +266,7 @@ class Prompt
         }
 
         if (! empty($this->arguments)) {
-            $data['arguments'] = array_map(fn(PromptArgument $arg) => $arg->toArray(), $this->arguments);
+            $data['arguments'] = array_map(fn (PromptArgument $arg) => $arg->toArray(), $this->arguments);
         }
 
         return $data;
@@ -305,4 +305,4 @@ class Prompt
     {
         return new self($this->name, $this->description, $arguments);
     }
-} 
+}

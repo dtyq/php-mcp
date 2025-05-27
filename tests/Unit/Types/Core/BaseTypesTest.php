@@ -7,8 +7,8 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Core;
 
-use Dtyq\PhpMcp\Types\Core\BaseTypes;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Core\BaseTypes;
 use PHPUnit\Framework\TestCase;
 
 /**

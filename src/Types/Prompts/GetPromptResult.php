@@ -7,8 +7,8 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Prompts;
 
-use Dtyq\PhpMcp\Types\Core\BaseTypes;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Core\BaseTypes;
 
 /**
  * Result of getting a prompt template.
@@ -174,7 +174,7 @@ class GetPromptResult
      */
     public function getUserMessages(): array
     {
-        return array_filter($this->messages, fn(PromptMessage $msg) => $msg->isUserMessage());
+        return array_filter($this->messages, fn (PromptMessage $msg) => $msg->isUserMessage());
     }
 
     /**
@@ -184,7 +184,7 @@ class GetPromptResult
      */
     public function getAssistantMessages(): array
     {
-        return array_filter($this->messages, fn(PromptMessage $msg) => $msg->isAssistantMessage());
+        return array_filter($this->messages, fn (PromptMessage $msg) => $msg->isAssistantMessage());
     }
 
     /**
@@ -194,7 +194,7 @@ class GetPromptResult
      */
     public function getTextMessages(): array
     {
-        return array_filter($this->messages, fn(PromptMessage $msg) => $msg->isTextContent());
+        return array_filter($this->messages, fn (PromptMessage $msg) => $msg->isTextContent());
     }
 
     /**
@@ -204,7 +204,7 @@ class GetPromptResult
      */
     public function getImageMessages(): array
     {
-        return array_filter($this->messages, fn(PromptMessage $msg) => $msg->isImageContent());
+        return array_filter($this->messages, fn (PromptMessage $msg) => $msg->isImageContent());
     }
 
     /**
@@ -214,7 +214,7 @@ class GetPromptResult
      */
     public function getResourceMessages(): array
     {
-        return array_filter($this->messages, fn(PromptMessage $msg) => $msg->isResourceContent());
+        return array_filter($this->messages, fn (PromptMessage $msg) => $msg->isResourceContent());
     }
 
     /**
@@ -242,7 +242,7 @@ class GetPromptResult
     public function toArray(): array
     {
         $data = [
-            'messages' => array_map(fn(PromptMessage $msg) => $msg->toArray(), $this->messages),
+            'messages' => array_map(fn (PromptMessage $msg) => $msg->toArray(), $this->messages),
         ];
 
         if ($this->description !== null) {
@@ -315,4 +315,4 @@ class GetPromptResult
         }
         return new self($description, $messages);
     }
-} 
+}

@@ -1,17 +1,22 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * Copyright (c) The Magic , Distributed under the software license
+ */
 
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Sampling;
 
-use Dtyq\PhpMcp\Types\Sampling\SamplingMessage;
-use Dtyq\PhpMcp\Types\Content\TextContent;
-use Dtyq\PhpMcp\Types\Content\ImageContent;
-use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Content\ImageContent;
+use Dtyq\PhpMcp\Types\Content\TextContent;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Sampling\SamplingMessage;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ */
 class SamplingMessageTest extends TestCase
 {
     public function testConstructorWithValidData(): void
@@ -318,4 +323,4 @@ class SamplingMessageTest extends TestCase
         $this->assertSame('text', $decoded['content']['type']);
         $this->assertSame('Hello', $decoded['content']['text']);
     }
-} 
+}

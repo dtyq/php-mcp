@@ -1,6 +1,9 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * Copyright (c) The Magic , Distributed under the software license
+ */
 
 namespace Dtyq\PhpMcp\Types\Sampling;
 
@@ -9,7 +12,7 @@ use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 
 /**
  * Represents a request for creating a message through LLM sampling.
- * 
+ *
  * This class encapsulates all the parameters needed to request message generation
  * from a language model, including conversation history, model preferences,
  * system prompts, and sampling parameters.
@@ -18,13 +21,20 @@ class CreateMessageRequest
 {
     /** @var SamplingMessage[] */
     private array $messages;
+
     private ?ModelPreferences $modelPreferences;
+
     private ?string $systemPrompt;
+
     private ?string $includeContext;
+
     private ?float $temperature;
+
     private int $maxTokens;
+
     /** @var string[] */
     private array $stopSequences;
+
     /** @var array<string, mixed> */
     private array $metadata;
 
@@ -33,10 +43,10 @@ class CreateMessageRequest
      *
      * @param SamplingMessage[] $messages The conversation messages
      * @param int $maxTokens Maximum tokens to generate
-     * @param ModelPreferences|null $modelPreferences Model selection preferences
-     * @param string|null $systemPrompt System prompt for the model
-     * @param string|null $includeContext Context inclusion setting
-     * @param float|null $temperature Sampling temperature (0.0-1.0)
+     * @param null|ModelPreferences $modelPreferences Model selection preferences
+     * @param null|string $systemPrompt System prompt for the model
+     * @param null|string $includeContext Context inclusion setting
+     * @param null|float $temperature Sampling temperature (0.0-1.0)
      * @param string[] $stopSequences Stop sequences for generation
      * @param array<string, mixed> $metadata Additional metadata
      * @throws ValidationError If parameters are invalid
@@ -65,31 +75,30 @@ class CreateMessageRequest
      * Create a request from array data.
      *
      * @param array<string, mixed> $data The request data
-     * @return self
      * @throws ValidationError If data is invalid
      */
     public static function fromArray(array $data): self
     {
-        if (!isset($data['messages'])) {
+        if (! isset($data['messages'])) {
             throw ValidationError::requiredFieldMissing('messages');
         }
 
-        if (!isset($data['maxTokens'])) {
+        if (! isset($data['maxTokens'])) {
             throw ValidationError::requiredFieldMissing('maxTokens');
         }
 
-        if (!is_array($data['messages'])) {
+        if (! is_array($data['messages'])) {
             throw ValidationError::invalidFieldType('messages', 'array', gettype($data['messages']));
         }
 
-        if (!is_int($data['maxTokens'])) {
+        if (! is_int($data['maxTokens'])) {
             throw ValidationError::invalidFieldType('maxTokens', 'integer', gettype($data['maxTokens']));
         }
 
         // Convert message arrays to SamplingMessage objects
         $messages = [];
         foreach ($data['messages'] as $index => $messageData) {
-            if (!is_array($messageData)) {
+            if (! is_array($messageData)) {
                 throw ValidationError::invalidFieldType("messages[{$index}]", 'array', gettype($messageData));
             }
             $messages[] = SamplingMessage::fromArray($messageData);
@@ -98,7 +107,7 @@ class CreateMessageRequest
         // Parse model preferences if present
         $modelPreferences = null;
         if (isset($data['modelPreferences'])) {
-            if (!is_array($data['modelPreferences'])) {
+            if (! is_array($data['modelPreferences'])) {
                 throw ValidationError::invalidFieldType('modelPreferences', 'array', gettype($data['modelPreferences']));
             }
             $modelPreferences = ModelPreferences::fromArray($data['modelPreferences']);
@@ -121,8 +130,7 @@ class CreateMessageRequest
      *
      * @param string $text The user message text
      * @param int $maxTokens Maximum tokens to generate
-     * @param string|null $systemPrompt Optional system prompt
-     * @return self
+     * @param null|string $systemPrompt Optional system prompt
      */
     public static function createTextRequest(string $text, int $maxTokens, ?string $systemPrompt = null): self
     {
@@ -135,8 +143,7 @@ class CreateMessageRequest
      *
      * @param SamplingMessage[] $messages The conversation messages
      * @param int $maxTokens Maximum tokens to generate
-     * @param ModelPreferences|null $modelPreferences Model preferences
-     * @return self
+     * @param null|ModelPreferences $modelPreferences Model preferences
      */
     public static function createConversationRequest(
         array $messages,
@@ -158,8 +165,6 @@ class CreateMessageRequest
 
     /**
      * Get the model preferences.
-     *
-     * @return ModelPreferences|null
      */
     public function getModelPreferences(): ?ModelPreferences
     {
@@ -168,8 +173,6 @@ class CreateMessageRequest
 
     /**
      * Get the system prompt.
-     *
-     * @return string|null
      */
     public function getSystemPrompt(): ?string
     {
@@ -178,8 +181,6 @@ class CreateMessageRequest
 
     /**
      * Get the context inclusion setting.
-     *
-     * @return string|null
      */
     public function getIncludeContext(): ?string
     {
@@ -188,8 +189,6 @@ class CreateMessageRequest
 
     /**
      * Get the sampling temperature.
-     *
-     * @return float|null
      */
     public function getTemperature(): ?float
     {
@@ -198,8 +197,6 @@ class CreateMessageRequest
 
     /**
      * Get the maximum tokens to generate.
-     *
-     * @return int
      */
     public function getMaxTokens(): int
     {
@@ -228,8 +225,6 @@ class CreateMessageRequest
 
     /**
      * Check if model preferences are set.
-     *
-     * @return bool
      */
     public function hasModelPreferences(): bool
     {
@@ -238,8 +233,6 @@ class CreateMessageRequest
 
     /**
      * Check if system prompt is set.
-     *
-     * @return bool
      */
     public function hasSystemPrompt(): bool
     {
@@ -248,8 +241,6 @@ class CreateMessageRequest
 
     /**
      * Check if temperature is set.
-     *
-     * @return bool
      */
     public function hasTemperature(): bool
     {
@@ -258,8 +249,6 @@ class CreateMessageRequest
 
     /**
      * Get the number of messages.
-     *
-     * @return int
      */
     public function getMessageCount(): int
     {
@@ -273,7 +262,7 @@ class CreateMessageRequest
      */
     public function getUserMessages(): array
     {
-        return array_values(array_filter($this->messages, fn($msg) => $msg->isUserMessage()));
+        return array_values(array_filter($this->messages, fn ($msg) => $msg->isUserMessage()));
     }
 
     /**
@@ -283,7 +272,7 @@ class CreateMessageRequest
      */
     public function getAssistantMessages(): array
     {
-        return array_values(array_filter($this->messages, fn($msg) => $msg->isAssistantMessage()));
+        return array_values(array_filter($this->messages, fn ($msg) => $msg->isAssistantMessage()));
     }
 
     /**
@@ -299,7 +288,7 @@ class CreateMessageRequest
         }
 
         foreach ($messages as $index => $message) {
-            if (!$message instanceof SamplingMessage) {
+            if (! $message instanceof SamplingMessage) {
                 throw ValidationError::invalidFieldType(
                     "messages[{$index}]",
                     SamplingMessage::class,
@@ -314,7 +303,7 @@ class CreateMessageRequest
     /**
      * Set the model preferences.
      *
-     * @param ModelPreferences|null $modelPreferences The preferences
+     * @param null|ModelPreferences $modelPreferences The preferences
      */
     public function setModelPreferences(?ModelPreferences $modelPreferences): void
     {
@@ -324,7 +313,7 @@ class CreateMessageRequest
     /**
      * Set the system prompt.
      *
-     * @param string|null $systemPrompt The system prompt
+     * @param null|string $systemPrompt The system prompt
      */
     public function setSystemPrompt(?string $systemPrompt): void
     {
@@ -334,14 +323,14 @@ class CreateMessageRequest
     /**
      * Set the context inclusion setting.
      *
-     * @param string|null $includeContext The context setting
+     * @param null|string $includeContext The context setting
      * @throws ValidationError If context setting is invalid
      */
     public function setIncludeContext(?string $includeContext): void
     {
         if ($includeContext !== null) {
             $validContexts = ['none', 'thisServer', 'allServers'];
-            if (!in_array($includeContext, $validContexts, true)) {
+            if (! in_array($includeContext, $validContexts, true)) {
                 throw ValidationError::invalidFieldValue(
                     'includeContext',
                     'must be one of: ' . implode(', ', $validContexts)
@@ -355,7 +344,7 @@ class CreateMessageRequest
     /**
      * Set the sampling temperature.
      *
-     * @param float|null $temperature The temperature (0.0-1.0)
+     * @param null|float $temperature The temperature (0.0-1.0)
      * @throws ValidationError If temperature is invalid
      */
     public function setTemperature(?float $temperature): void
@@ -391,7 +380,7 @@ class CreateMessageRequest
     public function setStopSequences(array $stopSequences): void
     {
         foreach ($stopSequences as $index => $sequence) {
-            if (!is_string($sequence)) {
+            if (! is_string($sequence)) {
                 throw ValidationError::invalidFieldType(
                     "stopSequences[{$index}]",
                     'string',
@@ -437,7 +426,6 @@ class CreateMessageRequest
      * Create a new request with different messages.
      *
      * @param SamplingMessage[] $messages The new messages
-     * @return self
      */
     public function withMessages(array $messages): self
     {
@@ -449,8 +437,7 @@ class CreateMessageRequest
     /**
      * Create a new request with different model preferences.
      *
-     * @param ModelPreferences|null $modelPreferences The new preferences
-     * @return self
+     * @param null|ModelPreferences $modelPreferences The new preferences
      */
     public function withModelPreferences(?ModelPreferences $modelPreferences): self
     {
@@ -462,8 +449,7 @@ class CreateMessageRequest
     /**
      * Create a new request with a different system prompt.
      *
-     * @param string|null $systemPrompt The new system prompt
-     * @return self
+     * @param null|string $systemPrompt The new system prompt
      */
     public function withSystemPrompt(?string $systemPrompt): self
     {
@@ -475,8 +461,7 @@ class CreateMessageRequest
     /**
      * Create a new request with different temperature.
      *
-     * @param float|null $temperature The new temperature
-     * @return self
+     * @param null|float $temperature The new temperature
      */
     public function withTemperature(?float $temperature): self
     {
@@ -493,7 +478,7 @@ class CreateMessageRequest
     public function toArray(): array
     {
         $result = [
-            'messages' => array_map(fn($msg) => $msg->toArray(), $this->messages),
+            'messages' => array_map(fn ($msg) => $msg->toArray(), $this->messages),
             'maxTokens' => $this->maxTokens,
         ];
 
@@ -513,11 +498,11 @@ class CreateMessageRequest
             $result['temperature'] = $this->temperature;
         }
 
-        if (!empty($this->stopSequences)) {
+        if (! empty($this->stopSequences)) {
             $result['stopSequences'] = $this->stopSequences;
         }
 
-        if (!empty($this->metadata)) {
+        if (! empty($this->metadata)) {
             $result['metadata'] = $this->metadata;
         }
 
@@ -526,11 +511,9 @@ class CreateMessageRequest
 
     /**
      * Convert to JSON string.
-     *
-     * @return string
      */
     public function toJson(): string
     {
         return JsonUtils::encode($this->toArray());
     }
-} 
+}

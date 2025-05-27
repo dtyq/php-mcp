@@ -1,28 +1,34 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * Copyright (c) The Magic , Distributed under the software license
+ */
 
 namespace Dtyq\PhpMcp\Types\Sampling;
 
-use Dtyq\PhpMcp\Types\Content\ContentInterface;
-use Dtyq\PhpMcp\Types\Content\TextContent;
-use Dtyq\PhpMcp\Types\Content\ImageContent;
-use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
+use Dtyq\PhpMcp\Types\Content\ContentInterface;
+use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
+use Dtyq\PhpMcp\Types\Content\ImageContent;
+use Dtyq\PhpMcp\Types\Content\TextContent;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 
 /**
  * Represents the result of a message creation request through LLM sampling.
- * 
+ *
  * This class encapsulates the response from a language model including
  * the generated content, model information, and completion metadata.
  */
 class CreateMessageResult
 {
     private string $model;
+
     private string $role;
+
     private ContentInterface $content;
+
     private ?string $stopReason;
 
     /**
@@ -31,7 +37,7 @@ class CreateMessageResult
      * @param string $model The model that generated the message
      * @param string $role The role of the generated message
      * @param ContentInterface $content The generated content
-     * @param string|null $stopReason The reason generation stopped
+     * @param null|string $stopReason The reason generation stopped
      * @throws ValidationError If parameters are invalid
      */
     public function __construct(
@@ -50,32 +56,31 @@ class CreateMessageResult
      * Create a result from array data.
      *
      * @param array<string, mixed> $data The result data
-     * @return self
      * @throws ValidationError If data is invalid
      */
     public static function fromArray(array $data): self
     {
-        if (!isset($data['model'])) {
+        if (! isset($data['model'])) {
             throw ValidationError::requiredFieldMissing('model');
         }
 
-        if (!isset($data['role'])) {
+        if (! isset($data['role'])) {
             throw ValidationError::requiredFieldMissing('role');
         }
 
-        if (!isset($data['content'])) {
+        if (! isset($data['content'])) {
             throw ValidationError::requiredFieldMissing('content');
         }
 
-        if (!is_string($data['model'])) {
+        if (! is_string($data['model'])) {
             throw ValidationError::invalidFieldType('model', 'string', gettype($data['model']));
         }
 
-        if (!is_string($data['role'])) {
+        if (! is_string($data['role'])) {
             throw ValidationError::invalidFieldType('role', 'string', gettype($data['role']));
         }
 
-        if (!is_array($data['content'])) {
+        if (! is_array($data['content'])) {
             throw ValidationError::invalidFieldType('content', 'array', gettype($data['content']));
         }
 
@@ -95,8 +100,7 @@ class CreateMessageResult
      *
      * @param string $model The model name
      * @param string $text The generated text
-     * @param string|null $stopReason The stop reason
-     * @return self
+     * @param null|string $stopReason The stop reason
      */
     public static function createTextResult(string $model, string $text, ?string $stopReason = null): self
     {
@@ -114,8 +118,7 @@ class CreateMessageResult
      * @param string $model The model name
      * @param string $data Base64-encoded image data
      * @param string $mimeType The image MIME type
-     * @param string|null $stopReason The stop reason
-     * @return self
+     * @param null|string $stopReason The stop reason
      */
     public static function createImageResult(
         string $model,
@@ -133,8 +136,6 @@ class CreateMessageResult
 
     /**
      * Get the model name.
-     *
-     * @return string
      */
     public function getModel(): string
     {
@@ -143,8 +144,6 @@ class CreateMessageResult
 
     /**
      * Get the message role.
-     *
-     * @return string
      */
     public function getRole(): string
     {
@@ -153,8 +152,6 @@ class CreateMessageResult
 
     /**
      * Get the generated content.
-     *
-     * @return ContentInterface
      */
     public function getContent(): ContentInterface
     {
@@ -163,8 +160,6 @@ class CreateMessageResult
 
     /**
      * Get the stop reason.
-     *
-     * @return string|null
      */
     public function getStopReason(): ?string
     {
@@ -173,8 +168,6 @@ class CreateMessageResult
 
     /**
      * Check if this is a user message.
-     *
-     * @return bool
      */
     public function isUserMessage(): bool
     {
@@ -183,8 +176,6 @@ class CreateMessageResult
 
     /**
      * Check if this is an assistant message.
-     *
-     * @return bool
      */
     public function isAssistantMessage(): bool
     {
@@ -193,8 +184,6 @@ class CreateMessageResult
 
     /**
      * Check if the content is text.
-     *
-     * @return bool
      */
     public function isTextContent(): bool
     {
@@ -203,8 +192,6 @@ class CreateMessageResult
 
     /**
      * Check if the content is an image.
-     *
-     * @return bool
      */
     public function isImageContent(): bool
     {
@@ -213,8 +200,6 @@ class CreateMessageResult
 
     /**
      * Check if the content is an embedded resource.
-     *
-     * @return bool
      */
     public function isEmbeddedResourceContent(): bool
     {
@@ -223,8 +208,6 @@ class CreateMessageResult
 
     /**
      * Get text content if available.
-     *
-     * @return string|null
      */
     public function getTextContent(): ?string
     {
@@ -237,7 +220,7 @@ class CreateMessageResult
     /**
      * Get image data if available.
      *
-     * @return string|null Base64-encoded image data
+     * @return null|string Base64-encoded image data
      */
     public function getImageData(): ?string
     {
@@ -249,8 +232,6 @@ class CreateMessageResult
 
     /**
      * Get image MIME type if available.
-     *
-     * @return string|null
      */
     public function getImageMimeType(): ?string
     {
@@ -262,8 +243,6 @@ class CreateMessageResult
 
     /**
      * Check if generation was stopped by end of turn.
-     *
-     * @return bool
      */
     public function isEndTurn(): bool
     {
@@ -272,8 +251,6 @@ class CreateMessageResult
 
     /**
      * Check if generation was stopped by a stop sequence.
-     *
-     * @return bool
      */
     public function isStopSequence(): bool
     {
@@ -282,8 +259,6 @@ class CreateMessageResult
 
     /**
      * Check if generation was stopped by max tokens.
-     *
-     * @return bool
      */
     public function isMaxTokens(): bool
     {
@@ -292,8 +267,6 @@ class CreateMessageResult
 
     /**
      * Check if a stop reason is set.
-     *
-     * @return bool
      */
     public function hasStopReason(): bool
     {
@@ -327,7 +300,7 @@ class CreateMessageResult
             throw ValidationError::emptyField('role');
         }
 
-        if (!in_array($role, [ProtocolConstants::ROLE_USER, ProtocolConstants::ROLE_ASSISTANT], true)) {
+        if (! in_array($role, [ProtocolConstants::ROLE_USER, ProtocolConstants::ROLE_ASSISTANT], true)) {
             throw ValidationError::invalidFieldValue('role', 'must be either "user" or "assistant"');
         }
 
@@ -347,7 +320,7 @@ class CreateMessageResult
     /**
      * Set the stop reason.
      *
-     * @param string|null $stopReason The stop reason
+     * @param null|string $stopReason The stop reason
      */
     public function setStopReason(?string $stopReason): void
     {
@@ -358,7 +331,6 @@ class CreateMessageResult
      * Create a new result with a different model.
      *
      * @param string $model The new model
-     * @return self
      */
     public function withModel(string $model): self
     {
@@ -371,7 +343,6 @@ class CreateMessageResult
      * Create a new result with a different role.
      *
      * @param string $role The new role
-     * @return self
      */
     public function withRole(string $role): self
     {
@@ -384,7 +355,6 @@ class CreateMessageResult
      * Create a new result with different content.
      *
      * @param ContentInterface $content The new content
-     * @return self
      */
     public function withContent(ContentInterface $content): self
     {
@@ -396,8 +366,7 @@ class CreateMessageResult
     /**
      * Create a new result with a different stop reason.
      *
-     * @param string|null $stopReason The new stop reason
-     * @return self
+     * @param null|string $stopReason The new stop reason
      */
     public function withStopReason(?string $stopReason): self
     {
@@ -428,8 +397,6 @@ class CreateMessageResult
 
     /**
      * Convert to JSON string.
-     *
-     * @return string
      */
     public function toJson(): string
     {
@@ -440,16 +407,15 @@ class CreateMessageResult
      * Create content from array data.
      *
      * @param array<string, mixed> $data The content data
-     * @return ContentInterface
      * @throws ValidationError If content type is invalid
      */
     private static function createContentFromArray(array $data): ContentInterface
     {
-        if (!isset($data['type'])) {
+        if (! isset($data['type'])) {
             throw ValidationError::requiredFieldMissing('content.type');
         }
 
-        if (!is_string($data['type'])) {
+        if (! is_string($data['type'])) {
             throw ValidationError::invalidFieldType('content.type', 'string', gettype($data['type']));
         }
 
@@ -464,4 +430,4 @@ class CreateMessageResult
                 throw ValidationError::unsupportedContentType($data['type']);
         }
     }
-} 
+}

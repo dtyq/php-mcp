@@ -7,8 +7,8 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Prompts;
 
-use Dtyq\PhpMcp\Types\Prompts\PromptArgument;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Prompts\PromptArgument;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -231,4 +231,4 @@ class PromptArgumentTest extends TestCase
         $this->assertSame('Description', $original->getDescription());
         $this->assertNull($withNull->getDescription());
     }
-} 
+}

@@ -1,6 +1,9 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * Copyright (c) The Magic , Distributed under the software license
+ */
 
 namespace Dtyq\PhpMcp\Types\Sampling;
 
@@ -9,7 +12,7 @@ use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 
 /**
  * Represents a model hint for sampling requests.
- * 
+ *
  * Model hints provide suggestions to clients about which models to use
  * for sampling. Clients can use these hints to select appropriate models
  * from their available options.
@@ -30,19 +33,26 @@ class ModelHint
     }
 
     /**
+     * String representation.
+     */
+    public function __toString(): string
+    {
+        return $this->name;
+    }
+
+    /**
      * Create a hint from array data.
      *
      * @param array<string, mixed> $data The hint data
-     * @return self
      * @throws ValidationError If data is invalid
      */
     public static function fromArray(array $data): self
     {
-        if (!isset($data['name'])) {
+        if (! isset($data['name'])) {
             throw ValidationError::requiredFieldMissing('name');
         }
 
-        if (!is_string($data['name'])) {
+        if (! is_string($data['name'])) {
             throw ValidationError::invalidFieldType('name', 'string', gettype($data['name']));
         }
 
@@ -51,8 +61,6 @@ class ModelHint
 
     /**
      * Get the model name.
-     *
-     * @return string
      */
     public function getName(): string
     {
@@ -78,7 +86,6 @@ class ModelHint
      * Create a new hint with a different name.
      *
      * @param string $name The new name
-     * @return self
      */
     public function withName(string $name): self
     {
@@ -91,7 +98,6 @@ class ModelHint
      * Check if this hint matches a model name.
      *
      * @param string $modelName The model name to check
-     * @return bool
      */
     public function matches(string $modelName): bool
     {
@@ -113,21 +119,9 @@ class ModelHint
 
     /**
      * Convert to JSON string.
-     *
-     * @return string
      */
     public function toJson(): string
     {
         return JsonUtils::encode($this->toArray());
     }
-
-    /**
-     * String representation.
-     *
-     * @return string
-     */
-    public function __toString(): string
-    {
-        return $this->name;
-    }
-} 
+}
