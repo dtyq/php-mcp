@@ -25,6 +25,7 @@ class CallToolResult implements ResultInterface
 
     private bool $isError = false;
 
+    /** @var null|array<string, mixed> */
     private ?array $meta = null;
 
     /**
@@ -97,13 +98,14 @@ class CallToolResult implements ResultInterface
         }
 
         foreach ($content as $index => $item) {
+            // @phpstan-ignore-next-line
             if (! $item instanceof TextContent
                 && ! $item instanceof ImageContent
                 && ! $item instanceof EmbeddedResource) {
                 throw ValidationError::invalidFieldType(
                     "content[{$index}]",
                     'TextContent, ImageContent, or EmbeddedResource',
-                    get_class($item)
+                    get_debug_type($item)
                 );
             }
         }
@@ -148,6 +150,7 @@ class CallToolResult implements ResultInterface
 
     /**
      * Get the first content item.
+     * @return null|EmbeddedResource|ImageContent|TextContent
      */
     public function getFirstContent()
     {

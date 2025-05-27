@@ -19,23 +19,26 @@ class GetPromptRequest implements RequestInterface
 {
     private string $method = 'prompts/get';
 
+    /** @var int|string */
     private $id;
 
+    /** @var null|int|string */
     private $progressToken;
 
     private string $name;
 
+    /** @var null|array<string, mixed> */
     private ?array $arguments = null;
 
     /**
      * @param string $name The name of the prompt to get
-     * @param null|array<string, string> $arguments Prompt arguments
+     * @param null|array<string, mixed> $arguments Prompt arguments
      * @param null|int|string $id Request ID
      */
     public function __construct(string $name, ?array $arguments = null, $id = null)
     {
         $this->setName($name);
-        $this->setArguments($arguments);
+        $this->arguments = $arguments;
         $this->id = $id ?? $this->generateId();
     }
 
@@ -44,6 +47,7 @@ class GetPromptRequest implements RequestInterface
         return $this->method;
     }
 
+    /** @return null|array<string, mixed> */
     public function getParams(): ?array
     {
         $params = [
@@ -61,13 +65,16 @@ class GetPromptRequest implements RequestInterface
         return $params;
     }
 
+    /** @return int|string */
     public function getId()
     {
         return $this->id;
     }
 
+    /** @param int|string $id */
     public function setId($id): void
     {
+        // @phpstan-ignore-next-line
         if (! is_string($id) && ! is_int($id)) {
             throw ValidationError::invalidArgumentType('id', 'string or integer', gettype($id));
         }
@@ -79,13 +86,16 @@ class GetPromptRequest implements RequestInterface
         return $this->progressToken !== null;
     }
 
+    /** @return null|int|string */
     public function getProgressToken()
     {
         return $this->progressToken;
     }
 
+    /** @param null|int|string $token */
     public function setProgressToken($token): void
     {
+        // @phpstan-ignore-next-line
         if ($token !== null && ! is_string($token) && ! is_int($token)) {
             throw ValidationError::invalidArgumentType('progressToken', 'string, integer, or null', gettype($token));
         }

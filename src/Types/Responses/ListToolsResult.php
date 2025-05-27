@@ -23,6 +23,7 @@ class ListToolsResult implements ResultInterface
 
     private ?string $nextCursor = null;
 
+    /** @var null|array<string, mixed> */
     private ?array $meta = null;
 
     /**
@@ -103,7 +104,7 @@ class ListToolsResult implements ResultInterface
                 throw ValidationError::invalidFieldType(
                     "tools[{$index}]",
                     'Tool',
-                    get_class($tool)
+                    get_debug_type($tool)
                 );
             }
         }

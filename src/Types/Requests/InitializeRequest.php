@@ -21,18 +21,22 @@ class InitializeRequest implements RequestInterface
 
     private string $protocolVersion;
 
+    /** @var array<string, mixed> */
     private array $capabilities;
 
+    /** @var array<string, mixed> */
     private array $clientInfo;
 
+    /** @var int|string */
     private $id;
 
+    /** @var null|int|string */
     private $progressToken;
 
     /**
-     * @param string $protocolVersion The latest MCP version the client supports
+     * @param string $protocolVersion MCP protocol version
      * @param array<string, mixed> $capabilities Client capabilities
-     * @param array<string, mixed> $clientInfo Client implementation info
+     * @param array<string, mixed> $clientInfo Client information
      * @param null|int|string $id Request ID
      */
     public function __construct(
@@ -52,22 +56,32 @@ class InitializeRequest implements RequestInterface
         return $this->method;
     }
 
-    public function getParams(): ?array
+    /** @return array<string, mixed> */
+    public function getParams(): array
     {
-        return [
+        $params = [
             'protocolVersion' => $this->protocolVersion,
             'capabilities' => $this->capabilities,
             'clientInfo' => $this->clientInfo,
         ];
+
+        if ($this->progressToken !== null) {
+            $params['_meta'] = ['progressToken' => $this->progressToken];
+        }
+
+        return $params;
     }
 
+    /** @return int|string */
     public function getId()
     {
         return $this->id;
     }
 
+    /** @param int|string $id */
     public function setId($id): void
     {
+        // @phpstan-ignore-next-line
         if (! is_string($id) && ! is_int($id)) {
             throw ValidationError::invalidArgumentType('id', 'string or integer', gettype($id));
         }
@@ -79,13 +93,16 @@ class InitializeRequest implements RequestInterface
         return $this->progressToken !== null;
     }
 
+    /** @return null|int|string */
     public function getProgressToken()
     {
         return $this->progressToken;
     }
 
+    /** @param null|int|string $token */
     public function setProgressToken($token): void
     {
+        // @phpstan-ignore-next-line
         if ($token !== null && ! is_string($token) && ! is_int($token)) {
             throw ValidationError::invalidArgumentType('progressToken', 'string, integer, or null', gettype($token));
         }

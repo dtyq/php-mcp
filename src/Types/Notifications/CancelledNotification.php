@@ -19,10 +19,12 @@ class CancelledNotification implements NotificationInterface
 {
     private string $method = 'notifications/cancelled';
 
+    /** @var int|string */
     private $requestId;
 
     private ?string $reason = null;
 
+    /** @var null|array<string, mixed> */
     private ?array $meta = null;
 
     /**
@@ -42,6 +44,7 @@ class CancelledNotification implements NotificationInterface
         return $this->method;
     }
 
+    /** @return null|array<string, mixed> */
     public function getParams(): ?array
     {
         $params = [
@@ -59,6 +62,7 @@ class CancelledNotification implements NotificationInterface
         return $params;
     }
 
+    /** @return array<string, mixed> */
     public function toJsonRpc(): array
     {
         return [
@@ -73,11 +77,13 @@ class CancelledNotification implements NotificationInterface
         return $this->meta !== null;
     }
 
+    /** @return null|array<string, mixed> */
     public function getMeta(): ?array
     {
         return $this->meta;
     }
 
+    /** @param null|array<string, mixed> $meta */
     public function setMeta(?array $meta): void
     {
         $this->meta = $meta;
@@ -97,6 +103,7 @@ class CancelledNotification implements NotificationInterface
      */
     public function setRequestId($requestId): void
     {
+        // @phpstan-ignore-next-line
         if (! is_string($requestId) && ! is_int($requestId)) {
             throw ValidationError::invalidArgumentType('requestId', 'string or integer', gettype($requestId));
         }

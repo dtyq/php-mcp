@@ -23,6 +23,7 @@ class ListResourcesResult implements ResultInterface
 
     private ?string $nextCursor = null;
 
+    /** @var null|array<string, mixed> */
     private ?array $meta = null;
 
     /**
@@ -37,6 +38,7 @@ class ListResourcesResult implements ResultInterface
         $this->meta = $meta;
     }
 
+    /** @return array<string, mixed> */
     public function toArray(): array
     {
         $data = [
@@ -59,11 +61,13 @@ class ListResourcesResult implements ResultInterface
         return $this->meta !== null;
     }
 
+    /** @return null|array<string, mixed> */
     public function getMeta(): ?array
     {
         return $this->meta;
     }
 
+    /** @param null|array<string, mixed> $meta */
     public function setMeta(?array $meta): void
     {
         $this->meta = $meta;
@@ -103,7 +107,7 @@ class ListResourcesResult implements ResultInterface
                 throw ValidationError::invalidFieldType(
                     "resources[{$index}]",
                     'Resource',
-                    get_class($resource)
+                    get_debug_type($resource)
                 );
             }
         }

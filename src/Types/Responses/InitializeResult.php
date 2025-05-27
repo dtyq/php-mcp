@@ -19,12 +19,15 @@ class InitializeResult implements ResultInterface
 {
     private string $protocolVersion;
 
+    /** @var array<string, mixed> */
     private array $capabilities;
 
+    /** @var array<string, mixed> */
     private array $serverInfo;
 
     private ?string $instructions = null;
 
+    /** @var null|array<string, mixed> */
     private ?array $meta = null;
 
     /**

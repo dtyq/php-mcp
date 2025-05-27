@@ -37,15 +37,15 @@ class ProtocolConstantsTest extends TestCase
     public function testMcpSpecificErrorCodes(): void
     {
         $this->assertEquals(-32000, ProtocolConstants::MCP_ERROR);
-        $this->assertEquals(-32001, ProtocolConstants::AUTHENTICATION_ERROR);
-        $this->assertEquals(-32002, ProtocolConstants::AUTHORIZATION_ERROR);
-        $this->assertEquals(-32003, ProtocolConstants::RESOURCE_NOT_FOUND);
-        $this->assertEquals(-32004, ProtocolConstants::TOOL_NOT_FOUND);
-        $this->assertEquals(-32005, ProtocolConstants::PROMPT_NOT_FOUND);
-        $this->assertEquals(-32006, ProtocolConstants::INVALID_URI);
-        $this->assertEquals(-32007, ProtocolConstants::TRANSPORT_ERROR);
+        $this->assertEquals(-32001, ProtocolConstants::TRANSPORT_ERROR);
+        $this->assertEquals(-32002, ProtocolConstants::RESOURCE_NOT_FOUND);
+        $this->assertEquals(-32003, ProtocolConstants::AUTHENTICATION_ERROR);
+        $this->assertEquals(-32004, ProtocolConstants::AUTHORIZATION_ERROR);
+        $this->assertEquals(-32005, ProtocolConstants::VALIDATION_ERROR);
+        $this->assertEquals(-32006, ProtocolConstants::TOOL_NOT_FOUND);
+        $this->assertEquals(-32007, ProtocolConstants::PROMPT_NOT_FOUND);
         $this->assertEquals(-32008, ProtocolConstants::PROTOCOL_ERROR);
-        $this->assertEquals(-32009, ProtocolConstants::VALIDATION_ERROR);
+        $this->assertEquals(-32009, ProtocolConstants::CAPABILITY_NOT_SUPPORTED);
     }
 
     public function testRoleConstants(): void

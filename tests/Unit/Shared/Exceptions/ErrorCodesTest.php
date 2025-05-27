@@ -29,13 +29,13 @@ class ErrorCodesTest extends TestCase
     {
         $this->assertSame(-32000, ErrorCodes::MCP_ERROR);
         $this->assertSame(-32001, ErrorCodes::TRANSPORT_ERROR);
-        $this->assertSame(-32002, ErrorCodes::PROTOCOL_ERROR);
+        $this->assertSame(-32002, ErrorCodes::RESOURCE_NOT_FOUND);
         $this->assertSame(-32003, ErrorCodes::AUTHENTICATION_ERROR);
         $this->assertSame(-32004, ErrorCodes::AUTHORIZATION_ERROR);
         $this->assertSame(-32005, ErrorCodes::VALIDATION_ERROR);
-        $this->assertSame(-32006, ErrorCodes::RESOURCE_NOT_FOUND);
-        $this->assertSame(-32007, ErrorCodes::TOOL_NOT_FOUND);
-        $this->assertSame(-32008, ErrorCodes::PROMPT_NOT_FOUND);
+        $this->assertSame(-32006, ErrorCodes::TOOL_NOT_FOUND);
+        $this->assertSame(-32007, ErrorCodes::PROMPT_NOT_FOUND);
+        $this->assertSame(-32008, ErrorCodes::PROTOCOL_ERROR);
         $this->assertSame(-32009, ErrorCodes::CAPABILITY_NOT_SUPPORTED);
     }
 

@@ -20,12 +20,14 @@ class ProgressNotification implements NotificationInterface
 {
     private string $method = 'notifications/progress';
 
+    /** @var int|string */
     private $progressToken;
 
     private int $progress;
 
     private ?int $total = null;
 
+    /** @var null|array<string, mixed> */
     private ?array $meta = null;
 
     /**
@@ -47,6 +49,7 @@ class ProgressNotification implements NotificationInterface
         return $this->method;
     }
 
+    /** @return null|array<string, mixed> */
     public function getParams(): ?array
     {
         $params = [
@@ -65,6 +68,7 @@ class ProgressNotification implements NotificationInterface
         return $params;
     }
 
+    /** @return array<string, mixed> */
     public function toJsonRpc(): array
     {
         return [
@@ -79,11 +83,13 @@ class ProgressNotification implements NotificationInterface
         return $this->meta !== null;
     }
 
+    /** @return null|array<string, mixed> */
     public function getMeta(): ?array
     {
         return $this->meta;
     }
 
+    /** @param null|array<string, mixed> $meta */
     public function setMeta(?array $meta): void
     {
         $this->meta = $meta;
@@ -103,6 +109,7 @@ class ProgressNotification implements NotificationInterface
      */
     public function setProgressToken($token): void
     {
+        // @phpstan-ignore-next-line
         if (! is_string($token) && ! is_int($token)) {
             throw ValidationError::invalidArgumentType('progressToken', 'string or integer', gettype($token));
         }

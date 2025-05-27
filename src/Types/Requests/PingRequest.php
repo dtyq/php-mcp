@@ -19,8 +19,10 @@ class PingRequest implements RequestInterface
 {
     private string $method = 'ping';
 
+    /** @var int|string */
     private $id;
 
+    /** @var null|int|string */
     private $progressToken;
 
     /**
@@ -36,18 +38,26 @@ class PingRequest implements RequestInterface
         return $this->method;
     }
 
+    /** @return null|array<string, mixed> */
     public function getParams(): ?array
     {
-        return null; // Ping requests have no parameters
+        if ($this->progressToken !== null) {
+            return ['_meta' => ['progressToken' => $this->progressToken]];
+        }
+
+        return null;
     }
 
+    /** @return int|string */
     public function getId()
     {
         return $this->id;
     }
 
+    /** @param int|string $id */
     public function setId($id): void
     {
+        // @phpstan-ignore-next-line
         if (! is_string($id) && ! is_int($id)) {
             throw ValidationError::invalidArgumentType('id', 'string or integer', gettype($id));
         }
@@ -59,13 +69,16 @@ class PingRequest implements RequestInterface
         return $this->progressToken !== null;
     }
 
+    /** @return null|int|string */
     public function getProgressToken()
     {
         return $this->progressToken;
     }
 
+    /** @param null|int|string $token */
     public function setProgressToken($token): void
     {
+        // @phpstan-ignore-next-line
         if ($token !== null && ! is_string($token) && ! is_int($token)) {
             throw ValidationError::invalidArgumentType('progressToken', 'string, integer, or null', gettype($token));
         }

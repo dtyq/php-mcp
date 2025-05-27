@@ -19,6 +19,7 @@ class PromptListChangedNotification implements NotificationInterface
 {
     private string $method = 'notifications/prompts/list_changed';
 
+    /** @var null|array<string, mixed> */
     private ?array $meta = null;
 
     /**
@@ -34,14 +35,17 @@ class PromptListChangedNotification implements NotificationInterface
         return $this->method;
     }
 
+    /** @return null|array<string, mixed> */
     public function getParams(): ?array
     {
         if ($this->meta !== null) {
             return ['_meta' => $this->meta];
         }
+
         return null;
     }
 
+    /** @return array<string, mixed> */
     public function toJsonRpc(): array
     {
         $data = [
@@ -62,11 +66,13 @@ class PromptListChangedNotification implements NotificationInterface
         return $this->meta !== null;
     }
 
+    /** @return null|array<string, mixed> */
     public function getMeta(): ?array
     {
         return $this->meta;
     }
 
+    /** @param null|array<string, mixed> $meta */
     public function setMeta(?array $meta): void
     {
         $this->meta = $meta;

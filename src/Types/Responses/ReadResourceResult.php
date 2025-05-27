@@ -21,6 +21,7 @@ class ReadResourceResult implements ResultInterface
     /** @var ResourceContents[] */
     private array $contents;
 
+    /** @var null|array<string, mixed> */
     private ?array $meta = null;
 
     /**
@@ -33,6 +34,7 @@ class ReadResourceResult implements ResultInterface
         $this->meta = $meta;
     }
 
+    /** @return array<string, mixed> */
     public function toArray(): array
     {
         $data = [
@@ -51,11 +53,13 @@ class ReadResourceResult implements ResultInterface
         return $this->meta !== null;
     }
 
+    /** @return null|array<string, mixed> */
     public function getMeta(): ?array
     {
         return $this->meta;
     }
 
+    /** @param null|array<string, mixed> $meta */
     public function setMeta(?array $meta): void
     {
         $this->meta = $meta;
@@ -94,7 +98,7 @@ class ReadResourceResult implements ResultInterface
                 throw ValidationError::invalidFieldType(
                     "contents[{$index}]",
                     'ResourceContents',
-                    get_class($content)
+                    get_debug_type($content)
                 );
             }
         }

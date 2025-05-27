@@ -19,6 +19,7 @@ class InitializedNotification implements NotificationInterface
 {
     private string $method = 'notifications/initialized';
 
+    /** @var null|array<string, mixed> */
     private ?array $meta = null;
 
     /**
@@ -34,6 +35,7 @@ class InitializedNotification implements NotificationInterface
         return $this->method;
     }
 
+    /** @return null|array<string, mixed> */
     public function getParams(): ?array
     {
         $params = [];
@@ -45,6 +47,7 @@ class InitializedNotification implements NotificationInterface
         return empty($params) ? null : $params;
     }
 
+    /** @return array<string, mixed> */
     public function toJsonRpc(): array
     {
         $data = [
@@ -65,6 +68,7 @@ class InitializedNotification implements NotificationInterface
         return $this->meta !== null;
     }
 
+    /** @return null|array<string, mixed> */
     public function getMeta(): ?array
     {
         return $this->meta;

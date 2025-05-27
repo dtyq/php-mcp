@@ -23,6 +23,7 @@ class ListPromptsResult implements ResultInterface
 
     private ?string $nextCursor = null;
 
+    /** @var null|array<string, mixed> */
     private ?array $meta = null;
 
     /**
@@ -103,7 +104,7 @@ class ListPromptsResult implements ResultInterface
                 throw ValidationError::invalidFieldType(
                     "prompts[{$index}]",
                     'Prompt',
-                    get_class($prompt)
+                    get_debug_type($prompt)
                 );
             }
         }

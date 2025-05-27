@@ -22,6 +22,7 @@ class ResourceUpdatedNotification implements NotificationInterface
 
     private string $uri;
 
+    /** @var null|array<string, mixed> */
     private ?array $meta = null;
 
     /**
@@ -39,7 +40,8 @@ class ResourceUpdatedNotification implements NotificationInterface
         return $this->method;
     }
 
-    public function getParams(): ?array
+    /** @return array<string, mixed> */
+    public function getParams(): array
     {
         $params = [
             'uri' => $this->uri,
@@ -52,6 +54,7 @@ class ResourceUpdatedNotification implements NotificationInterface
         return $params;
     }
 
+    /** @return array<string, mixed> */
     public function toJsonRpc(): array
     {
         return [
@@ -66,11 +69,13 @@ class ResourceUpdatedNotification implements NotificationInterface
         return $this->meta !== null;
     }
 
+    /** @return null|array<string, mixed> */
     public function getMeta(): ?array
     {
         return $this->meta;
     }
 
+    /** @param null|array<string, mixed> $meta */
     public function setMeta(?array $meta): void
     {
         $this->meta = $meta;

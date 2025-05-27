@@ -19,6 +19,7 @@ class ToolListChangedNotification implements NotificationInterface
 {
     private string $method = 'notifications/tools/list_changed';
 
+    /** @var null|array<string, mixed> */
     private ?array $meta = null;
 
     /**
@@ -34,6 +35,7 @@ class ToolListChangedNotification implements NotificationInterface
         return $this->method;
     }
 
+    /** @return null|array<string, mixed> */
     public function getParams(): ?array
     {
         if ($this->meta !== null) {
@@ -42,6 +44,7 @@ class ToolListChangedNotification implements NotificationInterface
         return null;
     }
 
+    /** @return array<string, mixed> */
     public function toJsonRpc(): array
     {
         $data = [
@@ -62,11 +65,13 @@ class ToolListChangedNotification implements NotificationInterface
         return $this->meta !== null;
     }
 
+    /** @return null|array<string, mixed> */
     public function getMeta(): ?array
     {
         return $this->meta;
     }
 
+    /** @param null|array<string, mixed> $meta */
     public function setMeta(?array $meta): void
     {
         $this->meta = $meta;

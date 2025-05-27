@@ -19,14 +19,16 @@ class ReadResourceRequest implements RequestInterface
 {
     private string $method = 'resources/read';
 
+    /** @var int|string */
     private $id;
 
+    /** @var null|int|string */
     private $progressToken;
 
     private string $uri;
 
     /**
-     * @param string $uri The URI of the resource to read
+     * @param string $uri Resource URI to read
      * @param null|int|string $id Request ID
      */
     public function __construct(string $uri, $id = null)
@@ -40,7 +42,8 @@ class ReadResourceRequest implements RequestInterface
         return $this->method;
     }
 
-    public function getParams(): ?array
+    /** @return array<string, mixed> */
+    public function getParams(): array
     {
         $params = [
             'uri' => $this->uri,
@@ -53,13 +56,16 @@ class ReadResourceRequest implements RequestInterface
         return $params;
     }
 
+    /** @return int|string */
     public function getId()
     {
         return $this->id;
     }
 
+    /** @param int|string $id */
     public function setId($id): void
     {
+        // @phpstan-ignore-next-line
         if (! is_string($id) && ! is_int($id)) {
             throw ValidationError::invalidArgumentType('id', 'string or integer', gettype($id));
         }
@@ -71,13 +77,16 @@ class ReadResourceRequest implements RequestInterface
         return $this->progressToken !== null;
     }
 
+    /** @return null|int|string */
     public function getProgressToken()
     {
         return $this->progressToken;
     }
 
+    /** @param null|int|string $token */
     public function setProgressToken($token): void
     {
+        // @phpstan-ignore-next-line
         if ($token !== null && ! is_string($token) && ! is_int($token)) {
             throw ValidationError::invalidArgumentType('progressToken', 'string, integer, or null', gettype($token));
         }
