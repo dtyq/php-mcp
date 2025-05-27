@@ -7,9 +7,8 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Content;
 
-use Dtyq\PhpMcp\Types\Core\BaseTypes;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
-use InvalidArgumentException;
 
 /**
  * Image content for MCP messages.
@@ -46,23 +45,23 @@ class ImageContent implements ContentInterface
     public static function fromArray(array $data): self
     {
         if (! isset($data['type']) || $data['type'] !== ProtocolConstants::CONTENT_TYPE_IMAGE) {
-            throw new InvalidArgumentException('Invalid content type for ImageContent');
+            throw ValidationError::invalidContentType(ProtocolConstants::CONTENT_TYPE_IMAGE, $data['type'] ?? 'unknown');
         }
 
         if (! isset($data['data'])) {
-            throw new InvalidArgumentException('Data field is required for ImageContent');
+            throw ValidationError::requiredFieldMissing('data', 'ImageContent');
         }
 
         if (! is_string($data['data'])) {
-            throw new InvalidArgumentException('Data field must be a string');
+            throw ValidationError::invalidFieldType('data', 'string', gettype($data['data']));
         }
 
         if (! isset($data['mimeType'])) {
-            throw new InvalidArgumentException('MimeType field is required for ImageContent');
+            throw ValidationError::requiredFieldMissing('mimeType', 'ImageContent');
         }
 
         if (! is_string($data['mimeType'])) {
-            throw new InvalidArgumentException('MimeType field must be a string');
+            throw ValidationError::invalidFieldType('mimeType', 'string', gettype($data['mimeType']));
         }
 
         $annotations = null;
@@ -79,22 +78,20 @@ class ImageContent implements ContentInterface
     public static function fromFile(string $filePath, ?Annotations $annotations = null): self
     {
         if (! file_exists($filePath)) {
-            throw new InvalidArgumentException("File does not exist: {$filePath}");
+            throw ValidationError::fileOperationError('read', $filePath, 'file does not exist');
         }
 
         if (! is_readable($filePath)) {
-            throw new InvalidArgumentException("File is not readable: {$filePath}");
+            throw ValidationError::fileOperationError('read', $filePath, 'file is not readable');
         }
 
-        $imageData = file_get_contents($filePath);
-        if ($imageData === false) {
-            throw new InvalidArgumentException("Failed to read file: {$filePath}");
+        $data = file_get_contents($filePath);
+        if ($data === false) {
+            throw ValidationError::fileOperationError('read', $filePath, 'failed to read file content');
         }
 
         $mimeType = self::detectMimeType($filePath);
-        $base64Data = base64_encode($imageData);
-
-        return new self($base64Data, $mimeType, $annotations);
+        return new self(base64_encode($data), $mimeType, $annotations);
     }
 
     public function getType(): string
@@ -115,13 +112,12 @@ class ImageContent implements ContentInterface
      */
     public function setData(string $data): void
     {
-        if (empty($data)) {
-            throw new InvalidArgumentException('Image data cannot be empty');
+        if (empty(trim($data))) {
+            throw ValidationError::emptyField('data');
         }
 
-        // Validate base64 encoding
         if (! self::isValidBase64($data)) {
-            throw new InvalidArgumentException('Image data must be valid base64 encoded');
+            throw ValidationError::invalidBase64('data');
         }
 
         $this->data = $data;
@@ -140,12 +136,9 @@ class ImageContent implements ContentInterface
      */
     public function setMimeType(string $mimeType): void
     {
-        BaseTypes::validateMimeType($mimeType);
-
-        if (! self::isImageMimeType($mimeType)) {
-            throw new InvalidArgumentException("Invalid image MIME type: {$mimeType}");
+        if (! self::isValidImageMimeType($mimeType)) {
+            throw ValidationError::invalidFieldValue('mimeType', "invalid image MIME type: {$mimeType}");
         }
-
         $this->mimeType = $mimeType;
     }
 
@@ -161,7 +154,7 @@ class ImageContent implements ContentInterface
 
     public function hasAnnotations(): bool
     {
-        return $this->annotations !== null && ! $this->annotations->isEmpty();
+        return $this->annotations !== null;
     }
 
     public function isTargetedTo(string $role): bool
@@ -194,22 +187,21 @@ class ImageContent implements ContentInterface
     /**
      * Get the raw binary image data.
      */
-    public function getBinaryData(): string
+    public function getDecodedData(): string
     {
         $decoded = base64_decode($this->data, true);
         if ($decoded === false) {
-            throw new InvalidArgumentException('Failed to decode base64 image data');
+            throw ValidationError::invalidBase64('data');
         }
         return $decoded;
     }
 
     /**
-     * Save image to file.
+     * Save the image to a file.
      */
     public function saveToFile(string $filePath): bool
     {
-        $binaryData = $this->getBinaryData();
-        return file_put_contents($filePath, $binaryData) !== false;
+        return file_put_contents($filePath, $this->getDecodedData()) !== false;
     }
 
     public function toArray(): array
@@ -229,7 +221,7 @@ class ImageContent implements ContentInterface
 
     public function toJson(): string
     {
-        return json_encode($this->toArray(), JSON_UNESCAPED_SLASHES);
+        return json_encode($this->toArray(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
 
     /**
@@ -265,22 +257,24 @@ class ImageContent implements ContentInterface
     }
 
     /**
-     * Check if MIME type is for images.
+     * Validate image MIME type.
      */
-    private static function isImageMimeType(string $mimeType): bool
+    private static function isValidImageMimeType(string $mimeType): bool
     {
-        $imageMimeTypes = [
-            ProtocolConstants::MIME_TYPE_IMAGE_PNG,
-            ProtocolConstants::MIME_TYPE_IMAGE_JPEG,
-            ProtocolConstants::MIME_TYPE_IMAGE_GIF,
-            ProtocolConstants::MIME_TYPE_IMAGE_WEBP,
+        $validTypes = [
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'image/gif',
+            'image/webp',
             'image/bmp',
             'image/svg+xml',
             'image/tiff',
+            'image/ico',
+            'image/x-icon',
         ];
 
-        return in_array($mimeType, $imageMimeTypes, true)
-               || strpos($mimeType, 'image/') === 0;
+        return in_array(strtolower($mimeType), $validTypes, true);
     }
 
     /**
@@ -288,35 +282,10 @@ class ImageContent implements ContentInterface
      */
     private static function detectMimeType(string $filePath): string
     {
-        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-
-        $mimeTypes = [
-            'png' => ProtocolConstants::MIME_TYPE_IMAGE_PNG,
-            'jpg' => ProtocolConstants::MIME_TYPE_IMAGE_JPEG,
-            'jpeg' => ProtocolConstants::MIME_TYPE_IMAGE_JPEG,
-            'gif' => ProtocolConstants::MIME_TYPE_IMAGE_GIF,
-            'webp' => ProtocolConstants::MIME_TYPE_IMAGE_WEBP,
-            'bmp' => 'image/bmp',
-            'svg' => 'image/svg+xml',
-            'tiff' => 'image/tiff',
-            'tif' => 'image/tiff',
-        ];
-
-        if (isset($mimeTypes[$extension])) {
-            return $mimeTypes[$extension];
+        $mimeType = mime_content_type($filePath);
+        if ($mimeType === false || ! self::isValidImageMimeType($mimeType)) {
+            throw ValidationError::fileOperationError('detect MIME type', $filePath, 'cannot detect valid image MIME type');
         }
-
-        // Fallback to finfo if available
-        if (function_exists('finfo_file')) {
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mimeType = finfo_file($finfo, $filePath);
-            finfo_close($finfo);
-
-            if ($mimeType && self::isImageMimeType($mimeType)) {
-                return $mimeType;
-            }
-        }
-
-        throw new InvalidArgumentException("Cannot detect MIME type for file: {$filePath}");
+        return $mimeType;
     }
 }

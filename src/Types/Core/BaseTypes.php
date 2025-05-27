@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Core;
 
-use InvalidArgumentException;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 
 /**
  * Basic type definitions for MCP protocol.
@@ -24,12 +24,12 @@ final class BaseTypes
      * Validate a progress token.
      *
      * @param mixed $token
-     * @throws InvalidArgumentException
+     * @throws ValidationError
      */
     public static function validateProgressToken($token): void
     {
         if ($token !== null && ! is_string($token) && ! is_int($token)) {
-            throw new InvalidArgumentException('Progress token must be string, integer, or null');
+            throw ValidationError::invalidArgumentType('progressToken', 'string, integer, or null', gettype($token));
         }
     }
 
@@ -37,25 +37,26 @@ final class BaseTypes
      * Validate a cursor.
      *
      * @param mixed $cursor
-     * @throws InvalidArgumentException
+     * @throws ValidationError
      */
     public static function validateCursor($cursor): void
     {
         if ($cursor !== null && ! is_string($cursor)) {
-            throw new InvalidArgumentException('Cursor must be string or null');
+            throw ValidationError::invalidArgumentType('cursor', 'string or null', gettype($cursor));
         }
     }
 
     /**
      * Validate a role.
      *
-     * @throws InvalidArgumentException
+     * @throws ValidationError
      */
     public static function validateRole(string $role): void
     {
         if (! ProtocolConstants::isValidRole($role)) {
-            throw new InvalidArgumentException(
-                'Role must be one of: ' . implode(', ', ProtocolConstants::getValidRoles())
+            throw ValidationError::invalidFieldValue(
+                'role',
+                'must be one of: ' . implode(', ', ProtocolConstants::getValidRoles())
             );
         }
     }
@@ -64,36 +65,36 @@ final class BaseTypes
      * Validate a request ID.
      *
      * @param mixed $id
-     * @throws InvalidArgumentException
+     * @throws ValidationError
      */
     public static function validateRequestId($id): void
     {
         if (! is_string($id) && ! is_int($id)) {
-            throw new InvalidArgumentException('Request ID must be string or integer');
+            throw ValidationError::invalidArgumentType('id', 'string or integer', gettype($id));
         }
     }
 
     /**
      * Validate a URI.
      *
-     * @throws InvalidArgumentException
+     * @throws ValidationError
      */
     public static function validateUri(string $uri): void
     {
         if (empty($uri)) {
-            throw new InvalidArgumentException('URI cannot be empty');
+            throw ValidationError::emptyField('uri');
         }
 
         // Basic URI validation - more specific validation can be done in context
         if (! filter_var($uri, FILTER_VALIDATE_URL) && ! self::isRelativeUri($uri)) {
-            throw new InvalidArgumentException('Invalid URI format');
+            throw ValidationError::invalidFieldValue('uri', 'invalid URI format');
         }
     }
 
     /**
      * Validate MIME type.
      *
-     * @throws InvalidArgumentException
+     * @throws ValidationError
      */
     public static function validateMimeType(?string $mimeType): void
     {
@@ -102,20 +103,21 @@ final class BaseTypes
         }
 
         if (! preg_match('/^[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_.]*$/', $mimeType)) {
-            throw new InvalidArgumentException('Invalid MIME type format');
+            throw ValidationError::invalidFieldValue('mimeType', 'invalid MIME type format');
         }
     }
 
     /**
      * Validate logging level.
      *
-     * @throws InvalidArgumentException
+     * @throws ValidationError
      */
     public static function validateLogLevel(string $level): void
     {
         if (! ProtocolConstants::isValidLogLevel($level)) {
-            throw new InvalidArgumentException(
-                'Logging level must be one of: ' . implode(', ', ProtocolConstants::getValidLogLevels())
+            throw ValidationError::invalidFieldValue(
+                'logLevel',
+                'must be one of: ' . implode(', ', ProtocolConstants::getValidLogLevels())
             );
         }
     }
@@ -123,7 +125,7 @@ final class BaseTypes
     /**
      * Validate content type.
      *
-     * @throws InvalidArgumentException
+     * @throws ValidationError
      */
     public static function validateContentType(string $type): void
     {
@@ -134,8 +136,9 @@ final class BaseTypes
         ];
 
         if (! in_array($type, $validTypes, true)) {
-            throw new InvalidArgumentException(
-                'Content type must be one of: ' . implode(', ', $validTypes)
+            throw ValidationError::invalidFieldValue(
+                'contentType',
+                'must be one of: ' . implode(', ', $validTypes)
             );
         }
     }
@@ -143,7 +146,7 @@ final class BaseTypes
     /**
      * Validate reference type.
      *
-     * @throws InvalidArgumentException
+     * @throws ValidationError
      */
     public static function validateReferenceType(string $type): void
     {
@@ -153,8 +156,9 @@ final class BaseTypes
         ];
 
         if (! in_array($type, $validTypes, true)) {
-            throw new InvalidArgumentException(
-                'Reference type must be one of: ' . implode(', ', $validTypes)
+            throw ValidationError::invalidFieldValue(
+                'referenceType',
+                'must be one of: ' . implode(', ', $validTypes)
             );
         }
     }
@@ -162,7 +166,7 @@ final class BaseTypes
     /**
      * Validate stop reason.
      *
-     * @throws InvalidArgumentException
+     * @throws ValidationError
      */
     public static function validateStopReason(?string $reason): void
     {
@@ -178,8 +182,9 @@ final class BaseTypes
         ];
 
         if (! in_array($reason, $validReasons, true)) {
-            throw new InvalidArgumentException(
-                'Stop reason must be one of: ' . implode(', ', $validReasons)
+            throw ValidationError::invalidFieldValue(
+                'stopReason',
+                'must be one of: ' . implode(', ', $validReasons)
             );
         }
     }
@@ -187,7 +192,7 @@ final class BaseTypes
     /**
      * Validate priority value (0.0 to 1.0).
      *
-     * @throws InvalidArgumentException
+     * @throws ValidationError
      */
     public static function validatePriority(?float $priority): void
     {
@@ -196,7 +201,7 @@ final class BaseTypes
         }
 
         if ($priority < 0.0 || $priority > 1.0) {
-            throw new InvalidArgumentException('Priority must be between 0.0 and 1.0');
+            throw ValidationError::invalidFieldValue('priority', 'must be between 0.0 and 1.0');
         }
     }
 

@@ -7,10 +7,10 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Content;
 
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Content\Annotations;
 use Dtyq\PhpMcp\Types\Content\TextContent;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -23,15 +23,15 @@ class TextContentTest extends TestCase
         $text = 'Hello, world!';
         $content = new TextContent($text);
 
-        $this->assertSame(ProtocolConstants::CONTENT_TYPE_TEXT, $content->getType());
         $this->assertSame($text, $content->getText());
+        $this->assertSame(ProtocolConstants::CONTENT_TYPE_TEXT, $content->getType());
         $this->assertNull($content->getAnnotations());
         $this->assertFalse($content->hasAnnotations());
     }
 
     public function testConstructorWithAnnotations(): void
     {
-        $text = 'Hello, world!';
+        $text = 'Test content';
         $annotations = new Annotations([ProtocolConstants::ROLE_USER], 0.5);
         $content = new TextContent($text, $annotations);
 
@@ -42,8 +42,8 @@ class TextContentTest extends TestCase
 
     public function testConstructorWithEmptyText(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Text content cannot be empty');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Field \'text\' cannot be empty');
 
         new TextContent('');
     }
@@ -69,8 +69,8 @@ class TextContentTest extends TestCase
 
     public function testFromArrayWithInvalidType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid content type for TextContent');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid content type: expected text, got invalid');
 
         TextContent::fromArray([
             'type' => 'invalid',
@@ -80,8 +80,8 @@ class TextContentTest extends TestCase
 
     public function testFromArrayWithMissingText(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Text field is required for TextContent');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Required field \'text\' is missing for TextContent');
 
         TextContent::fromArray([
             'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
@@ -90,8 +90,8 @@ class TextContentTest extends TestCase
 
     public function testFromArrayWithNonStringText(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Text field must be a string');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid type for field \'text\': expected string, got integer');
 
         TextContent::fromArray([
             'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
@@ -111,8 +111,8 @@ class TextContentTest extends TestCase
 
     public function testSetEmptyText(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Text content cannot be empty');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Field \'text\' cannot be empty');
 
         $content = new TextContent('Initial text');
         $content->setText('');

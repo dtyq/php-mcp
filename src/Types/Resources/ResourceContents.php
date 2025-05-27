@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Resources;
 
 use Dtyq\PhpMcp\Types\Core\BaseTypes;
-use InvalidArgumentException;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 
 /**
  * Base class for resource contents.
@@ -38,17 +38,17 @@ abstract class ResourceContents
     public static function fromArray(array $data): self
     {
         if (! isset($data['uri'])) {
-            throw new InvalidArgumentException('URI field is required for ResourceContents');
+            throw ValidationError::requiredFieldMissing('uri', 'ResourceContents');
         }
 
         if (! is_string($data['uri'])) {
-            throw new InvalidArgumentException('URI field must be a string');
+            throw ValidationError::invalidFieldType('uri', 'string', gettype($data['uri']));
         }
 
         $mimeType = null;
         if (isset($data['mimeType'])) {
             if (! is_string($data['mimeType'])) {
-                throw new InvalidArgumentException('MimeType field must be a string');
+                throw ValidationError::invalidFieldType('mimeType', 'string', gettype($data['mimeType']));
             }
             $mimeType = $data['mimeType'];
         }
@@ -56,19 +56,19 @@ abstract class ResourceContents
         // Determine the type based on available fields
         if (isset($data['text'])) {
             if (! is_string($data['text'])) {
-                throw new InvalidArgumentException('Text field must be a string');
+                throw ValidationError::invalidFieldType('text', 'string', gettype($data['text']));
             }
             return new TextResourceContents($data['uri'], $data['text'], $mimeType);
         }
 
         if (isset($data['blob'])) {
             if (! is_string($data['blob'])) {
-                throw new InvalidArgumentException('Blob field must be a string');
+                throw ValidationError::invalidFieldType('blob', 'string', gettype($data['blob']));
             }
             return new BlobResourceContents($data['uri'], $data['blob'], $mimeType);
         }
 
-        throw new InvalidArgumentException('ResourceContents must have either text or blob field');
+        throw ValidationError::invalidFieldValue('content', 'must have either text or blob field');
     }
 
     /**

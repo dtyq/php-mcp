@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Content;
 
 use Dtyq\PhpMcp\Types\Core\BaseTypes;
-use InvalidArgumentException;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 
 /**
  * Annotations for MCP content.
@@ -40,10 +40,23 @@ class Annotations
      */
     public static function fromArray(array $data): self
     {
-        return new self(
-            $data['audience'] ?? null,
-            $data['priority'] ?? null
-        );
+        $audience = null;
+        if (isset($data['audience'])) {
+            if (! is_array($data['audience'])) {
+                throw ValidationError::invalidFieldType('audience', 'array', gettype($data['audience']));
+            }
+            $audience = $data['audience'];
+        }
+
+        $priority = null;
+        if (isset($data['priority'])) {
+            if (! is_float($data['priority']) && ! is_int($data['priority'])) {
+                throw ValidationError::invalidFieldType('priority', 'number', gettype($data['priority']));
+            }
+            $priority = (float) $data['priority'];
+        }
+
+        return new self($audience, $priority);
     }
 
     /**
@@ -66,7 +79,7 @@ class Annotations
         if ($audience !== null) {
             foreach ($audience as $role) {
                 if (! is_string($role)) {
-                    throw new InvalidArgumentException('All audience roles must be strings');
+                    throw ValidationError::invalidFieldValue('audience', 'all roles must be strings');
                 }
                 BaseTypes::validateRole($role);
             }

@@ -9,7 +9,7 @@ namespace Dtyq\PhpMcp\Types\Content;
 
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Resources\ResourceContents;
-use InvalidArgumentException;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 
 /**
  * Embedded resource content for MCP messages.
@@ -43,15 +43,15 @@ class EmbeddedResource implements ContentInterface
     public static function fromArray(array $data): self
     {
         if (! isset($data['type']) || $data['type'] !== ProtocolConstants::CONTENT_TYPE_RESOURCE) {
-            throw new InvalidArgumentException('Invalid content type for EmbeddedResource');
+            throw ValidationError::invalidContentType(ProtocolConstants::CONTENT_TYPE_RESOURCE, $data['type'] ?? 'unknown');
         }
 
         if (! isset($data['resource'])) {
-            throw new InvalidArgumentException('Resource field is required for EmbeddedResource');
+            throw ValidationError::requiredFieldMissing('resource', 'EmbeddedResource');
         }
 
         if (! is_array($data['resource'])) {
-            throw new InvalidArgumentException('Resource field must be an array');
+            throw ValidationError::invalidFieldType('resource', 'array', gettype($data['resource']));
         }
 
         $resource = ResourceContents::fromArray($data['resource']);

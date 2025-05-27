@@ -10,7 +10,7 @@ namespace Dtyq\PhpMcp\Tests\Unit\Types\Resources;
 use Dtyq\PhpMcp\Types\Content\Annotations;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Resources\ResourceTemplate;
-use InvalidArgumentException;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -20,25 +20,24 @@ class ResourceTemplateTest extends TestCase
 {
     public function testConstructorWithValidData(): void
     {
-        $uriTemplate = 'file:///path/to/{filename}';
+        $uriTemplate = 'https://example.com/files/{id}';
         $name = 'File Template';
-        $description = 'A template for files';
-        $mimeType = 'text/plain';
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER], 0.5);
+        $description = 'A template for file resources';
+        $mimeType = 'application/octet-stream';
 
-        $template = new ResourceTemplate($uriTemplate, $name, $description, $mimeType, $annotations);
+        $template = new ResourceTemplate($uriTemplate, $name, $description, $mimeType);
 
         $this->assertSame($uriTemplate, $template->getUriTemplate());
         $this->assertSame($name, $template->getName());
         $this->assertSame($description, $template->getDescription());
         $this->assertSame($mimeType, $template->getMimeType());
-        $this->assertSame($annotations, $template->getAnnotations());
-        $this->assertTrue($template->hasAnnotations());
+        $this->assertTrue($template->hasDescription());
+        $this->assertTrue($template->hasMimeType());
     }
 
     public function testConstructorWithMinimalData(): void
     {
-        $uriTemplate = 'file:///path/to/{filename}';
+        $uriTemplate = 'https://example.com/files/{id}';
         $name = 'File Template';
 
         $template = new ResourceTemplate($uriTemplate, $name);
@@ -47,21 +46,17 @@ class ResourceTemplateTest extends TestCase
         $this->assertSame($name, $template->getName());
         $this->assertNull($template->getDescription());
         $this->assertNull($template->getMimeType());
-        $this->assertNull($template->getAnnotations());
-        $this->assertFalse($template->hasAnnotations());
+        $this->assertFalse($template->hasDescription());
+        $this->assertFalse($template->hasMimeType());
     }
 
     public function testFromArrayWithValidData(): void
     {
         $data = [
-            'uriTemplate' => 'file:///path/to/{filename}',
+            'uriTemplate' => 'https://example.com/files/{id}',
             'name' => 'File Template',
-            'description' => 'A template for files',
-            'mimeType' => 'text/plain',
-            'annotations' => [
-                'audience' => [ProtocolConstants::ROLE_USER],
-                'priority' => 0.7,
-            ],
+            'description' => 'A template for file resources',
+            'mimeType' => 'application/octet-stream',
         ];
 
         $template = ResourceTemplate::fromArray($data);
@@ -70,15 +65,12 @@ class ResourceTemplateTest extends TestCase
         $this->assertSame($data['name'], $template->getName());
         $this->assertSame($data['description'], $template->getDescription());
         $this->assertSame($data['mimeType'], $template->getMimeType());
-        $this->assertTrue($template->hasAnnotations());
-        $this->assertSame([ProtocolConstants::ROLE_USER], $template->getAnnotations()->getAudience());
-        $this->assertSame(0.7, $template->getAnnotations()->getPriority());
     }
 
     public function testFromArrayWithMinimalData(): void
     {
         $data = [
-            'uriTemplate' => 'file:///path/to/{filename}',
+            'uriTemplate' => 'https://example.com/files/{id}',
             'name' => 'File Template',
         ];
 
@@ -88,13 +80,12 @@ class ResourceTemplateTest extends TestCase
         $this->assertSame($data['name'], $template->getName());
         $this->assertNull($template->getDescription());
         $this->assertNull($template->getMimeType());
-        $this->assertFalse($template->hasAnnotations());
     }
 
     public function testFromArrayWithMissingUriTemplate(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('UriTemplate field is required for ResourceTemplate');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Required field \'uriTemplate\' is missing for ResourceTemplate');
 
         ResourceTemplate::fromArray([
             'name' => 'File Template',
@@ -103,18 +94,18 @@ class ResourceTemplateTest extends TestCase
 
     public function testFromArrayWithMissingName(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Name field is required for ResourceTemplate');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Required field \'name\' is missing for ResourceTemplate');
 
         ResourceTemplate::fromArray([
-            'uriTemplate' => 'file:///path/to/{filename}',
+            'uriTemplate' => 'https://example.com/files/{id}',
         ]);
     }
 
     public function testFromArrayWithInvalidUriTemplateType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('UriTemplate field must be a string');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid type for field \'uriTemplate\': expected string, got integer');
 
         ResourceTemplate::fromArray([
             'uriTemplate' => 123,
@@ -124,30 +115,54 @@ class ResourceTemplateTest extends TestCase
 
     public function testFromArrayWithInvalidNameType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Name field must be a string');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid type for field \'name\': expected string, got integer');
 
         ResourceTemplate::fromArray([
-            'uriTemplate' => 'file:///path/to/{filename}',
+            'uriTemplate' => 'https://example.com/files/{id}',
             'name' => 123,
+        ]);
+    }
+
+    public function testFromArrayWithInvalidDescriptionType(): void
+    {
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid type for field \'description\': expected string, got integer');
+
+        ResourceTemplate::fromArray([
+            'uriTemplate' => 'https://example.com/files/{id}',
+            'name' => 'File Template',
+            'description' => 123,
+        ]);
+    }
+
+    public function testFromArrayWithInvalidMimeTypeType(): void
+    {
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid type for field \'mimeType\': expected string, got integer');
+
+        ResourceTemplate::fromArray([
+            'uriTemplate' => 'https://example.com/files/{id}',
+            'name' => 'File Template',
+            'mimeType' => 123,
         ]);
     }
 
     public function testSetUriTemplateWithEmptyString(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('URI template cannot be empty');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Field \'uriTemplate\' cannot be empty');
 
-        $template = new ResourceTemplate('file:///valid/{id}', 'Test');
+        $template = new ResourceTemplate('https://example.com/files/{id}', 'Test');
         $template->setUriTemplate('');
     }
 
     public function testSetNameWithEmptyName(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Resource template name cannot be empty');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Field \'name\' cannot be empty');
 
-        $template = new ResourceTemplate('file:///valid/{id}', 'Test');
+        $template = new ResourceTemplate('https://example.com/files/{id}', 'Test');
         $template->setName('');
     }
 

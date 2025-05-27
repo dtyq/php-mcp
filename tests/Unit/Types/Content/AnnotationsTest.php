@@ -9,7 +9,7 @@ namespace Dtyq\PhpMcp\Tests\Unit\Types\Content;
 
 use Dtyq\PhpMcp\Types\Content\Annotations;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
-use InvalidArgumentException;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -77,17 +77,17 @@ class AnnotationsTest extends TestCase
 
     public function testSetAudienceWithInvalidRole(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Role must be one of: user, assistant');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid value for field \'audience\': all roles must be strings');
 
         $annotations = new Annotations();
-        $annotations->setAudience(['invalid_role']);
+        $annotations->setAudience(['user', 123]);
     }
 
     public function testSetAudienceWithNonStringRole(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('All audience roles must be strings');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid value for field \'audience\': all roles must be strings');
 
         $annotations = new Annotations();
         $annotations->setAudience([123]);
@@ -106,8 +106,8 @@ class AnnotationsTest extends TestCase
 
     public function testSetPriorityWithInvalidValue(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Priority must be between 0.0 and 1.0');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid value for field \'priority\': must be between 0.0 and 1.0');
 
         $annotations = new Annotations();
         $annotations->setPriority(1.5);
@@ -159,5 +159,21 @@ class AnnotationsTest extends TestCase
 
         $this->assertSame([ProtocolConstants::ROLE_USER], $decoded['audience']);
         $this->assertSame(0.5, $decoded['priority']);
+    }
+
+    public function testFromArrayWithInvalidAudienceType(): void
+    {
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid type for field \'audience\': expected array, got string');
+
+        Annotations::fromArray(['audience' => 'user']);
+    }
+
+    public function testFromArrayWithInvalidPriorityType(): void
+    {
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid type for field \'priority\': expected number, got string');
+
+        Annotations::fromArray(['priority' => 'high']);
     }
 }

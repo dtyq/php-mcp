@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Content;
 
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Core\BaseTypes;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
-use InvalidArgumentException;
 
 /**
  * Text content for MCP messages.
@@ -42,15 +42,15 @@ class TextContent implements ContentInterface
     public static function fromArray(array $data): self
     {
         if (! isset($data['type']) || $data['type'] !== ProtocolConstants::CONTENT_TYPE_TEXT) {
-            throw new InvalidArgumentException('Invalid content type for TextContent');
+            throw ValidationError::invalidContentType(ProtocolConstants::CONTENT_TYPE_TEXT, $data['type'] ?? 'unknown');
         }
 
         if (! isset($data['text'])) {
-            throw new InvalidArgumentException('Text field is required for TextContent');
+            throw ValidationError::requiredFieldMissing('text', 'TextContent');
         }
 
         if (! is_string($data['text'])) {
-            throw new InvalidArgumentException('Text field must be a string');
+            throw ValidationError::invalidFieldType('text', 'string', gettype($data['text']));
         }
 
         $annotations = null;
@@ -79,8 +79,8 @@ class TextContent implements ContentInterface
      */
     public function setText(string $text): void
     {
-        if (empty($text)) {
-            throw new InvalidArgumentException('Text content cannot be empty');
+        if ($text === '') {
+            throw ValidationError::emptyField('text');
         }
         $this->text = BaseTypes::sanitizeText($text);
     }

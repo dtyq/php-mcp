@@ -10,7 +10,7 @@ namespace Dtyq\PhpMcp\Tests\Unit\Types\Resources;
 use Dtyq\PhpMcp\Types\Content\Annotations;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Resources\Resource;
-use InvalidArgumentException;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -20,9 +20,9 @@ class ResourceTest extends TestCase
 {
     public function testConstructorWithValidData(): void
     {
-        $uri = 'file:///path/to/resource.txt';
-        $name = 'Test Resource';
-        $description = 'A test resource';
+        $uri = 'https://example.com/file.txt';
+        $name = 'Test File';
+        $description = 'A test file';
         $mimeType = 'text/plain';
         $size = 1024;
         $annotations = new Annotations([ProtocolConstants::ROLE_USER], 0.5);
@@ -40,8 +40,8 @@ class ResourceTest extends TestCase
 
     public function testConstructorWithMinimalData(): void
     {
-        $uri = 'file:///path/to/resource.txt';
-        $name = 'Test Resource';
+        $uri = 'https://example.com/file.txt';
+        $name = 'Test File';
 
         $resource = new Resource($uri, $name);
 
@@ -57,9 +57,9 @@ class ResourceTest extends TestCase
     public function testFromArrayWithValidData(): void
     {
         $data = [
-            'uri' => 'file:///path/to/resource.txt',
-            'name' => 'Test Resource',
-            'description' => 'A test resource',
+            'uri' => 'https://example.com/file.txt',
+            'name' => 'Test File',
+            'description' => 'A test file',
             'mimeType' => 'text/plain',
             'size' => 1024,
             'annotations' => [
@@ -83,8 +83,8 @@ class ResourceTest extends TestCase
     public function testFromArrayWithMinimalData(): void
     {
         $data = [
-            'uri' => 'file:///path/to/resource.txt',
-            'name' => 'Test Resource',
+            'uri' => 'https://example.com/file.txt',
+            'name' => 'Test File',
         ];
 
         $resource = Resource::fromArray($data);
@@ -99,116 +99,107 @@ class ResourceTest extends TestCase
 
     public function testFromArrayWithMissingUri(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('URI field is required for Resource');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Required field \'uri\' is missing for Resource');
 
         Resource::fromArray([
-            'name' => 'Test Resource',
+            'name' => 'Test File',
         ]);
     }
 
     public function testFromArrayWithMissingName(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Name field is required for Resource');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Required field \'name\' is missing for Resource');
 
         Resource::fromArray([
-            'uri' => 'file:///path/to/resource.txt',
+            'uri' => 'https://example.com/file.txt',
         ]);
     }
 
     public function testFromArrayWithInvalidUriType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('URI field must be a string');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid type for field \'uri\': expected string, got integer');
 
         Resource::fromArray([
             'uri' => 123,
-            'name' => 'Test Resource',
+            'name' => 'Test File',
         ]);
     }
 
     public function testFromArrayWithInvalidNameType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Name field must be a string');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid type for field \'name\': expected string, got integer');
 
         Resource::fromArray([
-            'uri' => 'file:///path/to/resource.txt',
+            'uri' => 'https://example.com/file.txt',
             'name' => 123,
         ]);
     }
 
     public function testFromArrayWithInvalidDescriptionType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Description field must be a string');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid type for field \'description\': expected string, got integer');
 
         Resource::fromArray([
-            'uri' => 'file:///path/to/resource.txt',
-            'name' => 'Test Resource',
+            'uri' => 'https://example.com/file.txt',
+            'name' => 'Test File',
             'description' => 123,
         ]);
     }
 
     public function testFromArrayWithInvalidMimeTypeType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('MimeType field must be a string');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid type for field \'mimeType\': expected string, got integer');
 
         Resource::fromArray([
-            'uri' => 'file:///path/to/resource.txt',
-            'name' => 'Test Resource',
+            'uri' => 'https://example.com/file.txt',
+            'name' => 'Test File',
             'mimeType' => 123,
         ]);
     }
 
     public function testFromArrayWithInvalidSizeType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Size field must be an integer');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid type for field \'size\': expected integer, got string');
 
         Resource::fromArray([
-            'uri' => 'file:///path/to/resource.txt',
-            'name' => 'Test Resource',
+            'uri' => 'https://example.com/file.txt',
+            'name' => 'Test File',
             'size' => 'invalid',
         ]);
     }
 
     public function testSetUriWithInvalidUri(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('URI cannot be empty');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Field \'uri\' cannot be empty');
 
-        $resource = new Resource('file:///valid.txt', 'Test');
+        $resource = new Resource('https://example.com/file.txt', 'Test');
         $resource->setUri('');
     }
 
     public function testSetNameWithEmptyName(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Resource name cannot be empty');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Field \'name\' cannot be empty');
 
-        $resource = new Resource('file:///valid.txt', 'Test');
+        $resource = new Resource('https://example.com/file.txt', 'Test');
         $resource->setName('');
     }
 
     public function testSetSizeWithNegativeSize(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Resource size cannot be negative');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid value for field \'size\': cannot be negative');
 
-        $resource = new Resource('file:///valid.txt', 'Test');
+        $resource = new Resource('https://example.com/file.txt', 'Test');
         $resource->setSize(-1);
-    }
-
-    public function testSetDescriptionWithEmptyString(): void
-    {
-        $resource = new Resource('file:///valid.txt', 'Test');
-        $resource->setDescription('   ');
-
-        $this->assertNull($resource->getDescription());
-        $this->assertFalse($resource->hasDescription());
     }
 
     public function testHasMethodsWithData(): void

@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Resources;
 
-use InvalidArgumentException;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 
 /**
  * Binary contents of a resource.
@@ -40,12 +40,11 @@ class BlobResourceContents extends ResourceContents
     public function setBlob(string $blob): void
     {
         if (empty($blob)) {
-            throw new InvalidArgumentException('Blob content cannot be empty');
+            throw ValidationError::emptyField('blob');
         }
 
-        // Validate base64 encoding
-        if (! self::isValidBase64($blob)) {
-            throw new InvalidArgumentException('Blob content must be valid base64 encoded');
+        if (! $this->isValidBase64($blob)) {
+            throw ValidationError::invalidBase64('blob');
         }
 
         $this->blob = $blob;
@@ -73,7 +72,7 @@ class BlobResourceContents extends ResourceContents
     {
         $decoded = base64_decode($this->blob, true);
         if ($decoded === false) {
-            throw new InvalidArgumentException('Failed to decode base64 blob data');
+            throw ValidationError::invalidBase64('blob');
         }
         return $decoded;
     }
@@ -93,21 +92,19 @@ class BlobResourceContents extends ResourceContents
     public static function fromFile(string $uri, string $filePath, ?string $mimeType = null): self
     {
         if (! file_exists($filePath)) {
-            throw new InvalidArgumentException("File does not exist: {$filePath}");
+            throw ValidationError::fileOperationError('read', $filePath, 'file does not exist');
         }
 
         if (! is_readable($filePath)) {
-            throw new InvalidArgumentException("File is not readable: {$filePath}");
+            throw ValidationError::fileOperationError('read', $filePath, 'file is not readable');
         }
 
-        $binaryData = file_get_contents($filePath);
-        if ($binaryData === false) {
-            throw new InvalidArgumentException("Failed to read file: {$filePath}");
+        $data = file_get_contents($filePath);
+        if ($data === false) {
+            throw ValidationError::fileOperationError('read', $filePath, 'failed to read file content');
         }
 
-        $base64Data = base64_encode($binaryData);
-
-        return new self($uri, $base64Data, $mimeType);
+        return new self($uri, base64_encode($data), $mimeType);
     }
 
     public function getEstimatedSize(): int
@@ -157,7 +154,7 @@ class BlobResourceContents extends ResourceContents
     /**
      * Validate base64 encoding.
      */
-    private static function isValidBase64(string $data): bool
+    private function isValidBase64(string $data): bool
     {
         return base64_encode(base64_decode($data, true)) === $data;
     }

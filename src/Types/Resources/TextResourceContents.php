@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Resources;
 
 use Dtyq\PhpMcp\Types\Core\BaseTypes;
-use InvalidArgumentException;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 
 /**
  * Text contents of a resource.
@@ -41,7 +41,7 @@ class TextResourceContents extends ResourceContents
     public function setText(string $text): void
     {
         if (empty($text)) {
-            throw new InvalidArgumentException('Text content cannot be empty');
+            throw ValidationError::emptyField('text');
         }
         $this->text = BaseTypes::sanitizeText($text);
     }

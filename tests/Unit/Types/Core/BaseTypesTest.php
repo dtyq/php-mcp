@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Core;
 
 use Dtyq\PhpMcp\Types\Core\BaseTypes;
-use InvalidArgumentException;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -27,10 +27,10 @@ class BaseTypesTest extends TestCase
 
     public function testValidateProgressTokenWithInvalidValue(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Progress token must be string, integer, or null');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Argument \'progressToken\' must be a string, integer, or null, double given');
 
-        BaseTypes::validateProgressToken(123.45);
+        BaseTypes::validateProgressToken(3.14);
     }
 
     public function testValidateCursorWithValidValues(): void
@@ -40,6 +40,14 @@ class BaseTypesTest extends TestCase
         BaseTypes::validateCursor(null);
         BaseTypes::validateCursor('cursor-string');
         BaseTypes::validateCursor('');
+    }
+
+    public function testValidateCursorWithInvalidValue(): void
+    {
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Argument \'cursor\' must be a string or null, integer given');
+
+        BaseTypes::validateCursor(123);
     }
 
     public function testValidateRoleWithValidValues(): void
@@ -52,8 +60,8 @@ class BaseTypesTest extends TestCase
 
     public function testValidateRoleWithInvalidValue(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Role must be one of: user, assistant');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid value for field \'role\': must be one of: user, assistant');
 
         BaseTypes::validateRole('system');
     }
@@ -68,10 +76,10 @@ class BaseTypesTest extends TestCase
 
     public function testValidateRequestIdWithInvalidValue(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Request ID must be string or integer');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Argument \'id\' must be a string or integer, double given');
 
-        BaseTypes::validateRequestId(123.45);
+        BaseTypes::validateRequestId(3.14);
     }
 
     public function testValidateUriWithValidValues(): void
@@ -86,8 +94,8 @@ class BaseTypesTest extends TestCase
 
     public function testValidateUriWithEmptyString(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('URI cannot be empty');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Field \'uri\' cannot be empty');
 
         BaseTypes::validateUri('');
     }
@@ -105,8 +113,8 @@ class BaseTypesTest extends TestCase
 
     public function testValidateMimeTypeWithInvalidValue(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid MIME type format');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid value for field \'mimeType\': invalid MIME type format');
 
         BaseTypes::validateMimeType('invalid-mime-type');
     }
@@ -124,8 +132,8 @@ class BaseTypesTest extends TestCase
 
     public function testValidateLogLevelWithInvalidValue(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Logging level must be one of:');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid value for field \'logLevel\': must be one of:');
 
         BaseTypes::validateLogLevel('invalid');
     }
@@ -141,8 +149,8 @@ class BaseTypesTest extends TestCase
 
     public function testValidateContentTypeWithInvalidValue(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Content type must be one of:');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid value for field \'contentType\': must be one of:');
 
         BaseTypes::validateContentType('invalid');
     }
@@ -157,8 +165,8 @@ class BaseTypesTest extends TestCase
 
     public function testValidateReferenceTypeWithInvalidValue(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Reference type must be one of:');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid value for field \'referenceType\': must be one of:');
 
         BaseTypes::validateReferenceType('ref/invalid');
     }
@@ -176,8 +184,8 @@ class BaseTypesTest extends TestCase
 
     public function testValidateStopReasonWithInvalidValue(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Stop reason must be one of:');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid value for field \'stopReason\': must be one of:');
 
         BaseTypes::validateStopReason('invalid');
     }
@@ -194,16 +202,16 @@ class BaseTypesTest extends TestCase
 
     public function testValidatePriorityWithInvalidValue(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Priority must be between 0.0 and 1.0');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid value for field \'priority\': must be between 0.0 and 1.0');
 
         BaseTypes::validatePriority(1.5);
     }
 
     public function testValidatePriorityWithNegativeValue(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Priority must be between 0.0 and 1.0');
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Invalid value for field \'priority\': must be between 0.0 and 1.0');
 
         BaseTypes::validatePriority(-0.1);
     }

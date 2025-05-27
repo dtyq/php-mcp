@@ -9,7 +9,7 @@ namespace Dtyq\PhpMcp\Types\Resources;
 
 use Dtyq\PhpMcp\Types\Content\Annotations;
 use Dtyq\PhpMcp\Types\Core\BaseTypes;
-use InvalidArgumentException;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 
 /**
  * A known resource that the server is capable of reading.
@@ -61,25 +61,25 @@ class Resource
     public static function fromArray(array $data): self
     {
         if (! isset($data['uri'])) {
-            throw new InvalidArgumentException('URI field is required for Resource');
+            throw ValidationError::requiredFieldMissing('uri', 'Resource');
         }
 
         if (! is_string($data['uri'])) {
-            throw new InvalidArgumentException('URI field must be a string');
+            throw ValidationError::invalidFieldType('uri', 'string', gettype($data['uri']));
         }
 
         if (! isset($data['name'])) {
-            throw new InvalidArgumentException('Name field is required for Resource');
+            throw ValidationError::requiredFieldMissing('name', 'Resource');
         }
 
         if (! is_string($data['name'])) {
-            throw new InvalidArgumentException('Name field must be a string');
+            throw ValidationError::invalidFieldType('name', 'string', gettype($data['name']));
         }
 
         $description = null;
         if (isset($data['description'])) {
             if (! is_string($data['description'])) {
-                throw new InvalidArgumentException('Description field must be a string');
+                throw ValidationError::invalidFieldType('description', 'string', gettype($data['description']));
             }
             $description = $data['description'];
         }
@@ -87,7 +87,7 @@ class Resource
         $mimeType = null;
         if (isset($data['mimeType'])) {
             if (! is_string($data['mimeType'])) {
-                throw new InvalidArgumentException('MimeType field must be a string');
+                throw ValidationError::invalidFieldType('mimeType', 'string', gettype($data['mimeType']));
             }
             $mimeType = $data['mimeType'];
         }
@@ -95,7 +95,7 @@ class Resource
         $size = null;
         if (isset($data['size'])) {
             if (! is_int($data['size'])) {
-                throw new InvalidArgumentException('Size field must be an integer');
+                throw ValidationError::invalidFieldType('size', 'integer', gettype($data['size']));
             }
             $size = $data['size'];
         }
@@ -146,7 +146,7 @@ class Resource
     public function setName(string $name): void
     {
         if (empty(trim($name))) {
-            throw new InvalidArgumentException('Resource name cannot be empty');
+            throw ValidationError::emptyField('name');
         }
         $this->name = BaseTypes::sanitizeText($name);
     }
@@ -188,7 +188,9 @@ class Resource
      */
     public function setMimeType(?string $mimeType): void
     {
-        BaseTypes::validateMimeType($mimeType);
+        if ($mimeType !== null) {
+            BaseTypes::validateMimeType($mimeType);
+        }
         $this->mimeType = $mimeType;
     }
 
@@ -206,7 +208,7 @@ class Resource
     public function setSize(?int $size): void
     {
         if ($size !== null && $size < 0) {
-            throw new InvalidArgumentException('Resource size cannot be negative');
+            throw ValidationError::invalidFieldValue('size', 'cannot be negative');
         }
         $this->size = $size;
     }
