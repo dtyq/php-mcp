@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Shared\Kernel;
 
+use Dtyq\PhpMcp\Shared\Auth\AuthenticatorInterface;
+use Dtyq\PhpMcp\Shared\Auth\NullAuthenticator;
 use Dtyq\PhpMcp\Shared\Exceptions\SystemException;
 use Dtyq\PhpMcp\Shared\Kernel\Config\Config;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
@@ -26,6 +28,8 @@ class Application
     protected EventDispatcherInterface $eventDispatcher;
 
     protected ContainerInterface $container;
+
+    protected AuthenticatorInterface $authenticator;
 
     /**
      * @param array<string, mixed> $configs
@@ -79,5 +83,35 @@ class Application
         }
         $this->eventDispatcher = $dispatcher;
         return $this->eventDispatcher;
+    }
+
+    /**
+     * Set authenticator instance.
+     *
+     * @return $this For method chaining
+     */
+    public function withAuthenticator(AuthenticatorInterface $authenticator): self
+    {
+        $this->authenticator = $authenticator;
+        return $this;
+    }
+
+    /**
+     * Get Authenticator instance.
+     *
+     * Returns configured authenticator or NullAuthenticator as default
+     */
+    public function getAuthenticator(): AuthenticatorInterface
+    {
+        if (isset($this->authenticator)) {
+            return $this->authenticator;
+        }
+        if ($this->container->has(AuthenticatorInterface::class)) {
+            $authenticator = $this->container->get(AuthenticatorInterface::class);
+        } else {
+            $authenticator = new NullAuthenticator();
+        }
+        $this->authenticator = $authenticator;
+        return $this->authenticator;
     }
 }
