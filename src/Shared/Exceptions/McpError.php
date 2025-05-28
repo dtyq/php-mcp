@@ -19,15 +19,20 @@ class McpError extends Exception
 {
     private ErrorData $error;
 
+    /** @var ?Exception The original exception that caused this error */
+    private ?Exception $originalException;
+
     /**
      * Initialize McpError with ErrorData.
      *
      * @param ErrorData $error The structured error data
+     * @param ?Exception $previous The original exception that caused this error
      */
-    public function __construct(ErrorData $error)
+    public function __construct(ErrorData $error, ?Exception $previous = null)
     {
-        parent::__construct($error->getMessage());
+        parent::__construct($error->getMessage(), 0, $previous);
         $this->error = $error;
+        $this->originalException = $previous;
     }
 
     /**
@@ -58,6 +63,14 @@ class McpError extends Exception
     public function getErrorData()
     {
         return $this->error->getData();
+    }
+
+    /**
+     * Get the original exception that caused this error.
+     */
+    public function getOriginalException(): ?Exception
+    {
+        return $this->originalException;
     }
 
     /**

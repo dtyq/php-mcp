@@ -7,3 +7,4 @@
 /coverage/
 /.php_cs.cache 
 .doc
+.todolist
