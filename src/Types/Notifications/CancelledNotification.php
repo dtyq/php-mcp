@@ -103,7 +103,6 @@ class CancelledNotification implements NotificationInterface
      */
     public function setRequestId($requestId): void
     {
-        // @phpstan-ignore-next-line
         if (! is_string($requestId) && ! is_int($requestId)) {
             throw ValidationError::invalidArgumentType('requestId', 'string or integer', gettype($requestId));
         }

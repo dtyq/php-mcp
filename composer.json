@@ -33,7 +33,7 @@
     },
     "scripts": {
         "test": "phpunit -c phpunit.xml --colors=always",
-        "analyse": "phpstan analyse --memory-limit 1024M -l 6 ./src",
+        "analyse": "phpstan analyse --memory-limit 1024M -c phpstan.neon",
         "cs-fix": "php-cs-fixer fix $1"
     }
 }

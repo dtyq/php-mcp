@@ -104,16 +104,15 @@ class ProgressNotification implements NotificationInterface
     }
 
     /**
-     * @param int|string $token
+     * @param int|string $progressToken
      * @throws ValidationError
      */
-    public function setProgressToken($token): void
+    public function setProgressToken($progressToken): void
     {
-        // @phpstan-ignore-next-line
-        if (! is_string($token) && ! is_int($token)) {
-            throw ValidationError::invalidArgumentType('progressToken', 'string or integer', gettype($token));
+        if (! is_string($progressToken) && ! is_int($progressToken)) {
+            throw ValidationError::invalidArgumentType('progressToken', 'string or integer', gettype($progressToken));
         }
-        $this->progressToken = $token;
+        $this->progressToken = $progressToken;
     }
 
     public function getProgress(): int

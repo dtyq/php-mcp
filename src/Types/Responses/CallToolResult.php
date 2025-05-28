@@ -98,7 +98,6 @@ class CallToolResult implements ResultInterface
         }
 
         foreach ($content as $index => $item) {
-            // @phpstan-ignore-next-line
             if (! $item instanceof TextContent
                 && ! $item instanceof ImageContent
                 && ! $item instanceof EmbeddedResource) {

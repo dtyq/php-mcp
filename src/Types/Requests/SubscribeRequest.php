@@ -65,7 +65,6 @@ class SubscribeRequest implements RequestInterface
     /** @param int|string $id */
     public function setId($id): void
     {
-        // @phpstan-ignore-next-line
         if (! is_string($id) && ! is_int($id)) {
             throw ValidationError::invalidArgumentType('id', 'string or integer', gettype($id));
         }
@@ -86,7 +85,6 @@ class SubscribeRequest implements RequestInterface
     /** @param null|int|string $token */
     public function setProgressToken($token): void
     {
-        // @phpstan-ignore-next-line
         if ($token !== null && ! is_string($token) && ! is_int($token)) {
             throw ValidationError::invalidArgumentType('progressToken', 'string, integer, or null', gettype($token));
         }
