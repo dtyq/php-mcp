@@ -8,6 +8,7 @@
 
 ```
 Shared/
+├── Auth/               # 身份验证框架和接口
 ├── Exceptions/          # 异常处理和错误管理
 ├── Kernel/             # 核心应用程序框架
 ├── Message/            # JSON-RPC 消息处理工具
@@ -16,7 +17,21 @@ Shared/
 
 ## 子目录概览
 
-### 1. Exceptions/
+### 1. Auth/
+
+为 MCP 操作提供简单灵活的身份验证框架，通过基于接口的身份验证提供最小依赖。
+
+**文件列表：**
+- `AuthenticatorInterface.php` - 自定义实现的身份验证合约
+- `NullAuthenticator.php` - 提供通用访问的默认身份验证器
+
+**设计原则：**
+- **接口驱动**：通过简单合约支持多种身份验证方法
+- **零依赖**：无特定 OAuth2 库要求
+- **渐进式采用**：从无身份验证到完整企业身份验证
+- **应用程序集成**：易于与现有身份验证系统集成
+
+### 2. Exceptions/
 
 包含 MCP 协议的全面异常处理类，包括 JSON-RPC 错误、MCP 特定错误、OAuth 错误和传输错误。
 
@@ -30,16 +45,16 @@ Shared/
 - `SystemException.php` - 系统级错误的异常
 - `ErrorData.php` - 错误信息的数据结构
 
-### 2. Kernel/
+### 3. Kernel/
 
-核心应用程序框架，提供依赖注入、配置管理和日志基础设施。
+核心应用程序框架，提供依赖注入、配置管理、身份验证和日志基础设施。
 
 **文件列表：**
-- `Application.php` - 主应用程序容器和服务定位器
+- `Application.php` - 带身份验证支持的主应用程序容器和服务定位器
 - `Config/Config.php` - 使用点符号的配置管理
 - `Logger/LoggerProxy.php` - 带有 SDK 名称前缀的 PSR-3 日志代理
 
-### 3. Message/
+### 4. Message/
 
 用于创建、解析和验证 MCP 协议消息的 JSON-RPC 2.0 消息处理工具。
 
@@ -48,7 +63,7 @@ Shared/
 - `MessageUtils.php` - 创建常见 MCP 消息的工具方法
 - `SessionMessage.php` - 带有元数据的会话感知消息包装器
 
-### 4. Utilities/
+### 5. Utilities/
 
 用于 JSON 处理、HTTP 操作和其他共享功能的通用工具类。
 
@@ -57,6 +72,111 @@ Shared/
 - `HttpUtils.php` - 各种传输方法的 HTTP 工具
 
 ## 详细文件说明
+
+### Auth/AuthenticatorInterface.php
+
+用于在 MCP 应用程序中实现自定义身份验证策略的核心身份验证合约。
+
+**接口方法：**
+- `authenticate(): AuthInfo` - 执行身份验证并返回身份验证信息
+
+**设计理念：**
+- **简单合约**：单方法身份验证接口
+- **基于异常**：成功时返回 `AuthInfo`，失败时抛出 `AuthenticationError`
+- **无依赖**：实现控制凭据提取和验证
+- **灵活性**：支持 JWT、数据库、API 或任何自定义身份验证方法
+
+**使用示例：**
+```php
+// 自定义 JWT 身份验证器
+class JwtAuthenticator implements AuthenticatorInterface
+{
+    public function authenticate(): AuthInfo
+    {
+        $token = $this->extractTokenFromRequest();
+        $payload = $this->validateJwtToken($token);
+        
+        return AuthInfo::create(
+            $payload['sub'],
+            $payload['scopes'] ?? [],
+            ['token_type' => 'jwt', 'iat' => $payload['iat']]
+        );
+    }
+}
+
+// 自定义数据库身份验证器
+class DatabaseAuthenticator implements AuthenticatorInterface
+{
+    public function authenticate(): AuthInfo
+    {
+        $apiKey = $this->extractApiKeyFromRequest();
+        $user = $this->findUserByApiKey($apiKey);
+        
+        if (!$user) {
+            throw new AuthenticationError('Invalid API key');
+        }
+        
+        return AuthInfo::create(
+            $user->id,
+            $user->scopes,
+            ['user_type' => $user->type, 'api_key' => $apiKey]
+        );
+    }
+}
+```
+
+### Auth/NullAuthenticator.php
+
+为开发和测试场景提供通用访问的默认身份验证器实现。
+
+**特性：**
+- **通用访问**：为匿名用户授予所有作用域（`*`）
+- **零配置**：无需设置即可开箱即用
+- **开发友好**：非常适合测试和开发环境
+- **永不过期**：身份验证永不过期
+
+**使用示例：**
+```php
+$authenticator = new NullAuthenticator();
+$authInfo = $authenticator->authenticate();
+
+// 始终返回具有通用访问权限的匿名用户
+assert($authInfo->getSubject() === 'anonymous');
+assert($authInfo->hasScope('any-scope') === true);
+assert($authInfo->hasAllScopes(['read', 'write', 'admin']) === true);
+```
+
+### Kernel/Application.php
+
+通过流畅接口支持身份验证的增强应用程序容器。
+
+**身份验证方法：**
+- `withAuthenticator(AuthenticatorInterface $authenticator): self` - 设置自定义身份验证器
+- `getAuthenticator(): AuthenticatorInterface` - 获取当前身份验证器（默认为 NullAuthenticator）
+
+**使用示例：**
+```php
+// 无身份验证（默认）
+$app = new Application($container, $config);
+$authInfo = $app->getAuthenticator()->authenticate(); // 返回具有通用访问权限的匿名用户
+
+// JWT 身份验证
+$jwtAuth = new JwtAuthenticator($secretKey);
+$app = $app->withAuthenticator($jwtAuth);
+
+// 数据库身份验证
+$dbAuth = new DatabaseAuthenticator($connection);
+$app = $app->withAuthenticator($dbAuth);
+
+// 自定义身份验证
+$customAuth = new class implements AuthenticatorInterface {
+    public function authenticate(): AuthInfo {
+        // 自定义逻辑
+        return AuthInfo::create('custom-user', ['read', 'write']);
+    }
+};
+$app = $app->withAuthenticator($customAuth);
+```
 
 ### Exceptions/ErrorCodes.php
 
@@ -152,177 +272,4 @@ $notification = JsonRpcMessage::createNotification('notifications/progress', [
 **支持的方法：**
 - `initialize` / `notifications/initialized`
 - `ping`
-- `tools/list` / `tools/call`
-- `resources/list` / `resources/read` / `resources/subscribe` / `resources/unsubscribe`
-- `prompts/list` / `prompts/get`
-- `sampling/createMessage`
-- `roots/list`
-
-**通知类型：**
-- `notifications/progress`
-- `notifications/message`
-- `notifications/cancelled`
-- `notifications/resources/updated`
-- `notifications/resources/list_changed`
-- `notifications/tools/list_changed`
-- `notifications/prompts/list_changed`
-
-**使用示例：**
-```php
-// 初始化连接
-$init = MessageUtils::createInitializeRequest(1, [
-    'name' => 'MyClient',
-    'version' => '1.0.0'
-], ['tools' => true]);
-
-// 带分页的工具列表
-$listTools = MessageUtils::createListToolsRequest(2, 'cursor123');
-
-// 订阅资源更新
-$subscribe = MessageUtils::createSubscribeRequest(3, 'file:///path/to/file');
-
-// 发送进度通知
-$progress = MessageUtils::createProgressNotification('token123', 0.75, 100);
-```
-
-### Utilities/JsonUtils.php
-
-带有 MCP 特定默认值的 JSON 处理工具：
-
-**特性：**
-- 带有适当错误处理的安全编码/解码
-- 调试用的美化打印
-- 不解码的 JSON 验证
-- 对象合并和字段提取
-- 大小检查和规范化
-
-**使用示例：**
-```php
-// 使用 MCP 默认值编码
-$json = JsonUtils::encode($data);
-
-// 带错误处理的安全解码
-$result = JsonUtils::safeDecode($jsonString);
-if ($result['success']) {
-    $data = $result['data'];
-} else {
-    $error = $result['error'];
-}
-
-// 验证 JSON 结构
-if (JsonUtils::isValid($jsonString)) {
-    // 处理有效的 JSON
-}
-```
-
-### Utilities/HttpUtils.php
-
-各种传输方法的 HTTP 工具：
-
-**支持的传输：**
-- 标准 HTTP/HTTPS
-- 服务器发送事件（SSE）
-- 流式 HTTP（MCP 2025-03-26）
-- 表单数据和 JSON 请求
-
-**特性：**
-- 不同 HTTP 方法的上下文创建
-- 身份验证头助手
-- URL 操作工具
-- 状态码验证
-
-**使用示例：**
-```php
-// 创建 JSON 请求上下文
-$context = HttpUtils::createJsonContext('POST', $requestData);
-
-// 创建流式 SSE 上下文
-$sseContext = HttpUtils::createSseContext(['Authorization' => 'Bearer token']);
-
-// 创建流式 HTTP 上下文
-$streamContext = HttpUtils::createStreamableHttpContext('POST', $data);
-```
-
-## 架构原则
-
-### 1. 基于接口的设计
-所有组件在适用的地方实现相应的 PSR 接口（日志使用 PSR-3，容器使用 PSR-11）。
-
-### 2. 错误处理策略
-- 遵循 JSON-RPC 2.0 和 MCP 规范的全面错误码
-- 常见错误场景的工厂方法
-- 带有附加上下文的结构化错误数据
-
-### 3. JSON-RPC 2.0 合规性
-- 严格遵守 JSON-RPC 2.0 规范
-- 支持请求、响应、通知和批处理
-- 正确的 ID 处理和错误响应
-
-> **📋 参考文档**: [JSON-RPC 2.0 消息](https://modelcontextprotocol.io/specification/2025-03-26/basic#messages) | [批处理支持](https://modelcontextprotocol.io/specification/2025-03-26/basic#batching)
-
-### 4. MCP 2025-03-26 支持
-- 最新协议版本支持
-- OAuth 2.1 身份验证框架
-- 流式 HTTP 传输
-- 工具注释和完成功能
-
-> **📋 参考文档**: [MCP 更新日志](https://modelcontextprotocol.io/specification/2025-03-26/changelog) | [身份验证框架](https://modelcontextprotocol.io/specification/2025-03-26/basic#auth)
-
-### 5. 可扩展性
-- 允许轻松扩展的模块化设计
-- 对象创建的工厂模式
-- 配置驱动的行为
-
-## 依赖项
-
-- **PSR-3**：日志接口
-- **PSR-11**：容器接口
-- **PSR-14**：事件调度器接口
-- **PSR-16**：简单缓存接口
-- **adbar/dot**：配置管理
-
-## 在 MCP 实现中的使用
-
-Shared 目录为以下内容提供基础：
-
-1. **客户端实现**：消息创建、错误处理、传输工具
-2. **服务器实现**：请求处理、响应生成、通知发送
-3. **传输层**：HTTP、WebSocket、STDIO 传输实现
-4. **协议合规性**：JSON-RPC 2.0 和 MCP 2025-03-26 规范遵守
-
-## 错误处理流程
-
-```
-用户输入 → 验证 → 业务逻辑 → 传输 → 响应
-    ↓      ↓       ↓       ↓     ↓
-ValidationError → McpError → TransportError → JsonRpcMessage
-```
-
-## 消息流程示例
-
-```php
-// 1. 创建请求
-$request = MessageUtils::createListToolsRequest(1);
-
-// 2. 通过传输发送（HTTP、WebSocket 等）
-$response = $transport->send($request);
-
-// 3. 处理响应或错误
-if ($response->isError()) {
-    $error = $response->getError();
-    throw new McpError(new ErrorData($error['code'], $error['message']));
-}
-
-$result = $response->getResult();
-```
-
-这个共享基础设施确保了所有 MCP 组件的一致行为，同时为不同的用例和传输方法提供了灵活性。
-
-## 🔗 相关文档
-
-- [MCP 规范 2025-03-26](https://modelcontextprotocol.io/specification/2025-03-26/)
-- [JSON-RPC 2.0 规范](https://www.jsonrpc.org/specification)
-- [MCP 基础协议](https://modelcontextprotocol.io/specification/2025-03-26/basic)
-- [MCP 服务器资源](https://modelcontextprotocol.io/specification/2025-03-26/server/resources)
-- [MCP 身份验证](https://modelcontextprotocol.io/specification/2025-03-26/basic#auth)
-- 项目开发标准和编码指南 
+- `tools/list`

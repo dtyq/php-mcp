@@ -8,6 +8,7 @@ This directory contains the complete implementation of Model Context Protocol (M
 
 ```
 Types/
+├── Auth/           # Authentication types and data structures
 ├── Core/           # Core protocol types and interfaces
 ├── Messages/       # Message types for communication
 ├── Content/        # Content types (text, image, embedded resources)
@@ -18,6 +19,41 @@ Types/
 ├── Tools/          # Tool-related types
 ├── Prompts/        # Prompt-related types
 └── Sampling/       # Sampling-related types
+```
+
+## 🔐 Authentication Types (`Auth/`)
+
+Types for managing authentication context and user permissions in MCP operations:
+
+- **`AuthInfo.php`** - Authentication information container with scope-based permissions
+
+**Key Features:**
+- **Scope-based permissions**: Fine-grained access control using string-based scopes
+- **Wildcard support**: Universal access through `*` scope
+- **Metadata storage**: Additional authentication context and user information
+- **Expiration handling**: Time-based authentication validity
+- **Type safety**: Comprehensive validation and type-safe operations
+
+**Usage Example:**
+```php
+// Create authentication info with specific scopes
+$authInfo = AuthInfo::create('user123', ['read', 'write'], [
+    'role' => 'admin',
+    'department' => 'engineering'
+], time() + 3600);
+
+// Check permissions
+if ($authInfo->hasScope('read')) {
+    // User can read
+}
+
+if ($authInfo->hasAllScopes(['read', 'write'])) {
+    // User can read and write
+}
+
+// Anonymous universal access
+$anonymous = AuthInfo::anonymous();
+assert($anonymous->hasScope('any-scope') === true);
 ```
 
 ## 🔧 Core Types (`Core/`)

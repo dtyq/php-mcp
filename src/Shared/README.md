@@ -8,6 +8,7 @@ The `Shared` directory contains common utilities, message handling, exception ma
 
 ```
 Shared/
+├── Auth/               # Authentication framework and interfaces
 ├── Exceptions/          # Exception handling and error management
 ├── Kernel/             # Core application framework
 ├── Message/            # JSON-RPC message handling utilities
@@ -16,7 +17,21 @@ Shared/
 
 ## Subdirectories Overview
 
-### 1. Exceptions/
+### 1. Auth/
+
+Simple and flexible authentication framework for MCP operations, providing interface-based authentication with minimal dependencies.
+
+**Files:**
+- `AuthenticatorInterface.php` - Authentication contract for custom implementations
+- `NullAuthenticator.php` - Default authenticator providing universal access
+
+**Design Principles:**
+- **Interface-driven**: Support multiple authentication methods through simple contract
+- **Zero dependencies**: No specific OAuth2 library requirements
+- **Progressive adoption**: From no-auth to full enterprise authentication
+- **Application integration**: Easy integration with existing authentication systems
+
+### 2. Exceptions/
 
 Contains comprehensive exception handling classes for the MCP protocol, including JSON-RPC errors, MCP-specific errors, OAuth errors, and transport errors.
 
@@ -30,16 +45,16 @@ Contains comprehensive exception handling classes for the MCP protocol, includin
 - `SystemException.php` - Exception for system-level errors
 - `ErrorData.php` - Data structure for error information
 
-### 2. Kernel/
+### 3. Kernel/
 
-Core application framework providing dependency injection, configuration management, and logging infrastructure.
+Core application framework providing dependency injection, configuration management, authentication, and logging infrastructure.
 
 **Files:**
-- `Application.php` - Main application container and service locator
+- `Application.php` - Main application container and service locator with authentication support
 - `Config/Config.php` - Configuration management using dot notation
 - `Logger/LoggerProxy.php` - PSR-3 logger proxy with SDK name prefixing
 
-### 3. Message/
+### 4. Message/
 
 JSON-RPC 2.0 message handling utilities for creating, parsing, and validating MCP protocol messages.
 
@@ -48,7 +63,7 @@ JSON-RPC 2.0 message handling utilities for creating, parsing, and validating MC
 - `MessageUtils.php` - Utility methods for creating common MCP messages
 - `SessionMessage.php` - Session-aware message wrapper with metadata
 
-### 4. Utilities/
+### 5. Utilities/
 
 Common utility classes for JSON processing, HTTP operations, and other shared functionality.
 
@@ -57,6 +72,111 @@ Common utility classes for JSON processing, HTTP operations, and other shared fu
 - `HttpUtils.php` - HTTP utilities for various transport methods
 
 ## Detailed File Descriptions
+
+### Auth/AuthenticatorInterface.php
+
+Core authentication contract for implementing custom authentication strategies in MCP applications.
+
+**Interface Methods:**
+- `authenticate(): AuthInfo` - Performs authentication and returns authentication information
+
+**Design Philosophy:**
+- **Simple contract**: Single method interface for authentication
+- **Exception-based**: Returns `AuthInfo` on success, throws `AuthenticationError` on failure
+- **No dependencies**: Implementations control credential extraction and validation
+- **Flexible**: Supports JWT, database, API, or any custom authentication method
+
+**Usage:**
+```php
+// Custom JWT authenticator
+class JwtAuthenticator implements AuthenticatorInterface
+{
+    public function authenticate(): AuthInfo
+    {
+        $token = $this->extractTokenFromRequest();
+        $payload = $this->validateJwtToken($token);
+        
+        return AuthInfo::create(
+            $payload['sub'],
+            $payload['scopes'] ?? [],
+            ['token_type' => 'jwt', 'iat' => $payload['iat']]
+        );
+    }
+}
+
+// Custom database authenticator  
+class DatabaseAuthenticator implements AuthenticatorInterface
+{
+    public function authenticate(): AuthInfo
+    {
+        $apiKey = $this->extractApiKeyFromRequest();
+        $user = $this->findUserByApiKey($apiKey);
+        
+        if (!$user) {
+            throw new AuthenticationError('Invalid API key');
+        }
+        
+        return AuthInfo::create(
+            $user->id,
+            $user->scopes,
+            ['user_type' => $user->type, 'api_key' => $apiKey]
+        );
+    }
+}
+```
+
+### Auth/NullAuthenticator.php
+
+Default authenticator implementation providing universal access for development and testing scenarios.
+
+**Features:**
+- **Universal access**: Grants all scopes (`*`) to anonymous user
+- **Zero configuration**: Works out-of-the-box without setup
+- **Development friendly**: Perfect for testing and development environments
+- **Never expires**: Authentication never expires
+
+**Usage:**
+```php
+$authenticator = new NullAuthenticator();
+$authInfo = $authenticator->authenticate();
+
+// Always returns anonymous user with universal access
+assert($authInfo->getSubject() === 'anonymous');
+assert($authInfo->hasScope('any-scope') === true);
+assert($authInfo->hasAllScopes(['read', 'write', 'admin']) === true);
+```
+
+### Kernel/Application.php
+
+Enhanced application container with authentication support through fluent interface.
+
+**Authentication Methods:**
+- `withAuthenticator(AuthenticatorInterface $authenticator): self` - Set custom authenticator
+- `getAuthenticator(): AuthenticatorInterface` - Get current authenticator (defaults to NullAuthenticator)
+
+**Usage Examples:**
+```php
+// No authentication (default)
+$app = new Application($container, $config);
+$authInfo = $app->getAuthenticator()->authenticate(); // Returns anonymous with universal access
+
+// JWT authentication
+$jwtAuth = new JwtAuthenticator($secretKey);
+$app = $app->withAuthenticator($jwtAuth);
+
+// Database authentication
+$dbAuth = new DatabaseAuthenticator($connection);
+$app = $app->withAuthenticator($dbAuth);
+
+// Custom authentication
+$customAuth = new class implements AuthenticatorInterface {
+    public function authenticate(): AuthInfo {
+        // Custom logic here
+        return AuthInfo::create('custom-user', ['read', 'write']);
+    }
+};
+$app = $app->withAuthenticator($customAuth);
+```
 
 ### Exceptions/ErrorCodes.php
 

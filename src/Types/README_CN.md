@@ -8,6 +8,7 @@
 
 ```
 Types/
+├── Auth/           # 身份验证类型和数据结构
 ├── Core/           # 核心协议类型和接口
 ├── Messages/       # 通信消息类型
 ├── Content/        # 内容类型（文本、图像、嵌入资源）
@@ -18,6 +19,41 @@ Types/
 ├── Tools/          # 工具相关类型
 ├── Prompts/        # 提示相关类型
 └── Sampling/       # 采样相关类型
+```
+
+## 🔐 身份验证类型 (`Auth/`)
+
+用于管理 MCP 操作中身份验证上下文和用户权限的类型：
+
+- **`AuthInfo.php`** - 带基于作用域权限的身份验证信息容器
+
+**主要特性：**
+- **基于作用域的权限**：使用基于字符串的作用域进行细粒度访问控制
+- **通配符支持**：通过 `*` 作用域实现通用访问
+- **元数据存储**：额外的身份验证上下文和用户信息
+- **过期处理**：基于时间的身份验证有效性
+- **类型安全**：全面的验证和类型安全操作
+
+**使用示例：**
+```php
+// 创建具有特定作用域的身份验证信息
+$authInfo = AuthInfo::create('user123', ['read', 'write'], [
+    'role' => 'admin',
+    'department' => 'engineering'
+], time() + 3600);
+
+// 检查权限
+if ($authInfo->hasScope('read')) {
+    // 用户可以读取
+}
+
+if ($authInfo->hasAllScopes(['read', 'write'])) {
+    // 用户可以读取和写入
+}
+
+// 匿名通用访问
+$anonymous = AuthInfo::anonymous();
+assert($anonymous->hasScope('any-scope') === true);
 ```
 
 ## 🔧 核心类型 (`Core/`)
@@ -107,110 +143,4 @@ Types/
 - **`ResourceContents.php`** - 资源内容的基类
 - **`TextResourceContents.php`** - 基于文本的资源内容
 - **`BlobResourceContents.php`** - 二进制资源内容（base64 编码）
-- **`ResourceTemplate.php`** - 参数化资源的模板
-
-## 🔧 工具类型 (`Tools/`)
-
-可执行函数和能力的类型：
-
-- **`Tool.php`** - 带模式和元数据的工具定义
-- **`ToolResult.php`** - 工具执行结果容器
-- **`ToolAnnotations.php`** - 工具元数据和行为提示
-
-## 💭 提示类型 (`Prompts/`)
-
-模板化消息和工作流的类型：
-
-- **`Prompt.php`** - 提示模板定义
-- **`PromptArgument.php`** - 提示参数定义
-- **`PromptMessage.php`** - 提示模板中的单个消息
-- **`GetPromptResult.php`** - 提示模板执行结果
-
-## 🤖 采样类型 (`Sampling/`)
-
-LLM 交互和消息生成的类型：
-
-- **`CreateMessageRequest.php`** - LLM 消息生成请求
-- **`CreateMessageResult.php`** - LLM 生成的消息响应
-- **`SamplingMessage.php`** - 采样的消息结构
-- **`ModelPreferences.php`** - LLM 模型偏好和提示
-- **`ModelHint.php`** - 模型选择提示
-
-## 🏗️ 架构原则
-
-### 基于接口的设计
-所有类型都实现适当的接口（`RequestInterface`、`ResultInterface`、`NotificationInterface`），确保一致的行为和类型安全。
-
-### 验证和错误处理
-- 所有类型都使用 `ValidationError` 进行一致的错误报告
-- 全面的输入验证和描述性错误消息
-- 类型安全的构造和数据访问方法
-
-### JSON-RPC 2.0 合规性
-- 完全符合 JSON-RPC 2.0 规范
-- 正确的请求/响应 ID 处理
-- 标准错误码实现
-
-> **📋 参考文档**: [JSON-RPC 2.0 消息](https://modelcontextprotocol.io/specification/2025-03-26/basic#messages) | [错误处理](https://modelcontextprotocol.io/specification/2025-03-26/basic#responses)
-
-### 分页支持
-列表操作支持基于游标的分页：
-- `nextCursor` 用于前向导航
-- 所有列表结果的一致分页接口
-
-> **📋 参考文档**: [资源分页](https://modelcontextprotocol.io/specification/2025-03-26/server/resources) | [工具分页](https://modelcontextprotocol.io/specification/2025-03-26/server/tools)
-
-### 可扩展性
-- 元字段支持（`_meta`）用于附加信息
-- 内容目标定位和优先级的注解系统
-- 灵活的内容类型系统
-
-## 🔄 协议流程示例
-
-### 基本资源访问
-```
-客户端 -> ListResourcesRequest -> 服务器
-服务器 -> ListResourcesResult -> 客户端
-客户端 -> ReadResourceRequest -> 服务器  
-服务器 -> ReadResourceResult -> 客户端
-```
-
-### 工具执行
-```
-客户端 -> ListToolsRequest -> 服务器
-服务器 -> ListToolsResult -> 客户端
-客户端 -> CallToolRequest -> 服务器
-服务器 -> CallToolResult -> 客户端
-```
-
-### 订阅模型
-```
-客户端 -> SubscribeRequest -> 服务器
-服务器 -> (确认) -> 客户端
-服务器 -> ResourceUpdatedNotification -> 客户端
-```
-
-## 📋 实现状态
-
-✅ **完整的 MCP 2025-03-26 核心协议支持**
-- 所有必需的请求/响应对已实现
-- 完整的通知系统
-- 完整的资源、工具和提示管理
-- LLM 交互的采样能力
-- 正确的错误处理和验证
-
-## 🔗 相关文档
-
-- [MCP 规范 2025-03-26](https://modelcontextprotocol.io/specification/2025-03-26/)
-- [JSON-RPC 2.0 规范](https://www.jsonrpc.org/specification)
-- [MCP 基础协议](https://modelcontextprotocol.io/specification/2025-03-26/basic)
-- [MCP 服务器资源](https://modelcontextprotocol.io/specification/2025-03-26/server/resources)
-- [MCP 服务器工具](https://modelcontextprotocol.io/specification/2025-03-26/server/tools)
-- [MCP 服务器提示](https://modelcontextprotocol.io/specification/2025-03-26/server/prompts)
-- [MCP 客户端采样](https://modelcontextprotocol.io/specification/2025-03-26/client/sampling)
-- [MCP 更新日志](https://modelcontextprotocol.io/specification/2025-03-26/changelog)
-- 项目开发标准和编码指南
-
----
-
-*此实现提供了 Model Context Protocol 的完整、类型安全的 PHP 实现，使 LLM 应用程序与外部数据源和工具之间能够无缝集成。* 
+- **`
