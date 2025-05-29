@@ -27,6 +27,9 @@ class StdioTransport extends AbstractTransport
 
     private bool $shouldStop = false;
 
+    /**
+     * @var array<string, mixed>
+     */
     private array $config;
 
     public function __construct(Application $app, TransportMetadata $transportMetadata)
@@ -132,6 +135,8 @@ class StdioTransport extends AbstractTransport
 
     /**
      * Get the transport configuration.
+     *
+     * @return array<string, mixed>
      */
     public function getConfig(): array
     {

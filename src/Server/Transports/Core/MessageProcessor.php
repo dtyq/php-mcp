@@ -73,7 +73,7 @@ class MessageProcessor
     /**
      * Handle a batch of JSON-RPC messages.
      *
-     * @param array $batch Array of JSON-RPC messages
+     * @param array<int, array<string, mixed>> $batch Array of JSON-RPC messages
      * @return null|string The batch response, or null if no responses needed
      */
     public function handleBatch(array $batch): ?string
@@ -106,8 +106,8 @@ class MessageProcessor
     /**
      * Handle a JSON-RPC request.
      *
-     * @param array $request The request message
-     * @return array The response message
+     * @param array<string, mixed> $request The request message
+     * @return array<string, mixed> The response message
      */
     public function handleRequest(array $request): array
     {
@@ -145,7 +145,7 @@ class MessageProcessor
     /**
      * Handle a JSON-RPC notification.
      *
-     * @param array $notification The notification message
+     * @param array<string, mixed> $notification The notification message
      */
     public function handleNotification(array $notification): void
     {
@@ -166,7 +166,7 @@ class MessageProcessor
     /**
      * Handle a JSON-RPC response.
      *
-     * @param array $response The response message
+     * @param array<string, mixed> $response The response message
      */
     public function handleResponse(array $response): void
     {
@@ -234,7 +234,7 @@ class MessageProcessor
     /**
      * Handle a single JSON-RPC message.
      *
-     * @param array $message The decoded JSON-RPC message
+     * @param array<string, mixed> $message The decoded JSON-RPC message
      * @return null|string The response message, or null if no response needed
      */
     private function handleSingleMessage(array $message): ?string
@@ -261,7 +261,7 @@ class MessageProcessor
      * Route a request to the appropriate FastMcp manager.
      *
      * @param string $method The method name
-     * @param array $params The method parameters
+     * @param array<string, mixed> $params The method parameters
      * @return mixed The result
      */
     private function routeRequest(string $method, array $params)
@@ -361,7 +361,7 @@ class MessageProcessor
      * Route a notification to the appropriate handler.
      *
      * @param string $method The method name
-     * @param array $params The method parameters
+     * @param array<string, mixed> $params The method parameters
      */
     private function routeNotification(string $method, array $params): void
     {
@@ -381,7 +381,7 @@ class MessageProcessor
     /**
      * Validate a single JSON-RPC message.
      *
-     * @param array $message The message to validate
+     * @param array<string, mixed> $message The message to validate
      * @return bool True if valid, false otherwise
      */
     private function validateSingleMessage(array $message): bool
