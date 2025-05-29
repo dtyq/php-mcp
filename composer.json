@@ -8,11 +8,13 @@
         "php": ">=7.4",
         "ext-json": "*",
         "ext-openssl": "*",
+        "ext-pcntl": "*",
         "psr/log": "*",
         "psr/simple-cache": "*",
         "psr/event-dispatcher": "*",
         "psr/container": "*",
         "adbario/php-dot-notation": "^3.3|^2.4"
+
     },
     "require-dev": {
         "phpunit/phpunit": "^9.0",
