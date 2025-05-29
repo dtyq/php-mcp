@@ -9,6 +9,7 @@ namespace Dtyq\PhpMcp\Shared\Message;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ErrorCodes;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use stdClass;
 
 /**
@@ -19,57 +20,6 @@ use stdClass;
  */
 class MessageUtils
 {
-    /**
-     * MCP protocol version.
-     */
-    public const MCP_PROTOCOL_VERSION = '2025-03-26';
-
-    /**
-     * Common MCP methods.
-     */
-    public const METHOD_INITIALIZE = 'initialize';
-
-    public const METHOD_INITIALIZED = 'notifications/initialized';
-
-    public const METHOD_PING = 'ping';
-
-    public const METHOD_LIST_TOOLS = 'tools/list';
-
-    public const METHOD_CALL_TOOL = 'tools/call';
-
-    public const METHOD_LIST_RESOURCES = 'resources/list';
-
-    public const METHOD_READ_RESOURCE = 'resources/read';
-
-    public const METHOD_LIST_PROMPTS = 'prompts/list';
-
-    public const METHOD_GET_PROMPT = 'prompts/get';
-
-    public const METHOD_CREATE_MESSAGE = 'sampling/createMessage';
-
-    public const METHOD_LIST_ROOTS = 'roots/list';
-
-    public const METHOD_SUBSCRIBE_RESOURCE = 'resources/subscribe';
-
-    public const METHOD_UNSUBSCRIBE_RESOURCE = 'resources/unsubscribe';
-
-    /**
-     * Notification methods.
-     */
-    public const NOTIFICATION_PROGRESS = 'notifications/progress';
-
-    public const NOTIFICATION_LOGGING = 'notifications/message';
-
-    public const NOTIFICATION_RESOURCE_UPDATED = 'notifications/resources/updated';
-
-    public const NOTIFICATION_RESOURCE_LIST_CHANGED = 'notifications/resources/list_changed';
-
-    public const NOTIFICATION_TOOL_LIST_CHANGED = 'notifications/tools/list_changed';
-
-    public const NOTIFICATION_PROMPT_LIST_CHANGED = 'notifications/prompts/list_changed';
-
-    public const NOTIFICATION_CANCELLED = 'notifications/cancelled';
-
     /**
      * Create an MCP initialize request.
      *
@@ -83,12 +33,12 @@ class MessageUtils
         array $capabilities = []
     ): JsonRpcMessage {
         $params = [
-            'protocolVersion' => self::MCP_PROTOCOL_VERSION,
+            'protocolVersion' => ProtocolConstants::LATEST_PROTOCOL_VERSION,
             'clientInfo' => $clientInfo,
             'capabilities' => $capabilities,
         ];
 
-        return JsonRpcMessage::createRequest(self::METHOD_INITIALIZE, $params, $requestId);
+        return JsonRpcMessage::createRequest(ProtocolConstants::METHOD_INITIALIZE, $params, $requestId);
     }
 
     /**
@@ -104,7 +54,7 @@ class MessageUtils
         array $capabilities = []
     ): JsonRpcMessage {
         $result = [
-            'protocolVersion' => self::MCP_PROTOCOL_VERSION,
+            'protocolVersion' => ProtocolConstants::LATEST_PROTOCOL_VERSION,
             'serverInfo' => $serverInfo,
             'capabilities' => $capabilities,
         ];
@@ -117,7 +67,7 @@ class MessageUtils
      */
     public static function createInitializedNotification(): JsonRpcMessage
     {
-        return JsonRpcMessage::createNotification(self::METHOD_INITIALIZED);
+        return JsonRpcMessage::createNotification(ProtocolConstants::NOTIFICATION_INITIALIZED);
     }
 
     /**
@@ -127,13 +77,14 @@ class MessageUtils
      */
     public static function createPingRequest($requestId): JsonRpcMessage
     {
-        return JsonRpcMessage::createRequest(self::METHOD_PING, null, $requestId);
+        return JsonRpcMessage::createRequest(ProtocolConstants::METHOD_PING, null, $requestId);
     }
 
     /**
      * Create a pong response.
      *
      * @param int|string $requestId Request ID being responded to
+     * @return JsonRpcMessage The pong response
      */
     public static function createPongResponse($requestId): JsonRpcMessage
     {
@@ -154,7 +105,7 @@ class MessageUtils
         }
 
         return JsonRpcMessage::createRequest(
-            self::METHOD_LIST_TOOLS,
+            ProtocolConstants::METHOD_TOOLS_LIST,
             empty($params) ? null : $params,
             $requestId
         );
@@ -174,7 +125,7 @@ class MessageUtils
             'arguments' => $arguments,
         ];
 
-        return JsonRpcMessage::createRequest(self::METHOD_CALL_TOOL, $params, $requestId);
+        return JsonRpcMessage::createRequest(ProtocolConstants::METHOD_TOOLS_CALL, $params, $requestId);
     }
 
     /**
@@ -191,7 +142,7 @@ class MessageUtils
         }
 
         return JsonRpcMessage::createRequest(
-            self::METHOD_LIST_RESOURCES,
+            ProtocolConstants::METHOD_RESOURCES_LIST,
             empty($params) ? null : $params,
             $requestId
         );
@@ -207,7 +158,7 @@ class MessageUtils
     {
         $params = ['uri' => $uri];
 
-        return JsonRpcMessage::createRequest(self::METHOD_READ_RESOURCE, $params, $requestId);
+        return JsonRpcMessage::createRequest(ProtocolConstants::METHOD_RESOURCES_READ, $params, $requestId);
     }
 
     /**
@@ -220,7 +171,7 @@ class MessageUtils
     {
         $params = ['uri' => $uri];
 
-        return JsonRpcMessage::createRequest(self::METHOD_SUBSCRIBE_RESOURCE, $params, $requestId);
+        return JsonRpcMessage::createRequest(ProtocolConstants::METHOD_RESOURCES_SUBSCRIBE, $params, $requestId);
     }
 
     /**
@@ -233,7 +184,7 @@ class MessageUtils
     {
         $params = ['uri' => $uri];
 
-        return JsonRpcMessage::createRequest(self::METHOD_UNSUBSCRIBE_RESOURCE, $params, $requestId);
+        return JsonRpcMessage::createRequest(ProtocolConstants::METHOD_RESOURCES_UNSUBSCRIBE, $params, $requestId);
     }
 
     /**
@@ -250,7 +201,7 @@ class MessageUtils
         }
 
         return JsonRpcMessage::createRequest(
-            self::METHOD_LIST_PROMPTS,
+            ProtocolConstants::METHOD_PROMPTS_LIST,
             empty($params) ? null : $params,
             $requestId
         );
@@ -270,7 +221,7 @@ class MessageUtils
             $params['arguments'] = $arguments;
         }
 
-        return JsonRpcMessage::createRequest(self::METHOD_GET_PROMPT, $params, $requestId);
+        return JsonRpcMessage::createRequest(ProtocolConstants::METHOD_PROMPTS_GET, $params, $requestId);
     }
 
     /**
@@ -286,7 +237,7 @@ class MessageUtils
             $params['reason'] = $reason;
         }
 
-        return JsonRpcMessage::createNotification(self::NOTIFICATION_CANCELLED, $params);
+        return JsonRpcMessage::createNotification(ProtocolConstants::NOTIFICATION_CANCELLED, $params);
     }
 
     /**
@@ -307,7 +258,7 @@ class MessageUtils
             $params['total'] = $total;
         }
 
-        return JsonRpcMessage::createNotification(self::NOTIFICATION_PROGRESS, $params);
+        return JsonRpcMessage::createNotification(ProtocolConstants::NOTIFICATION_PROGRESS, $params);
     }
 
     /**
@@ -328,7 +279,7 @@ class MessageUtils
             $params['logger'] = $logger;
         }
 
-        return JsonRpcMessage::createNotification(self::NOTIFICATION_LOGGING, $params);
+        return JsonRpcMessage::createNotification(ProtocolConstants::NOTIFICATION_MESSAGE, $params);
     }
 
     /**
@@ -432,19 +383,19 @@ class MessageUtils
     public static function isStandardMethod(string $method): bool
     {
         $standardMethods = [
-            self::METHOD_INITIALIZE,
-            self::METHOD_INITIALIZED,
-            self::METHOD_PING,
-            self::METHOD_LIST_TOOLS,
-            self::METHOD_CALL_TOOL,
-            self::METHOD_LIST_RESOURCES,
-            self::METHOD_READ_RESOURCE,
-            self::METHOD_SUBSCRIBE_RESOURCE,
-            self::METHOD_UNSUBSCRIBE_RESOURCE,
-            self::METHOD_LIST_PROMPTS,
-            self::METHOD_GET_PROMPT,
-            self::METHOD_CREATE_MESSAGE,
-            self::METHOD_LIST_ROOTS,
+            ProtocolConstants::METHOD_INITIALIZE,
+            ProtocolConstants::NOTIFICATION_INITIALIZED,
+            ProtocolConstants::METHOD_PING,
+            ProtocolConstants::METHOD_TOOLS_LIST,
+            ProtocolConstants::METHOD_TOOLS_CALL,
+            ProtocolConstants::METHOD_RESOURCES_LIST,
+            ProtocolConstants::METHOD_RESOURCES_READ,
+            ProtocolConstants::METHOD_RESOURCES_SUBSCRIBE,
+            ProtocolConstants::METHOD_RESOURCES_UNSUBSCRIBE,
+            ProtocolConstants::METHOD_PROMPTS_LIST,
+            ProtocolConstants::METHOD_PROMPTS_GET,
+            ProtocolConstants::METHOD_SAMPLING_CREATE_MESSAGE,
+            ProtocolConstants::METHOD_ROOTS_LIST,
         ];
 
         return in_array($method, $standardMethods, true);
@@ -480,5 +431,85 @@ class MessageUtils
     public static function createSessionMessage(JsonRpcMessage $message, $metadata = null): SessionMessage
     {
         return new SessionMessage($message, $metadata);
+    }
+
+    /**
+     * Create a tools list response.
+     *
+     * @param int|string $requestId Request ID being responded to
+     * @param array<int, array<string, mixed>> $tools Array of tool definitions
+     * @return JsonRpcMessage The tools list response
+     */
+    public static function createToolsListResponse($requestId, array $tools): JsonRpcMessage
+    {
+        return JsonRpcMessage::createResponse($requestId, ['tools' => $tools]);
+    }
+
+    /**
+     * Create a tools call response.
+     *
+     * @param int|string $requestId Request ID being responded to
+     * @param mixed $result The result from tool execution
+     * @return JsonRpcMessage The tools call response
+     */
+    public static function createToolsCallResponse($requestId, $result): JsonRpcMessage
+    {
+        $content = [
+            'content' => [
+                [
+                    'type' => 'text',
+                    'text' => is_string($result) ? $result : json_encode($result),
+                ],
+            ],
+        ];
+        return JsonRpcMessage::createResponse($requestId, $content);
+    }
+
+    /**
+     * Create a prompts list response.
+     *
+     * @param int|string $requestId Request ID being responded to
+     * @param array<int, array<string, mixed>> $prompts Array of prompt definitions
+     * @return JsonRpcMessage The prompts list response
+     */
+    public static function createPromptsListResponse($requestId, array $prompts): JsonRpcMessage
+    {
+        return JsonRpcMessage::createResponse($requestId, ['prompts' => $prompts]);
+    }
+
+    /**
+     * Create a prompts get response.
+     *
+     * @param int|string $requestId Request ID being responded to
+     * @param array<string, mixed> $promptResult The result from prompt execution
+     * @return JsonRpcMessage The prompts get response
+     */
+    public static function createPromptsGetResponse($requestId, array $promptResult): JsonRpcMessage
+    {
+        return JsonRpcMessage::createResponse($requestId, $promptResult);
+    }
+
+    /**
+     * Create a resources list response.
+     *
+     * @param int|string $requestId Request ID being responded to
+     * @param array<int, array<string, mixed>> $resources Array of resource definitions
+     * @return JsonRpcMessage The resources list response
+     */
+    public static function createResourcesListResponse($requestId, array $resources): JsonRpcMessage
+    {
+        return JsonRpcMessage::createResponse($requestId, ['resources' => $resources]);
+    }
+
+    /**
+     * Create a resources read response.
+     *
+     * @param int|string $requestId Request ID being responded to
+     * @param array<string, mixed> $content The resource content
+     * @return JsonRpcMessage The resources read response
+     */
+    public static function createResourcesReadResponse($requestId, array $content): JsonRpcMessage
+    {
+        return JsonRpcMessage::createResponse($requestId, ['contents' => [$content]]);
     }
 }

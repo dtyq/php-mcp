@@ -9,6 +9,7 @@ namespace Dtyq\PhpMcp\Tests\Unit\Shared\Message;
 
 use Dtyq\PhpMcp\Shared\Message\JsonRpcMessage;
 use Dtyq\PhpMcp\Shared\Message\MessageUtils;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -19,7 +20,11 @@ class MessageUtilsTest extends TestCase
 {
     public function testMcpProtocolVersion(): void
     {
-        $this->assertSame('2025-03-26', MessageUtils::MCP_PROTOCOL_VERSION);
+        // Test that MessageUtils uses the correct protocol version from ProtocolConstants
+        $clientInfo = ['name' => 'TestClient', 'version' => '1.0.0'];
+        $message = MessageUtils::createInitializeRequest(1, $clientInfo);
+        $params = $message->getParams();
+        $this->assertSame(ProtocolConstants::LATEST_PROTOCOL_VERSION, $params['protocolVersion']);
     }
 
     public function testCreateInitializeRequest(): void
@@ -296,31 +301,5 @@ class MessageUtilsTest extends TestCase
         $this->assertIsString($id1);
         $this->assertIsString($id2);
         $this->assertNotSame($id1, $id2);
-    }
-
-    public function testMethodConstants(): void
-    {
-        $this->assertSame('initialize', MessageUtils::METHOD_INITIALIZE);
-        $this->assertSame('notifications/initialized', MessageUtils::METHOD_INITIALIZED);
-        $this->assertSame('ping', MessageUtils::METHOD_PING);
-        $this->assertSame('tools/list', MessageUtils::METHOD_LIST_TOOLS);
-        $this->assertSame('tools/call', MessageUtils::METHOD_CALL_TOOL);
-        $this->assertSame('resources/list', MessageUtils::METHOD_LIST_RESOURCES);
-        $this->assertSame('resources/read', MessageUtils::METHOD_READ_RESOURCE);
-        $this->assertSame('resources/subscribe', MessageUtils::METHOD_SUBSCRIBE_RESOURCE);
-        $this->assertSame('resources/unsubscribe', MessageUtils::METHOD_UNSUBSCRIBE_RESOURCE);
-        $this->assertSame('prompts/list', MessageUtils::METHOD_LIST_PROMPTS);
-        $this->assertSame('prompts/get', MessageUtils::METHOD_GET_PROMPT);
-    }
-
-    public function testNotificationConstants(): void
-    {
-        $this->assertSame('notifications/progress', MessageUtils::NOTIFICATION_PROGRESS);
-        $this->assertSame('notifications/message', MessageUtils::NOTIFICATION_LOGGING);
-        $this->assertSame('notifications/cancelled', MessageUtils::NOTIFICATION_CANCELLED);
-        $this->assertSame('notifications/resources/updated', MessageUtils::NOTIFICATION_RESOURCE_UPDATED);
-        $this->assertSame('notifications/resources/list_changed', MessageUtils::NOTIFICATION_RESOURCE_LIST_CHANGED);
-        $this->assertSame('notifications/tools/list_changed', MessageUtils::NOTIFICATION_TOOL_LIST_CHANGED);
-        $this->assertSame('notifications/prompts/list_changed', MessageUtils::NOTIFICATION_PROMPT_LIST_CHANGED);
     }
 }

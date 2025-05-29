@@ -8,9 +8,12 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Server\Transports\Core;
 
 use Dtyq\PhpMcp\Server\Transports\TransportMetadata;
+use Dtyq\PhpMcp\Shared\Exceptions\ErrorCodes;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
+use Dtyq\PhpMcp\Shared\Message\JsonRpcMessage;
+use Dtyq\PhpMcp\Shared\Message\MessageUtils;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Exception;
 use InvalidArgumentException;
@@ -47,13 +50,15 @@ class MessageProcessor
         try {
             // Validate UTF-8 encoding (MCP requirement)
             if (! $this->validateUtf8($jsonRpc)) {
-                throw TransportError::malformedMessage('json-rpc', 'Message is not valid UTF-8');
+                $errorResponse = MessageUtils::createParseErrorResponse('Message is not valid UTF-8');
+                return $errorResponse->toJson();
             }
 
             // Parse JSON
             $decoded = json_decode($jsonRpc, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw TransportError::malformedMessage('json-rpc', 'Invalid JSON: ' . json_last_error_msg());
+                $errorResponse = MessageUtils::createParseErrorResponse('Invalid JSON: ' . json_last_error_msg());
+                return $errorResponse->toJson();
             }
 
             // Handle batch or single message
@@ -88,7 +93,7 @@ class MessageProcessor
             if (isset($message['method'], $message['id'])) {
                 // Request in batch - collect response
                 $response = $this->handleRequest($message);
-                if ($response !== null) {
+                if (! empty($response)) {
                     $responses[] = $response;
                 }
             } elseif (isset($message['method'])) {
@@ -116,13 +121,17 @@ class MessageProcessor
         $id = $request['id'] ?? null;
 
         try {
-            $result = $this->routeRequest($method, $params);
+            $response = $this->routeRequest($id, $method, $params);
+            return $response->toArray();
+        } catch (InvalidArgumentException $e) {
+            // Method not found or invalid arguments
+            $this->logger->warning('Method not found or invalid arguments', [
+                'method' => $method,
+                'error' => $e->getMessage(),
+            ]);
 
-            return [
-                'jsonrpc' => '2.0',
-                'result' => $result,
-                'id' => $id,
-            ];
+            $errorResponse = MessageUtils::createMethodNotFoundErrorResponse($id, $method);
+            return $errorResponse->toArray();
         } catch (Exception $e) {
             $this->logger->error('Request handling failed', [
                 'method' => $method,
@@ -130,15 +139,13 @@ class MessageProcessor
                 'error' => $e->getMessage(),
             ]);
 
-            return [
-                'jsonrpc' => '2.0',
-                'error' => [
-                    'code' => -32603,
-                    'message' => 'Internal error',
-                    'data' => $e->getMessage(),
-                ],
-                'id' => $id,
-            ];
+            // Use MessageUtils to create the error response
+            $errorResponse = MessageUtils::createErrorResponse(
+                $id,
+                ErrorCodes::INTERNAL_ERROR,
+                $e->getMessage()
+            );
+            return $errorResponse->toArray();
         }
     }
 
@@ -260,14 +267,15 @@ class MessageProcessor
     /**
      * Route a request to the appropriate FastMcp manager.
      *
+     * @param int|string $requestId Request ID being responded to
      * @param string $method The method name
      * @param array<string, mixed> $params The method parameters
-     * @return mixed The result
+     * @return JsonRpcMessage The result
      */
-    private function routeRequest(string $method, array $params)
+    private function routeRequest($requestId, string $method, array $params): JsonRpcMessage
     {
         switch ($method) {
-            case 'initialize':
+            case ProtocolConstants::METHOD_INITIALIZE:
                 $capabilities = [
                     'instructions' => $this->transportMetadata->getInstructions() ?: '',
                     'logging' => new stdClass(),
@@ -287,71 +295,45 @@ class MessageProcessor
                         'listChanged' => false,
                     ];
                 }
-
-                return [
-                    'protocolVersion' => ProtocolConstants::LATEST_PROTOCOL_VERSION,
-                    'capabilities' => $capabilities,
-                    'serverInfo' => [
-                        'name' => $this->transportMetadata->getName() ?: 'php-mcp-server',
-                        'version' => $this->transportMetadata->getVersion() ?: '1.0.0',
-                    ],
+                $serverInfo = [
+                    'name' => $this->transportMetadata->getName() ?: 'php-mcp-server',
+                    'version' => $this->transportMetadata->getVersion() ?: '1.0.0',
                 ];
-
-            case 'tools/list':
+                return MessageUtils::createInitializeResponse($requestId, $serverInfo, $capabilities);
+            case ProtocolConstants::METHOD_PING:
+                return MessageUtils::createPongResponse($requestId);
+            case ProtocolConstants::METHOD_TOOLS_LIST:
                 $tools = $this->transportMetadata->getToolManager()->getAll();
-                return [
-                    'tools' => array_map(function ($registeredTool) {
-                        return $registeredTool->getTool()->toArray();
-                    }, $tools),
-                ];
-
-            case 'tools/call':
+                $toolsArray = array_map(function ($registeredTool) {
+                    return $registeredTool->getTool()->toArray();
+                }, $tools);
+                return MessageUtils::createToolsListResponse($requestId, $toolsArray);
+            case ProtocolConstants::METHOD_TOOLS_CALL:
                 $name = $params['name'] ?? '';
                 $arguments = $params['arguments'] ?? [];
                 $result = $this->transportMetadata->getToolManager()->execute($name, $arguments);
-
-                // Wrap result in proper tool result format
-                return [
-                    'content' => [
-                        [
-                            'type' => 'text',
-                            'text' => is_string($result) ? $result : json_encode($result),
-                        ],
-                    ],
-                ];
-
-            case 'prompts/list':
+                return MessageUtils::createToolsCallResponse($requestId, $result);
+            case ProtocolConstants::METHOD_PROMPTS_LIST:
                 $prompts = $this->transportMetadata->getPromptManager()->getAll();
-                return [
-                    'prompts' => array_map(function ($registeredPrompt) {
-                        return $registeredPrompt->getPrompt()->toArray();
-                    }, $prompts),
-                ];
-
-            case 'prompts/get':
+                $promptsArray = array_map(function ($registeredPrompt) {
+                    return $registeredPrompt->getPrompt()->toArray();
+                }, $prompts);
+                return MessageUtils::createPromptsListResponse($requestId, $promptsArray);
+            case ProtocolConstants::METHOD_PROMPTS_GET:
                 $name = $params['name'] ?? '';
                 $arguments = $params['arguments'] ?? [];
                 $result = $this->transportMetadata->getPromptManager()->execute($name, $arguments);
-
-                // Return the GetPromptResult as array
-                return $result->toArray();
-            case 'resources/list':
+                return MessageUtils::createPromptsGetResponse($requestId, $result->toArray());
+            case ProtocolConstants::METHOD_RESOURCES_LIST:
                 $resources = $this->transportMetadata->getResourceManager()->getAll();
-                return [
-                    'resources' => array_map(function ($registeredResource) {
-                        return $registeredResource->getResource()->toArray();
-                    }, $resources),
-                ];
-
-            case 'resources/read':
+                $resourcesArray = array_map(function ($registeredResource) {
+                    return $registeredResource->getResource()->toArray();
+                }, $resources);
+                return MessageUtils::createResourcesListResponse($requestId, $resourcesArray);
+            case ProtocolConstants::METHOD_RESOURCES_READ:
                 $uri = $params['uri'] ?? '';
                 $content = $this->transportMetadata->getResourceManager()->getContent($uri);
-
-                // Return the resource content as array
-                return [
-                    'contents' => [$content->toArray()],
-                ];
-
+                return MessageUtils::createResourcesReadResponse($requestId, $content->toArray());
             default:
                 throw new InvalidArgumentException("Unknown method: {$method}");
         }
@@ -366,10 +348,10 @@ class MessageProcessor
     private function routeNotification(string $method, array $params): void
     {
         switch ($method) {
-            case 'notifications/initialized':
+            case ProtocolConstants::NOTIFICATION_INITIALIZED:
                 $this->logger->info('Client initialized');
                 break;
-            case 'notifications/cancelled':
+            case ProtocolConstants::NOTIFICATION_CANCELLED:
                 $id = $params['id'] ?? null;
                 $this->logger->info('Request cancelled', ['id' => $id]);
                 break;
@@ -387,7 +369,7 @@ class MessageProcessor
     private function validateSingleMessage(array $message): bool
     {
         // Must have jsonrpc version
-        if (! isset($message['jsonrpc']) || $message['jsonrpc'] !== '2.0') {
+        if (! isset($message['jsonrpc']) || $message['jsonrpc'] !== ProtocolConstants::JSONRPC_VERSION) {
             return false;
         }
 

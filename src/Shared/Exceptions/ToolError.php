@@ -51,7 +51,7 @@ class ToolError extends McpError
      */
     public static function unknownTool(string $toolName): self
     {
-        return new self("Unknown tool: {$toolName}", $toolName, -32601); // Method not found
+        return new self("Unknown tool: {$toolName}", $toolName, ErrorCodes::METHOD_NOT_FOUND); // Method not found
     }
 
     /**
@@ -62,7 +62,7 @@ class ToolError extends McpError
         return new self(
             "Error executing tool {$toolName}: " . $originalException->getMessage(),
             $toolName,
-            -32603, // Internal error
+            ErrorCodes::INTERNAL_ERROR, // Internal error
             $originalException
         );
     }
@@ -75,7 +75,7 @@ class ToolError extends McpError
         return new self(
             "Tool validation failed for {$toolName}: {$reason}",
             $toolName,
-            -32602 // Invalid params
+            ErrorCodes::INVALID_PARAMS // Invalid params
         );
     }
 }
