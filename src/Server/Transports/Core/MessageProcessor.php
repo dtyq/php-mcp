@@ -15,6 +15,7 @@ use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
 use Dtyq\PhpMcp\Shared\Message\JsonRpcMessage;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
+use Dtyq\PhpMcp\Types\Core\BaseTypes;
 use Exception;
 use stdClass;
 use Throwable;
@@ -60,7 +61,8 @@ class MessageProcessor
             // Parse JSON using JsonUtils for better error handling
             $decoded = JsonUtils::decode($jsonRpc, true);
 
-            if (is_array($decoded) && array_is_list($decoded)) {
+            // Handle both single messages and batch messages
+            if (is_array($decoded) && BaseTypes::arrayIsList($decoded)) {
                 throw new TransportError(
                     'Batch processing is not supported',
                     ErrorCodes::INVALID_REQUEST

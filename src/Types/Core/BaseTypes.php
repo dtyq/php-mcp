@@ -267,6 +267,29 @@ final class BaseTypes
     }
 
     /**
+     * Polyfill for array_is_list() function (PHP 8.1+).
+     * Checks if an array is a list (sequential integer keys starting from 0).
+     *
+     * @param array<mixed> $array
+     */
+    public static function arrayIsList(array $array): bool
+    {
+        if (function_exists('array_is_list')) {
+            return array_is_list($array);
+        }
+
+        // Polyfill implementation for PHP 7.4
+        if (empty($array)) {
+            return true;
+        }
+
+        $keys = array_keys($array);
+        $expectedKeys = range(0, count($array) - 1);
+
+        return $keys === $expectedKeys;
+    }
+
+    /**
      * Check if URI is relative.
      */
     private static function isRelativeUri(string $uri): bool

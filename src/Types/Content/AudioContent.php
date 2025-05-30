@@ -117,12 +117,12 @@ class AudioContent implements ContentInterface
 
     public function isTargetedTo(string $role): bool
     {
-        return $this->annotations?->isTargetedTo($role) ?? false;
+        return $this->annotations !== null ? $this->annotations->isTargetedTo($role) : false;
     }
 
     public function getPriority(): ?float
     {
-        return $this->annotations?->getPriority();
+        return $this->annotations !== null ? $this->annotations->getPriority() : null;
     }
 
     /**
@@ -252,14 +252,21 @@ class AudioContent implements ContentInterface
     {
         $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
-        return match ($extension) {
-            'mp3' => ProtocolConstants::MIME_TYPE_AUDIO_MP3,
-            'wav' => ProtocolConstants::MIME_TYPE_AUDIO_WAV,
-            'ogg' => ProtocolConstants::MIME_TYPE_AUDIO_OGG,
-            'm4a', 'mp4' => ProtocolConstants::MIME_TYPE_AUDIO_M4A,
-            'webm' => ProtocolConstants::MIME_TYPE_AUDIO_WEBM,
-            default => throw ValidationError::invalidFieldValue('filePath', "unsupported audio file extension: {$extension}"),
-        };
+        switch ($extension) {
+            case 'mp3':
+                return ProtocolConstants::MIME_TYPE_AUDIO_MP3;
+            case 'wav':
+                return ProtocolConstants::MIME_TYPE_AUDIO_WAV;
+            case 'ogg':
+                return ProtocolConstants::MIME_TYPE_AUDIO_OGG;
+            case 'm4a':
+            case 'mp4':
+                return ProtocolConstants::MIME_TYPE_AUDIO_M4A;
+            case 'webm':
+                return ProtocolConstants::MIME_TYPE_AUDIO_WEBM;
+            default:
+                throw ValidationError::invalidFieldValue('filePath', "unsupported audio file extension: {$extension}");
+        }
     }
 
     /**
@@ -275,6 +282,6 @@ class AudioContent implements ContentInterface
             ProtocolConstants::MIME_TYPE_AUDIO_WEBM,
         ];
 
-        return in_array($mimeType, $supportedTypes, true) || str_starts_with($mimeType, 'audio/');
+        return in_array($mimeType, $supportedTypes, true) || substr($mimeType, 0, 6) === 'audio/';
     }
 }

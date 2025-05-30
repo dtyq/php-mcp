@@ -98,7 +98,9 @@ class ResourceManagerTest extends TestCase
         // Add another resource
         $configResource = new RegisteredResource(
             new Resource('app://config.json', 'Config File'),
-            fn (string $uri) => new TextResourceContents($uri, '{}', 'application/json')
+            function (string $uri): TextResourceContents {
+                return new TextResourceContents($uri, '{}', 'application/json');
+            }
         );
         $this->resourceManager->register($configResource);
 
@@ -204,7 +206,9 @@ class ResourceManagerTest extends TestCase
         // Create a different resource with the same URI
         $newResource = new RegisteredResource(
             new Resource('file:///test.txt', 'Updated Test File'),
-            fn (string $uri) => new TextResourceContents($uri, 'Updated content', 'text/plain')
+            function (string $uri): TextResourceContents {
+                return new TextResourceContents($uri, 'Updated content', 'text/plain');
+            }
         );
 
         $this->resourceManager->register($newResource);
@@ -251,19 +255,27 @@ class ResourceManagerTest extends TestCase
         $resources = [
             new RegisteredResource(
                 new Resource('file:///docs/readme.txt', 'README'),
-                fn ($uri) => new TextResourceContents($uri, 'README content', 'text/plain')
+                function ($uri): TextResourceContents {
+                    return new TextResourceContents($uri, 'README content', 'text/plain');
+                }
             ),
             new RegisteredResource(
                 new Resource('file:///docs/guide.md', 'User Guide'),
-                fn ($uri) => new TextResourceContents($uri, 'Guide content', 'text/markdown')
+                function ($uri): TextResourceContents {
+                    return new TextResourceContents($uri, 'Guide content', 'text/markdown');
+                }
             ),
             new RegisteredResource(
                 new Resource('app://config/database.json', 'DB Config'),
-                fn ($uri) => new TextResourceContents($uri, '{}', 'application/json')
+                function ($uri): TextResourceContents {
+                    return new TextResourceContents($uri, '{}', 'application/json');
+                }
             ),
             new RegisteredResource(
                 new Resource('app://config/app.json', 'App Config'),
-                fn ($uri) => new TextResourceContents($uri, '{}', 'application/json')
+                function ($uri): TextResourceContents {
+                    return new TextResourceContents($uri, '{}', 'application/json');
+                }
             ),
         ];
 
@@ -275,15 +287,21 @@ class ResourceManagerTest extends TestCase
         $allUris = $this->resourceManager->getUris();
 
         // Find file:// URIs
-        $fileUris = array_filter($allUris, fn ($uri) => str_starts_with($uri, 'file://'));
+        $fileUris = array_filter($allUris, function ($uri) {
+            return substr($uri, 0, 7) === 'file://';
+        });
         $this->assertCount(2, $fileUris);
 
         // Find app://config URIs
-        $configUris = array_filter($allUris, fn ($uri) => str_starts_with($uri, 'app://config'));
+        $configUris = array_filter($allUris, function ($uri) {
+            return substr($uri, 0, 12) === 'app://config';
+        });
         $this->assertCount(2, $configUris);
 
         // Find .json files
-        $jsonUris = array_filter($allUris, fn ($uri) => str_ends_with($uri, '.json'));
+        $jsonUris = array_filter($allUris, function ($uri) {
+            return substr($uri, -5) === '.json';
+        });
         $this->assertCount(2, $jsonUris);
     }
 
@@ -297,7 +315,9 @@ class ResourceManagerTest extends TestCase
                 'text/plain',
                 256
             ),
-            fn ($uri) => new TextResourceContents($uri, 'Content with metadata', 'text/plain')
+            function ($uri): TextResourceContents {
+                return new TextResourceContents($uri, 'Content with metadata', 'text/plain');
+            }
         );
 
         $this->resourceManager->register($resourceWithMetadata);

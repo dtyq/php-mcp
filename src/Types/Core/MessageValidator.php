@@ -101,14 +101,14 @@ final class MessageValidator
             throw ValidationError::invalidFieldType('message', 'array', gettype($decoded), $decoded);
         }
 
-        // Check if it's a batch message (indexed array) or single message (associative array)
-        if (array_is_list($decoded)) {
-            // Batch processing (including empty array)
+        // Check if it's a batch message (array of messages)
+        if (BaseTypes::arrayIsList($decoded)) {
             self::validateBatch($decoded);
-        } else {
-            // Single message
-            self::validateSingleMessage($decoded);
+            return;
         }
+
+        // Single message
+        self::validateSingleMessage($decoded);
     }
 
     /**
@@ -232,7 +232,7 @@ final class MessageValidator
             return $info;
         }
 
-        if (array_is_list($decoded)) {
+        if (BaseTypes::arrayIsList($decoded)) {
             $info['type'] = 'batch';
             $info['isBatch'] = true;
             $info['count'] = count($decoded);
