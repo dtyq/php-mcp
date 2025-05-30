@@ -170,22 +170,22 @@ class InitializeRequest implements RequestInterface
      */
     public static function fromArray(array $data): self
     {
-        if (! isset($data['protocolVersion'])) {
+        if (! isset($data['params']['protocolVersion'])) {
             throw ValidationError::requiredFieldMissing('protocolVersion', 'InitializeRequest');
         }
 
-        if (! isset($data['capabilities'])) {
+        if (! isset($data['params']['capabilities'])) {
             throw ValidationError::requiredFieldMissing('capabilities', 'InitializeRequest');
         }
 
-        if (! isset($data['clientInfo'])) {
+        if (! isset($data['params']['clientInfo'])) {
             throw ValidationError::requiredFieldMissing('clientInfo', 'InitializeRequest');
         }
 
         return new self(
-            $data['protocolVersion'],
-            $data['capabilities'],
-            $data['clientInfo'],
+            $data['params']['protocolVersion'],
+            $data['params']['capabilities'],
+            $data['params']['clientInfo'],
             $data['id'] ?? null
         );
     }
