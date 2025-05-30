@@ -364,6 +364,9 @@ class Tool
     /**
      * Normalize JSON schema by converting null properties to stdClass objects
      * This ensures MCP compatibility as MCP doesn't allow null values for properties.
+     *
+     * @param array<string, mixed> $schema
+     * @return array<string, mixed>
      */
     private function normalizeJsonSchema(array $schema): array
     {

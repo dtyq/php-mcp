@@ -11,6 +11,7 @@ use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Tools\Tool;
 use Dtyq\PhpMcp\Types\Tools\ToolAnnotations;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 /**
  * @internal
@@ -353,7 +354,8 @@ class ToolTest extends TestCase
         $withSchema = $original->withInputSchema($newSchema);
         $this->assertNotSame($original, $withSchema);
         $this->assertSame(['type' => 'object'], $original->getInputSchema());
-        $this->assertSame($newSchema, $withSchema->getInputSchema());
+        $expectedSchema = ['type' => 'object', 'properties' => new stdClass()];
+        $this->assertEquals($expectedSchema, $withSchema->getInputSchema());
 
         $withDescription = $original->withDescription('New description');
         $this->assertNotSame($original, $withDescription);
