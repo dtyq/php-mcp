@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Server\Transports\Core;
 
-use Dtyq\PhpMcp\Server\Transports\TransportMetadata;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;

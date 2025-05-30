@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Server\Transports\Stdio;
 
 use Dtyq\PhpMcp\Server\Transports\Core\AbstractTransport;
-use Dtyq\PhpMcp\Server\Transports\TransportMetadata;
+use Dtyq\PhpMcp\Server\Transports\Core\TransportMetadata;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Exception;

@@ -9,7 +9,6 @@ namespace Dtyq\PhpMcp\Server\Transports\Core;
 
 use Dtyq\PhpMcp\Server\Transports\Core\Handlers\MessageHandlerInterface;
 use Dtyq\PhpMcp\Server\Transports\Core\Handlers\NotificationHandlerInterface;
-use Dtyq\PhpMcp\Server\Transports\TransportMetadata;
 use Dtyq\PhpMcp\Shared\Exceptions\ErrorCodes;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;

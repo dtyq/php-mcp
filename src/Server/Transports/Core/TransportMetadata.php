@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Copyright (c) The Magic , Distributed under the software license
  */
 
-namespace Dtyq\PhpMcp\Server\Transports;
+namespace Dtyq\PhpMcp\Server\Transports\Core;
 
 use Dtyq\PhpMcp\Server\FastMcp\Prompts\PromptManager;
 use Dtyq\PhpMcp\Server\FastMcp\Resources\ResourceManager;

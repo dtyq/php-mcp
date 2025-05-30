@@ -14,8 +14,8 @@ use Dtyq\PhpMcp\Server\FastMcp\Resources\RegisteredResourceTemplate;
 use Dtyq\PhpMcp\Server\FastMcp\Resources\ResourceManager;
 use Dtyq\PhpMcp\Server\FastMcp\Tools\RegisteredTool;
 use Dtyq\PhpMcp\Server\FastMcp\Tools\ToolManager;
+use Dtyq\PhpMcp\Server\Transports\Core\TransportMetadata;
 use Dtyq\PhpMcp\Server\Transports\Stdio\StdioTransport;
-use Dtyq\PhpMcp\Server\Transports\TransportMetadata;
 use Dtyq\PhpMcp\Shared\Exceptions\SystemException;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 

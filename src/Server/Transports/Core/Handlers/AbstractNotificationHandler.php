@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Server\Transports\Core\Handlers;
 
-use Dtyq\PhpMcp\Server\Transports\TransportMetadata;
+use Dtyq\PhpMcp\Server\Transports\Core\TransportMetadata;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Types\Core\NotificationInterface;
 use Dtyq\PhpMcp\Types\Core\ResultInterface;
