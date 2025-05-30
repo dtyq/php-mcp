@@ -133,6 +133,7 @@ final class BaseTypes
             ProtocolConstants::CONTENT_TYPE_TEXT,
             ProtocolConstants::CONTENT_TYPE_IMAGE,
             ProtocolConstants::CONTENT_TYPE_RESOURCE,
+            ProtocolConstants::CONTENT_TYPE_AUDIO,
         ];
 
         if (! in_array($type, $validTypes, true)) {
@@ -236,6 +237,33 @@ final class BaseTypes
     public static function generateCursor(): string
     {
         return base64_encode(uniqid('cursor_', true));
+    }
+
+    /**
+     * Validate base64 encoded data.
+     */
+    public static function isValidBase64(string $data): bool
+    {
+        // Check if the string is valid base64
+        $decoded = base64_decode($data, true);
+        if ($decoded === false) {
+            return false;
+        }
+        return base64_encode($decoded) === $data;
+    }
+
+    /**
+     * Format bytes into human-readable format.
+     */
+    public static function formatBytes(int $bytes, int $precision = 2): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+
+        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; ++$i) {
+            $bytes /= 1024;
+        }
+
+        return round($bytes, $precision) . ' ' . $units[$i];
     }
 
     /**

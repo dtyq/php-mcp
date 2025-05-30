@@ -22,14 +22,17 @@ class ProgressNotificationTest extends TestCase
         $progressToken = 'token_123';
         $progress = 50;
         $total = 100;
+        $message = 'Processing files...';
         $meta = ['timestamp' => '2025-01-01T00:00:00Z'];
 
-        $notification = new ProgressNotification($progressToken, $progress, $total, $meta);
+        $notification = new ProgressNotification($progressToken, $progress, $total, $message, $meta);
 
         $this->assertSame('notifications/progress', $notification->getMethod());
         $this->assertSame($progressToken, $notification->getProgressToken());
         $this->assertSame($progress, $notification->getProgress());
         $this->assertSame($total, $notification->getTotal());
+        $this->assertSame($message, $notification->getMessage());
+        $this->assertTrue($notification->hasMessage());
         $this->assertTrue($notification->hasMeta());
         $this->assertSame($meta, $notification->getMeta());
     }
@@ -176,7 +179,7 @@ class ProgressNotificationTest extends TestCase
     public function testGetParamsWithMeta(): void
     {
         $meta = ['timestamp' => '2025-01-01T00:00:00Z'];
-        $notification = new ProgressNotification('token', 25, null, $meta);
+        $notification = new ProgressNotification('token', 25, null, null, $meta);
 
         $params = $notification->getParams();
         $this->assertArrayHasKey('_meta', $params);

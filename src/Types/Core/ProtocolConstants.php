@@ -65,6 +65,8 @@ final class ProtocolConstants
 
     public const CONTENT_TYPE_RESOURCE = 'resource';
 
+    public const CONTENT_TYPE_AUDIO = 'audio';
+
     // Stop reasons for sampling
     public const STOP_REASON_END_TURN = 'endTurn';
 
@@ -169,6 +171,17 @@ final class ProtocolConstants
     public const MIME_TYPE_IMAGE_GIF = 'image/gif';
 
     public const MIME_TYPE_IMAGE_WEBP = 'image/webp';
+
+    // Audio MIME types
+    public const MIME_TYPE_AUDIO_MP3 = 'audio/mpeg';
+
+    public const MIME_TYPE_AUDIO_WAV = 'audio/wav';
+
+    public const MIME_TYPE_AUDIO_OGG = 'audio/ogg';
+
+    public const MIME_TYPE_AUDIO_M4A = 'audio/mp4';
+
+    public const MIME_TYPE_AUDIO_WEBM = 'audio/webm';
 
     // Transport types
     public const TRANSPORT_TYPE_STDIO = 'stdio';

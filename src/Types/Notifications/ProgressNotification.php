@@ -27,6 +27,8 @@ class ProgressNotification implements NotificationInterface
 
     private ?int $total = null;
 
+    private ?string $message = null;
+
     /** @var null|array<string, mixed> */
     private ?array $meta = null;
 
@@ -34,13 +36,15 @@ class ProgressNotification implements NotificationInterface
      * @param int|string $progressToken The progress token from the original request
      * @param int $progress Current progress value (should increase over time)
      * @param null|int $total Total expected progress (optional)
+     * @param null|string $message Descriptive status message (MCP 2025-03-26)
      * @param null|array<string, mixed> $meta Optional meta information
      */
-    public function __construct($progressToken, int $progress, ?int $total = null, ?array $meta = null)
+    public function __construct($progressToken, int $progress, ?int $total = null, ?string $message = null, ?array $meta = null)
     {
         $this->setProgressToken($progressToken);
         $this->setProgress($progress);
         $this->total = $total;
+        $this->message = $message;
         $this->meta = $meta;
     }
 
@@ -59,6 +63,10 @@ class ProgressNotification implements NotificationInterface
 
         if ($this->total !== null) {
             $params['total'] = $this->total;
+        }
+
+        if ($this->message !== null) {
+            $params['message'] = $this->message;
         }
 
         if ($this->meta !== null) {
@@ -162,6 +170,30 @@ class ProgressNotification implements NotificationInterface
     }
 
     /**
+     * Get the descriptive status message.
+     */
+    public function getMessage(): ?string
+    {
+        return $this->message;
+    }
+
+    /**
+     * Set the descriptive status message.
+     */
+    public function setMessage(?string $message): void
+    {
+        $this->message = $message;
+    }
+
+    /**
+     * Check if progress notification has a descriptive message.
+     */
+    public function hasMessage(): bool
+    {
+        return $this->message !== null && $this->message !== '';
+    }
+
+    /**
      * Create from array data.
      *
      * @param array<string, mixed> $data
@@ -185,6 +217,7 @@ class ProgressNotification implements NotificationInterface
             $data['params']['progressToken'],
             $data['params']['progress'],
             $data['params']['total'] ?? null,
+            $data['params']['message'] ?? null,
             $data['params']['_meta'] ?? null
         );
     }
