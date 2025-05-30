@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Shared\Utilities;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Exception;
 use JsonException;
 
 /**
@@ -86,7 +87,7 @@ class JsonUtils
     ) {
         try {
             return json_decode($json, $associative, $depth, $flags);
-        } catch (JsonException $e) {
+        } catch (Exception $e) {
             throw ValidationError::invalidJsonFormat("JSON decoding failed: {$e->getMessage()}");
         }
     }

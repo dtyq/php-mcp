@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Shared\Message;
 
 use JsonException;
+use stdClass;
 
 /**
  * Represents a JSON-RPC 2.0 message.
@@ -91,6 +92,9 @@ class JsonRpcMessage
         $this->method = $method;
         $this->params = $params;
         $this->id = $id;
+        if (is_array($result) && empty($result)) {
+            $result = new stdClass();
+        }
         $this->result = $result;
         $this->error = $error;
     }

@@ -9,6 +9,7 @@ namespace Dtyq\PhpMcp\Types\Prompts;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Core\BaseTypes;
+use Dtyq\PhpMcp\Types\Core\ResultInterface;
 
 /**
  * Result of getting a prompt template.
@@ -16,13 +17,16 @@ use Dtyq\PhpMcp\Types\Core\BaseTypes;
  * Contains the generated messages and optional description for a prompt
  * that has been invoked with specific arguments.
  */
-class GetPromptResult
+class GetPromptResult implements ResultInterface
 {
     /** @var null|string Optional description of the prompt result */
     private ?string $description;
 
     /** @var array<PromptMessage> The generated messages */
     private array $messages;
+
+    /** @var null|array<string, mixed> */
+    private ?array $meta = null;
 
     /**
      * @param array<PromptMessage> $messages
@@ -314,5 +318,30 @@ class GetPromptResult
             }
         }
         return new self($description, $messages);
+    }
+
+    public function hasMeta(): bool
+    {
+        return $this->meta !== null;
+    }
+
+    public function getMeta(): ?array
+    {
+        return $this->meta;
+    }
+
+    public function setMeta(?array $meta): void
+    {
+        $this->meta = $meta;
+    }
+
+    public function isPaginated(): bool
+    {
+        return false;
+    }
+
+    public function getNextCursor(): ?string
+    {
+        return null;
     }
 }

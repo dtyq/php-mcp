@@ -7,64 +7,51 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Server\Transports\Core;
 
+use Dtyq\PhpMcp\Server\Transports\Core\Handlers\MessageHandlerInterface;
+use Dtyq\PhpMcp\Server\Transports\Core\Handlers\NotificationHandlerInterface;
 use Dtyq\PhpMcp\Server\Transports\TransportMetadata;
 use Dtyq\PhpMcp\Shared\Exceptions\ErrorCodes;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
 use Dtyq\PhpMcp\Shared\Message\JsonRpcMessage;
-use Dtyq\PhpMcp\Shared\Message\MessageUtils;
+use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Exception;
-use InvalidArgumentException;
 use stdClass;
+use Throwable;
 
-/**
- * Processes JSON-RPC messages and integrates with FastMcp components.
- *
- * This class handles the core message processing logic for MCP transports,
- * routing messages to appropriate FastMcp managers and ensuring compliance
- * with MCP 2025-03-26 specification.
- */
 class MessageProcessor
 {
-    private TransportMetadata $transportMetadata;
+    private Application $application;
 
     private LoggerProxy $logger;
 
+    private TransportMetadata $transportMetadata;
+
+    private HandlerFactory $handlerFactory;
+
     public function __construct(Application $app, TransportMetadata $transportMetadata)
     {
+        $this->application = $app;
         $this->transportMetadata = $transportMetadata;
         $this->logger = $app->getLogger();
+        $this->handlerFactory = new HandlerFactory();
     }
 
-    /**
-     * Process a JSON-RPC message and return response if needed.
-     *
-     * @param string $jsonRpc The JSON-RPC message string
-     * @return null|string The response message, or null if no response needed
-     * @throws TransportError If message processing fails
-     */
     public function processJsonRpc(string $jsonRpc): ?string
     {
         try {
-            // Validate UTF-8 encoding (MCP requirement)
-            if (! $this->validateUtf8($jsonRpc)) {
-                $errorResponse = MessageUtils::createParseErrorResponse('Message is not valid UTF-8');
-                return $errorResponse->toJson();
-            }
+            // Parse JSON using JsonUtils for better error handling
+            $decoded = JsonUtils::decode($jsonRpc, true);
 
-            // Parse JSON
-            $decoded = json_decode($jsonRpc, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                $errorResponse = MessageUtils::createParseErrorResponse('Invalid JSON: ' . json_last_error_msg());
-                return $errorResponse->toJson();
-            }
-
-            // Handle batch or single message
             if (is_array($decoded) && isset($decoded[0])) {
-                return $this->handleBatch($decoded);
+                throw new TransportError(
+                    'Batch processing is not supported',
+                    ErrorCodes::INVALID_REQUEST
+                );
             }
+
             return $this->handleSingleMessage($decoded);
         } catch (Exception $e) {
             $this->logger->error('Message processing failed', [
@@ -73,134 +60,6 @@ class MessageProcessor
             ]);
             throw $e;
         }
-    }
-
-    /**
-     * Handle a batch of JSON-RPC messages.
-     *
-     * @param array<int, array<string, mixed>> $batch Array of JSON-RPC messages
-     * @return null|string The batch response, or null if no responses needed
-     */
-    public function handleBatch(array $batch): ?string
-    {
-        $responses = [];
-
-        foreach ($batch as $message) {
-            if (! is_array($message)) {
-                throw TransportError::malformedMessage('json-rpc', 'Invalid batch message format');
-            }
-
-            if (isset($message['method'], $message['id'])) {
-                // Request in batch - collect response
-                $response = $this->handleRequest($message);
-                if (! empty($response)) {
-                    $responses[] = $response;
-                }
-            } elseif (isset($message['method'])) {
-                // Notification in batch - no response
-                $this->handleNotification($message);
-            } elseif (isset($message['result']) || isset($message['error'])) {
-                // Response in batch - handle but don't respond
-                $this->handleResponse($message);
-            }
-        }
-
-        return empty($responses) ? null : json_encode($responses);
-    }
-
-    /**
-     * Handle a JSON-RPC request.
-     *
-     * @param array<string, mixed> $request The request message
-     * @return array<string, mixed> The response message
-     */
-    public function handleRequest(array $request): array
-    {
-        $method = $request['method'] ?? '';
-        $params = $request['params'] ?? [];
-        $id = $request['id'] ?? null;
-
-        try {
-            $response = $this->routeRequest($id, $method, $params);
-            return $response->toArray();
-        } catch (InvalidArgumentException $e) {
-            // Method not found or invalid arguments
-            $this->logger->warning('Method not found or invalid arguments', [
-                'method' => $method,
-                'error' => $e->getMessage(),
-            ]);
-
-            $errorResponse = MessageUtils::createMethodNotFoundErrorResponse($id, $method);
-            return $errorResponse->toArray();
-        } catch (Exception $e) {
-            $this->logger->error('Request handling failed', [
-                'method' => $method,
-                'params' => $params,
-                'error' => $e->getMessage(),
-            ]);
-
-            // Use MessageUtils to create the error response
-            $errorResponse = MessageUtils::createErrorResponse(
-                $id,
-                ErrorCodes::INTERNAL_ERROR,
-                $e->getMessage()
-            );
-            return $errorResponse->toArray();
-        }
-    }
-
-    /**
-     * Handle a JSON-RPC notification.
-     *
-     * @param array<string, mixed> $notification The notification message
-     */
-    public function handleNotification(array $notification): void
-    {
-        $method = $notification['method'] ?? '';
-        $params = $notification['params'] ?? [];
-
-        try {
-            $this->routeNotification($method, $params);
-        } catch (Exception $e) {
-            $this->logger->error('Notification handling failed', [
-                'method' => $method,
-                'params' => $params,
-                'error' => $e->getMessage(),
-            ]);
-        }
-    }
-
-    /**
-     * Handle a JSON-RPC response.
-     *
-     * @param array<string, mixed> $response The response message
-     */
-    public function handleResponse(array $response): void
-    {
-        $id = $response['id'] ?? null;
-
-        if (isset($response['result'])) {
-            $this->logger->debug('Received response', [
-                'id' => $id,
-                'result' => $response['result'],
-            ]);
-        } elseif (isset($response['error'])) {
-            $this->logger->warning('Received error response', [
-                'id' => $id,
-                'error' => $response['error'],
-            ]);
-        }
-    }
-
-    /**
-     * Validate that a message is valid UTF-8.
-     *
-     * @param string $message The message to validate
-     * @return bool True if valid UTF-8, false otherwise
-     */
-    public function validateUtf8(string $message): bool
-    {
-        return mb_check_encoding($message, 'UTF-8');
     }
 
     /**
@@ -241,123 +100,58 @@ class MessageProcessor
     /**
      * Handle a single JSON-RPC message.
      *
-     * @param array<string, mixed> $message The decoded JSON-RPC message
-     * @return null|string The response message, or null if no response needed
+     * @param array<string, mixed> $decoded The decoded message array
+     * @return null|string The response JSON string or null
      */
-    private function handleSingleMessage(array $message): ?string
+    protected function handleSingleMessage(array $decoded): ?string
     {
-        if (isset($message['method'])) {
-            if (isset($message['id'])) {
-                // Request - needs response
-                $response = $this->handleRequest($message);
-                return json_encode($response);
+        $method = $decoded['method'] ?? '';
+        $id = $decoded['id'] ?? null;
+        $response = null;
+        try {
+            $handler = $this->handlerFactory->createHandler($this->application, $method);
+            if (! $handler) {
+                return null;
             }
-            // Notification - no response
-            $this->handleNotification($message);
-            return null;
+            $result = null;
+            if ($handler instanceof NotificationHandlerInterface) {
+                $result = $handler->handle($handler->createNotification($decoded), $this->transportMetadata);
+            }
+            if ($handler instanceof MessageHandlerInterface) {
+                $result = $handler->handle($handler->createRequest($decoded), $this->transportMetadata);
+            }
+
+            if ($result) {
+                $response = JsonRpcMessage::createResponse($id, $result->toArray());
+            }
+        } catch (Throwable $e) {
+            $this->logger->error('Request handling failed', [
+                'method' => $method,
+                'params' => $decoded,
+                'error' => $e->getMessage(),
+            ]);
+
+            $response = JsonRpcMessage::createError(
+                $id,
+                [
+                    'code' => ErrorCodes::INTERNAL_ERROR,
+                    'message' => $e->getMessage(),
+                    'data' => new stdClass(),
+                ],
+            );
         }
-        if (isset($message['result']) || isset($message['error'])) {
-            // Response - handle but don't respond
-            $this->handleResponse($message);
-            return null;
-        }
-        throw TransportError::malformedMessage('json-rpc', 'Invalid JSON-RPC message structure');
+        return $response ? $response->toJson() : null;
     }
 
     /**
-     * Route a request to the appropriate FastMcp manager.
+     * Validate that a message is valid UTF-8.
      *
-     * @param int|string $requestId Request ID being responded to
-     * @param string $method The method name
-     * @param array<string, mixed> $params The method parameters
-     * @return JsonRpcMessage The result
+     * @param string $message The message to validate
+     * @return bool True if valid UTF-8, false otherwise
      */
-    private function routeRequest($requestId, string $method, array $params): JsonRpcMessage
+    private function validateUtf8(string $message): bool
     {
-        switch ($method) {
-            case ProtocolConstants::METHOD_INITIALIZE:
-                $capabilities = [
-                    'instructions' => $this->transportMetadata->getInstructions() ?: '',
-                    'logging' => new stdClass(),
-                ];
-                if ($this->transportMetadata->getToolManager()->count() > 0) {
-                    $capabilities['tools'] = [
-                        'listChanged' => false,
-                    ];
-                }
-                if ($this->transportMetadata->getPromptManager()->count() > 0) {
-                    $capabilities['prompts'] = [
-                        'listChanged' => false,
-                    ];
-                }
-                if ($this->transportMetadata->getResourceManager()->count() > 0) {
-                    $capabilities['resources'] = [
-                        'listChanged' => false,
-                    ];
-                }
-                $serverInfo = [
-                    'name' => $this->transportMetadata->getName() ?: 'php-mcp-server',
-                    'version' => $this->transportMetadata->getVersion() ?: '1.0.0',
-                ];
-                return MessageUtils::createInitializeResponse($requestId, $serverInfo, $capabilities);
-            case ProtocolConstants::METHOD_PING:
-                return MessageUtils::createPongResponse($requestId);
-            case ProtocolConstants::METHOD_TOOLS_LIST:
-                $tools = $this->transportMetadata->getToolManager()->getAll();
-                $toolsArray = array_map(function ($registeredTool) {
-                    return $registeredTool->getTool()->toArray();
-                }, $tools);
-                return MessageUtils::createToolsListResponse($requestId, $toolsArray);
-            case ProtocolConstants::METHOD_TOOLS_CALL:
-                $name = $params['name'] ?? '';
-                $arguments = $params['arguments'] ?? [];
-                $result = $this->transportMetadata->getToolManager()->execute($name, $arguments);
-                return MessageUtils::createToolsCallResponse($requestId, $result);
-            case ProtocolConstants::METHOD_PROMPTS_LIST:
-                $prompts = $this->transportMetadata->getPromptManager()->getAll();
-                $promptsArray = array_map(function ($registeredPrompt) {
-                    return $registeredPrompt->getPrompt()->toArray();
-                }, $prompts);
-                return MessageUtils::createPromptsListResponse($requestId, $promptsArray);
-            case ProtocolConstants::METHOD_PROMPTS_GET:
-                $name = $params['name'] ?? '';
-                $arguments = $params['arguments'] ?? [];
-                $result = $this->transportMetadata->getPromptManager()->execute($name, $arguments);
-                return MessageUtils::createPromptsGetResponse($requestId, $result->toArray());
-            case ProtocolConstants::METHOD_RESOURCES_LIST:
-                $resources = $this->transportMetadata->getResourceManager()->getAll();
-                $resourcesArray = array_map(function ($registeredResource) {
-                    return $registeredResource->getResource()->toArray();
-                }, $resources);
-                return MessageUtils::createResourcesListResponse($requestId, $resourcesArray);
-            case ProtocolConstants::METHOD_RESOURCES_READ:
-                $uri = $params['uri'] ?? '';
-                $content = $this->transportMetadata->getResourceManager()->getContent($uri);
-                return MessageUtils::createResourcesReadResponse($requestId, $content->toArray());
-            default:
-                throw new InvalidArgumentException("Unknown method: {$method}");
-        }
-    }
-
-    /**
-     * Route a notification to the appropriate handler.
-     *
-     * @param string $method The method name
-     * @param array<string, mixed> $params The method parameters
-     */
-    private function routeNotification(string $method, array $params): void
-    {
-        switch ($method) {
-            case ProtocolConstants::NOTIFICATION_INITIALIZED:
-                $this->logger->info('Client initialized');
-                break;
-            case ProtocolConstants::NOTIFICATION_CANCELLED:
-                $id = $params['id'] ?? null;
-                $this->logger->info('Request cancelled', ['id' => $id]);
-                break;
-            default:
-                $this->logger->warning('Unknown notification method', ['method' => $method]);
-        }
+        return mb_check_encoding($message, 'UTF-8');
     }
 
     /**
