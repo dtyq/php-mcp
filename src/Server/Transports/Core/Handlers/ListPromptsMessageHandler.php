@@ -36,4 +36,4 @@ class ListPromptsMessageHandler extends AbstractMessageHandler
         // Use ListPromptsResult for type safety
         return new ListPromptsResult($promptObjects);
     }
-} 
+}

@@ -35,4 +35,4 @@ class ReadResourceMessageHandler extends AbstractMessageHandler
         // Use ReadResourceResult for type safety
         return new ReadResourceResult([$contents]);
     }
-} 
+}

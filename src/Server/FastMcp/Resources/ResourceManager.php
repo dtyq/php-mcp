@@ -10,16 +10,20 @@ namespace Dtyq\PhpMcp\Server\FastMcp\Resources;
 use Dtyq\PhpMcp\Shared\Exceptions\ResourceError;
 use Dtyq\PhpMcp\Types\Resources\Resource;
 use Dtyq\PhpMcp\Types\Resources\ResourceContents;
+use Dtyq\PhpMcp\Types\Resources\ResourceTemplate;
 
 /**
  * Simple resource registration manager.
  *
- * Manages resource registration and access.
+ * Manages resource registration and access, including resource templates.
  */
 class ResourceManager
 {
     /** @var array<string, RegisteredResource> Registered resources indexed by URI */
     private array $resources = [];
+
+    /** @var array<string, RegisteredResourceTemplate> Registered resource templates indexed by URI template */
+    private array $templates = [];
 
     /**
      * Register a resource.
@@ -27,6 +31,14 @@ class ResourceManager
     public function register(RegisteredResource $registeredResource): void
     {
         $this->resources[$registeredResource->getUri()] = $registeredResource;
+    }
+
+    /**
+     * Register a resource template.
+     */
+    public function registerTemplate(RegisteredResourceTemplate $registeredTemplate): void
+    {
+        $this->templates[$registeredTemplate->getUriTemplate()] = $registeredTemplate;
     }
 
     /**
@@ -38,11 +50,27 @@ class ResourceManager
     }
 
     /**
+     * Get a registered resource template by URI template.
+     */
+    public function getTemplate(string $uriTemplate): ?RegisteredResourceTemplate
+    {
+        return $this->templates[$uriTemplate] ?? null;
+    }
+
+    /**
      * Check if resource exists.
      */
     public function has(string $uri): bool
     {
         return isset($this->resources[$uri]);
+    }
+
+    /**
+     * Check if resource template exists.
+     */
+    public function hasTemplate(string $uriTemplate): bool
+    {
+        return isset($this->templates[$uriTemplate]);
     }
 
     /**
@@ -52,6 +80,18 @@ class ResourceManager
     {
         if (isset($this->resources[$uri])) {
             unset($this->resources[$uri]);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Remove a resource template.
+     */
+    public function removeTemplate(string $uriTemplate): bool
+    {
+        if (isset($this->templates[$uriTemplate])) {
+            unset($this->templates[$uriTemplate]);
             return true;
         }
         return false;
@@ -68,6 +108,16 @@ class ResourceManager
     }
 
     /**
+     * Get all template URI templates.
+     *
+     * @return array<string>
+     */
+    public function getTemplateUris(): array
+    {
+        return array_keys($this->templates);
+    }
+
+    /**
      * Get all registered resources.
      *
      * @return array<RegisteredResource>
@@ -75,6 +125,16 @@ class ResourceManager
     public function getAll(): array
     {
         return array_values($this->resources);
+    }
+
+    /**
+     * Get all registered resource templates.
+     *
+     * @return array<RegisteredResourceTemplate>
+     */
+    public function getAllTemplates(): array
+    {
+        return array_values($this->templates);
     }
 
     /**
@@ -86,6 +146,14 @@ class ResourceManager
     }
 
     /**
+     * Get template count.
+     */
+    public function countTemplates(): int
+    {
+        return count($this->templates);
+    }
+
+    /**
      * Clear all resources.
      */
     public function clear(): void
@@ -94,16 +162,48 @@ class ResourceManager
     }
 
     /**
+     * Clear all resource templates.
+     */
+    public function clearTemplates(): void
+    {
+        $this->templates = [];
+    }
+
+    /**
      * Access a resource by URI.
      */
     public function getContent(string $uri): ResourceContents
     {
+        // First check for exact resource match
         $registeredResource = $this->get($uri);
-        if ($registeredResource === null) {
-            throw ResourceError::unknownResource($uri);
+        if ($registeredResource !== null) {
+            return $registeredResource->getContent();
         }
 
-        return $registeredResource->getContent();
+        // Then check templates for pattern match
+        foreach ($this->templates as $template) {
+            $parameters = $this->matchUriTemplate($template->getUriTemplate(), $uri);
+            if ($parameters !== null) {
+                return $template->generateContent($parameters);
+            }
+        }
+
+        throw ResourceError::unknownResource($uri);
+    }
+
+    /**
+     * Generate resource content from template.
+     *
+     * @param array<string, mixed> $parameters Template parameters
+     */
+    public function generateFromTemplate(string $uriTemplate, array $parameters = []): ResourceContents
+    {
+        $registeredTemplate = $this->getTemplate($uriTemplate);
+        if ($registeredTemplate === null) {
+            throw ResourceError::unknownResource($uriTemplate);
+        }
+
+        return $registeredTemplate->generateContent($parameters);
     }
 
     /**
@@ -117,6 +217,22 @@ class ResourceManager
         foreach ($this->resources as $uri => $resource) {
             if (fnmatch($pattern, $uri)) {
                 $matches[] = $resource;
+            }
+        }
+        return $matches;
+    }
+
+    /**
+     * Find templates by pattern matching against URI template.
+     *
+     * @return array<RegisteredResourceTemplate>
+     */
+    public function findTemplatesByPattern(string $pattern): array
+    {
+        $matches = [];
+        foreach ($this->templates as $uriTemplate => $template) {
+            if (fnmatch($pattern, $uriTemplate)) {
+                $matches[] = $template;
             }
         }
         return $matches;
@@ -139,6 +255,22 @@ class ResourceManager
     }
 
     /**
+     * Find templates by MIME type.
+     *
+     * @return array<RegisteredResourceTemplate>
+     */
+    public function findTemplatesByMimeType(string $mimeType): array
+    {
+        $matches = [];
+        foreach ($this->templates as $template) {
+            if ($template->getMimeType() === $mimeType) {
+                $matches[] = $template;
+            }
+        }
+        return $matches;
+    }
+
+    /**
      * Get all resource metadata without content.
      *
      * @return array<\Dtyq\PhpMcp\Types\Resources\Resource>
@@ -149,5 +281,44 @@ class ResourceManager
             fn (RegisteredResource $registered) => $registered->getResource(),
             $this->resources
         );
+    }
+
+    /**
+     * Get all template metadata.
+     *
+     * @return array<ResourceTemplate>
+     */
+    public function getTemplateMetadata(): array
+    {
+        return array_map(
+            fn (RegisteredResourceTemplate $registered) => $registered->getTemplate(),
+            $this->templates
+        );
+    }
+
+    /**
+     * Match URI against template pattern and extract parameters.
+     *
+     * @return null|array<string, string>
+     */
+    private function matchUriTemplate(string $template, string $uri): ?array
+    {
+        // Convert URI template to regex pattern
+        // Replace {variable} with named capture groups
+        $pattern = preg_replace('/\{([^}]+)\}/', '(?P<$1>[^/]+)', $template);
+        $pattern = '#^' . str_replace('/', '\/', $pattern) . '$#';
+
+        if (preg_match($pattern, $uri, $matches)) {
+            // Extract only named captures
+            $parameters = [];
+            foreach ($matches as $key => $value) {
+                if (is_string($key)) {
+                    $parameters[$key] = $value;
+                }
+            }
+            return $parameters;
+        }
+
+        return null;
     }
 }

@@ -8,6 +8,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use Dtyq\PhpMcp\Server\FastMcp\Prompts\RegisteredPrompt;
 use Dtyq\PhpMcp\Server\FastMcp\Resources\RegisteredResource;
+use Dtyq\PhpMcp\Server\FastMcp\Resources\RegisteredResourceTemplate;
 use Dtyq\PhpMcp\Server\FastMcp\Tools\RegisteredTool;
 use Dtyq\PhpMcp\Server\McpServer;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
@@ -18,6 +19,7 @@ use Dtyq\PhpMcp\Types\Prompts\Prompt;
 use Dtyq\PhpMcp\Types\Prompts\PromptArgument;
 use Dtyq\PhpMcp\Types\Prompts\PromptMessage;
 use Dtyq\PhpMcp\Types\Resources\Resource;
+use Dtyq\PhpMcp\Types\Resources\ResourceTemplate;
 use Dtyq\PhpMcp\Types\Resources\TextResourceContents;
 use Dtyq\PhpMcp\Types\Tools\Tool;
 use Psr\Container\ContainerInterface;
@@ -195,6 +197,127 @@ function createSystemInfoResource(): RegisteredResource
     });
 }
 
+function createUserProfileTemplate(): RegisteredResourceTemplate
+{
+    $template = new ResourceTemplate(
+        'user://{userId}/profile',
+        'User Profile Template',
+        'Generate user profile based on user ID',
+        'application/json'
+    );
+
+    return new RegisteredResourceTemplate($template, function (array $parameters): TextResourceContents {
+        $userId = $parameters['userId'] ?? 'unknown';
+
+        // Generate mock user profile
+        $profile = [
+            'userId' => $userId,
+            'username' => 'user_' . $userId,
+            'email' => "user{$userId}@example.com",
+            'displayName' => 'User ' . ucfirst($userId),
+            'role' => $userId === 'admin' ? 'administrator' : 'user',
+            'createdAt' => date('c'),
+            'lastSeen' => date('c', time() - rand(0, 86400)),
+            'preferences' => [
+                'theme' => $userId === 'admin' ? 'dark' : 'light',
+                'language' => 'en',
+                'notifications' => true,
+            ],
+        ];
+
+        $uri = "user://{$userId}/profile";
+        return new TextResourceContents($uri, json_encode($profile, JSON_PRETTY_PRINT), 'application/json');
+    });
+}
+
+function createConfigTemplate(): RegisteredResourceTemplate
+{
+    $template = new ResourceTemplate(
+        'config://{module}/{environment}',
+        'Configuration Template',
+        'Generate configuration files for different modules and environments',
+        'application/json'
+    );
+
+    return new RegisteredResourceTemplate($template, function (array $parameters): TextResourceContents {
+        $module = $parameters['module'] ?? 'default';
+        $environment = $parameters['environment'] ?? 'development';
+
+        // Generate mock configuration
+        $config = [
+            'module' => $module,
+            'environment' => $environment,
+            'version' => '1.0.0',
+            'settings' => [
+                'debug' => $environment === 'development',
+                'log_level' => $environment === 'production' ? 'warning' : 'debug',
+                'cache_enabled' => $environment === 'production',
+                'api_endpoint' => "https://api.{$environment}.example.com",
+            ],
+            'database' => [
+                'host' => "db.{$environment}.example.com",
+                'port' => 5432,
+                'name' => "{$module}_{$environment}",
+                'pool_size' => $environment === 'production' ? 20 : 5,
+            ],
+            'features' => [
+                'beta_features' => $environment !== 'production',
+                'analytics' => $environment === 'production',
+                'rate_limiting' => $environment === 'production',
+            ],
+        ];
+
+        $uri = "config://{$module}/{$environment}";
+        return new TextResourceContents($uri, json_encode($config, JSON_PRETTY_PRINT), 'application/json');
+    });
+}
+
+function createDocumentTemplate(): RegisteredResourceTemplate
+{
+    $template = new ResourceTemplate(
+        'docs://{category}/{docId}',
+        'Documentation Template',
+        'Generate documentation content based on category and document ID',
+        'text/markdown'
+    );
+
+    return new RegisteredResourceTemplate($template, function (array $parameters): TextResourceContents {
+        $category = $parameters['category'] ?? 'general';
+        $docId = $parameters['docId'] ?? 'intro';
+
+        // Generate mock documentation
+        $title = ucfirst($category) . ' - ' . ucfirst($docId);
+        $content = "# {$title}\n\n";
+        $content .= "This is automatically generated documentation for the **{$category}** category.\n\n";
+        $content .= "## Overview\n\n";
+        $content .= "Document ID: `{$docId}`\n";
+        $content .= "Category: `{$category}`\n";
+        $content .= 'Generated: ' . date('Y-m-d H:i:s') . "\n\n";
+        $content .= "## Content\n\n";
+
+        switch ($category) {
+            case 'api':
+                $content .= "### API Reference for {$docId}\n\n";
+                $content .= "```http\nGET /api/{$docId}\nContent-Type: application/json\n```\n\n";
+                $content .= "**Response:**\n```json\n{\n  \"status\": \"success\",\n  \"data\": {...}\n}\n```\n";
+                break;
+            case 'tutorial':
+                $content .= "### Step-by-step Tutorial: {$docId}\n\n";
+                $content .= "1. First step\n2. Second step\n3. Final step\n\n";
+                $content .= "> **Note:** This is a tutorial for {$docId}\n";
+                break;
+            default:
+                $content .= "This is general documentation content for {$docId}.\n\n";
+                $content .= "- Point 1\n- Point 2\n- Point 3\n";
+        }
+
+        $content .= "\n---\n*Generated by PHP MCP Resource Template*\n";
+
+        $uri = "docs://{$category}/{$docId}";
+        return new TextResourceContents($uri, $content, 'text/markdown');
+    });
+}
+
 // Create application
 $app = new Application($container, $config);
 
@@ -206,4 +329,7 @@ $server
     ->registerTool(createCalculatorTool())
     ->registerPrompt(createGreetingPrompt())
     ->registerResource(createSystemInfoResource())
+    ->registerTemplate(createUserProfileTemplate())
+    ->registerTemplate(createConfigTemplate())
+    ->registerTemplate(createDocumentTemplate())
     ->stdio(); // Start stdio transport

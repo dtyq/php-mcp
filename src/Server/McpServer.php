@@ -10,6 +10,7 @@ namespace Dtyq\PhpMcp\Server;
 use Dtyq\PhpMcp\Server\FastMcp\Prompts\PromptManager;
 use Dtyq\PhpMcp\Server\FastMcp\Prompts\RegisteredPrompt;
 use Dtyq\PhpMcp\Server\FastMcp\Resources\RegisteredResource;
+use Dtyq\PhpMcp\Server\FastMcp\Resources\RegisteredResourceTemplate;
 use Dtyq\PhpMcp\Server\FastMcp\Resources\ResourceManager;
 use Dtyq\PhpMcp\Server\FastMcp\Tools\RegisteredTool;
 use Dtyq\PhpMcp\Server\FastMcp\Tools\ToolManager;
@@ -61,6 +62,12 @@ class McpServer
     public function registerResource(RegisteredResource $resource): self
     {
         $this->resourceManager->register($resource);
+        return $this;
+    }
+
+    public function registerTemplate(RegisteredResourceTemplate $template): self
+    {
+        $this->resourceManager->registerTemplate($template);
         return $this;
     }
 

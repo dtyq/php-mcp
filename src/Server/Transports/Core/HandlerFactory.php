@@ -10,10 +10,11 @@ namespace Dtyq\PhpMcp\Server\Transports\Core;
 use Dtyq\PhpMcp\Server\Transports\Core\Handlers\CallToolMessageHandler;
 use Dtyq\PhpMcp\Server\Transports\Core\Handlers\CancelledNotificationMessageHandler;
 use Dtyq\PhpMcp\Server\Transports\Core\Handlers\GetPromptMessageHandler;
-use Dtyq\PhpMcp\Server\Transports\Core\Handlers\InitializeMessageHandler;
 use Dtyq\PhpMcp\Server\Transports\Core\Handlers\InitializedNotificationMessageHandler;
+use Dtyq\PhpMcp\Server\Transports\Core\Handlers\InitializeMessageHandler;
 use Dtyq\PhpMcp\Server\Transports\Core\Handlers\ListPromptsMessageHandler;
 use Dtyq\PhpMcp\Server\Transports\Core\Handlers\ListResourcesMessageHandler;
+use Dtyq\PhpMcp\Server\Transports\Core\Handlers\ListResourceTemplatesMessageHandler;
 use Dtyq\PhpMcp\Server\Transports\Core\Handlers\ListToolsMessageHandler;
 use Dtyq\PhpMcp\Server\Transports\Core\Handlers\MessageHandlerInterface;
 use Dtyq\PhpMcp\Server\Transports\Core\Handlers\NotificationHandlerInterface;
@@ -28,7 +29,7 @@ use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
  *
  * Uses the Factory pattern to provide appropriate handlers for different message types,
  * supporting both requests (with responses) and notifications (fire-and-forget).
- * 
+ *
  * Based on MCP Protocol Revision: 2025-03-26
  */
 class HandlerFactory
@@ -49,6 +50,7 @@ class HandlerFactory
 
         // Resource methods
         ProtocolConstants::METHOD_RESOURCES_LIST => ListResourcesMessageHandler::class,
+        ProtocolConstants::METHOD_RESOURCES_TEMPLATES_LIST => ListResourceTemplatesMessageHandler::class,
         ProtocolConstants::METHOD_RESOURCES_READ => ReadResourceMessageHandler::class,
 
         // Core notification methods

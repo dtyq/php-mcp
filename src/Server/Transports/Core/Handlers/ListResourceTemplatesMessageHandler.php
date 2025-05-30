@@ -11,29 +11,31 @@ use Dtyq\PhpMcp\Server\Transports\TransportMetadata;
 use Dtyq\PhpMcp\Types\Core\RequestInterface;
 use Dtyq\PhpMcp\Types\Core\ResultInterface;
 use Dtyq\PhpMcp\Types\Requests\ListResourcesRequest;
-use Dtyq\PhpMcp\Types\Responses\ListResourcesResult;
+use Dtyq\PhpMcp\Types\Responses\ListResourceTemplatesResult;
 
 /**
- * Handler for MCP List Resources requests.
+ * Handler for MCP List Resource Templates requests.
  */
-class ListResourcesMessageHandler extends AbstractMessageHandler
+class ListResourceTemplatesMessageHandler extends AbstractMessageHandler
 {
     /**
      * @param array<string, mixed> $request
      */
     public function createRequest(array $request): RequestInterface
     {
+        // Use ListResourcesRequest as base since it has similar structure
         return ListResourcesRequest::fromArray($request);
     }
 
     public function handle(RequestInterface $message, TransportMetadata $metadata): ?ResultInterface
     {
-        $resources = $metadata->getResourceManager()->getAll();
-        $resourceObjects = array_map(function ($registeredResource) {
-            return $registeredResource->getResource();
-        }, $resources);
+        // Get all registered resource templates
+        $templates = $metadata->getResourceManager()->getAllTemplates();
+        $templateObjects = array_map(function ($registeredTemplate) {
+            return $registeredTemplate->getTemplate();
+        }, $templates);
 
-        // Use ListResourcesResult for type safety
-        return new ListResourcesResult($resourceObjects);
+        // Use dedicated ListResourceTemplatesResult for type safety
+        return new ListResourceTemplatesResult($templateObjects);
     }
 }
