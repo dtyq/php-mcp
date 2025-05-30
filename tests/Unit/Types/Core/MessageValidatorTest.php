@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Copyright (c) The Magic , Distributed under the software license
  */
 
-namespace Tests\Unit\Types\Core;
+namespace Dtyq\PhpMcp\Tests\Unit\Types\Core;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Core\MessageValidator;
