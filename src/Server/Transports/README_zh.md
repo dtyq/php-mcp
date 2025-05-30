@@ -288,7 +288,7 @@ composer test -- tests/Unit/Server/Transports/
 
 - [MCP 规范 2025-03-26](https://spec.modelcontextprotocol.io/)
 - [JSON-RPC 2.0 规范](https://www.jsonrpc.org/specification)
-- [PHP MCP 文档](../../../docs/)
+- [PHP MCP 开发标准](../../../docs/development-standards.md)
 
 ## 🤝 贡献
 

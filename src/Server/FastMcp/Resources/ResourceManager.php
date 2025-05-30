@@ -273,7 +273,7 @@ class ResourceManager
     /**
      * Get all resource metadata without content.
      *
-     * @return array<\Dtyq\PhpMcp\Types\Resources\Resource>
+     * @return array<resource>
      */
     public function getResourceMetadata(): array
     {
@@ -305,18 +305,14 @@ class ResourceManager
     {
         // Convert URI template to regex pattern
         // Replace {variable} with named capture groups
-        $pattern = preg_replace('/\{([^}]+)\}/', '(?P<$1>[^/]+)', $template);
-        $pattern = '#^' . str_replace('/', '\/', $pattern) . '$#';
+        $pattern = preg_replace('/\{([^}]+)}/', '(?P<$1>[^/]+)', $template);
+        $pattern = '#^' . $pattern . '$#';
 
         if (preg_match($pattern, $uri, $matches)) {
             // Extract only named captures
-            $parameters = [];
-            foreach ($matches as $key => $value) {
-                if (is_string($key)) {
-                    $parameters[$key] = $value;
-                }
-            }
-            return $parameters;
+            return array_filter($matches, function ($key) {
+                return is_string($key);
+            }, ARRAY_FILTER_USE_KEY);
         }
 
         return null;

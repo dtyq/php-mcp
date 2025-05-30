@@ -288,7 +288,7 @@ The architecture supports additional transport implementations:
 
 - [MCP Specification 2025-03-26](https://spec.modelcontextprotocol.io/)
 - [JSON-RPC 2.0 Specification](https://www.jsonrpc.org/specification)
-- [PHP MCP Documentation](../../../docs/)
+- [PHP MCP Development Standards](../../../docs/development-standards.md)
 
 ## 🤝 Contributing
 
