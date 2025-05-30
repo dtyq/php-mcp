@@ -45,10 +45,10 @@ interface TransportInterface
      * handling transport-specific decoding and validation.
      *
      * @param null|int $timeout Timeout in seconds (null for default)
-     * @return string The received JSON-RPC message
-     * @throws TransportError If receiving fails or times out
+     * @return null|string The received JSON-RPC message, or null on timeout/EOF
+     * @throws TransportError If receiving fails due to transport error
      */
-    public function receive(?int $timeout = null): string;
+    public function receive(?int $timeout = null): ?string;
 
     /**
      * Check if the transport is currently connected.

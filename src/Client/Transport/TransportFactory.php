@@ -1,0 +1,163 @@
+<?php
+
+declare(strict_types=1);
+/**
+ * Copyright (c) The Magic , Distributed under the software license
+ */
+
+namespace Dtyq\PhpMcp\Client\Transport;
+
+use Dtyq\PhpMcp\Client\Configuration\ClientConfig;
+use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
+use Dtyq\PhpMcp\Client\Core\TransportInterface;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+
+/**
+ * Factory for creating transport instances.
+ *
+ * This factory implements the factory method pattern to create
+ * appropriate transport instances based on the requested type,
+ * with support for future transport extensions.
+ */
+class TransportFactory
+{
+    /** @var array<string, class-string<TransportInterface>> */
+    private static array $transportTypes = [
+        // 'stdio' => StdioTransport::class,  // Will be added when StdioTransport is implemented
+        // Future transport types can be added here:
+        // 'http' => HttpTransport::class,
+        // 'websocket' => WebSocketTransport::class,
+    ];
+
+    /**
+     * Create a transport instance.
+     *
+     * @param string $type The transport type identifier
+     * @param ClientConfig $config Client configuration containing transport settings
+     * @return TransportInterface The created transport instance
+     * @throws ValidationError If transport type is invalid or configuration is invalid
+     */
+    public static function create(string $type, ClientConfig $config): TransportInterface
+    {
+        // Validate transport type
+        self::validateTransportType($type);
+
+        // Get transport-specific configuration
+        $transportConfig = $config->getTransportConfig();
+
+        // Create transport based on type
+        switch ($type) {
+            case 'stdio':
+                throw ValidationError::invalidFieldValue(
+                    'transportType',
+                    'Stdio transport not yet implemented',
+                    ['type' => $type]
+                );
+
+            default:
+                throw ValidationError::invalidFieldValue(
+                    'transportType',
+                    'Unsupported transport type',
+                    ['type' => $type, 'supported' => array_keys(self::$transportTypes)]
+                );
+        }
+    }
+
+    /**
+     * Get a list of supported transport types.
+     *
+     * @return array<string> Array of supported transport type identifiers
+     */
+    public static function getSupportedTypes(): array
+    {
+        return array_keys(self::$transportTypes);
+    }
+
+    /**
+     * Check if a transport type is supported.
+     *
+     * @param string $type The transport type to check
+     * @return bool True if supported, false otherwise
+     */
+    public static function isSupported(string $type): bool
+    {
+        return isset(self::$transportTypes[$type]);
+    }
+
+    /**
+     * Register a new transport type.
+     *
+     * This method allows for runtime registration of custom transport types.
+     *
+     * @param string $type The transport type identifier
+     * @param class-string<TransportInterface> $className The transport class name
+     * @throws ValidationError If the class doesn't implement TransportInterface
+     */
+    public static function registerTransport(string $type, string $className): void
+    {
+        if (! class_exists($className)) {
+            throw ValidationError::invalidFieldValue(
+                'className',
+                'Class does not exist',
+                ['className' => $className]
+            );
+        }
+
+        if (! is_subclass_of($className, TransportInterface::class)) {
+            throw ValidationError::invalidFieldValue(
+                'className',
+                'Class must implement TransportInterface',
+                ['className' => $className, 'interface' => TransportInterface::class]
+            );
+        }
+
+        self::$transportTypes[$type] = $className;
+    }
+
+    /**
+     * Create configuration for a specific transport type with defaults.
+     *
+     * @param string $type The transport type
+     * @param array<string, mixed> $overrides Configuration overrides
+     * @return array<string, mixed> Transport configuration
+     * @throws ValidationError If transport type is unsupported
+     */
+    public static function createDefaultConfig(string $type, array $overrides = []): array
+    {
+        self::validateTransportType($type);
+
+        $defaults = match ($type) {
+            'stdio' => StdioConfig::getDefaults(),
+            default => []
+        };
+
+        return array_merge($defaults, $overrides);
+    }
+
+    /**
+     * Validate transport type.
+     *
+     * @param string $type The transport type to validate
+     * @throws ValidationError If type is invalid
+     */
+    private static function validateTransportType(string $type): void
+    {
+        if (empty($type)) {
+            throw ValidationError::emptyField('transportType');
+        }
+
+        // For now, only allow known types even if not implemented
+        $knownTypes = ['stdio']; // Add other types as they become available
+
+        if (! in_array($type, $knownTypes, true)) {
+            throw ValidationError::invalidFieldValue(
+                'transportType',
+                'Unknown transport type',
+                [
+                    'type' => $type,
+                    'known' => $knownTypes,
+                ]
+            );
+        }
+    }
+}
