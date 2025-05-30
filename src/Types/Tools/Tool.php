@@ -9,6 +9,7 @@ namespace Dtyq\PhpMcp\Types\Tools;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Core\BaseTypes;
+use stdClass;
 
 /**
  * Definition for a tool the client can call.
@@ -152,7 +153,7 @@ class Tool
         if (empty($inputSchema)) {
             throw ValidationError::emptyField('inputSchema');
         }
-        $this->inputSchema = $inputSchema;
+        $this->inputSchema = $this->normalizeJsonSchema($inputSchema);
     }
 
     /**
@@ -358,6 +359,29 @@ class Tool
             $this->description,
             $annotations
         );
+    }
+
+    /**
+     * Normalize JSON schema by converting null properties to stdClass objects
+     * This ensures MCP compatibility as MCP doesn't allow null values for properties.
+     */
+    private function normalizeJsonSchema(array $schema): array
+    {
+        $normalized = [];
+
+        foreach ($schema as $key => $value) {
+            if ($key === 'properties' && ($value === null || (is_array($value) && empty($value)))) {
+                // Convert null properties or empty array to empty stdClass (serializes as {} in JSON)
+                $normalized[$key] = new stdClass();
+            } elseif (is_array($value)) {
+                // Recursively normalize nested arrays
+                $normalized[$key] = $this->normalizeJsonSchema($value);
+            } else {
+                $normalized[$key] = $value;
+            }
+        }
+
+        return $normalized;
     }
 
     /**
