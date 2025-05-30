@@ -177,9 +177,11 @@ class InitializeRequestTest extends TestCase
     {
         $data = [
             'id' => 'init_123',
-            'protocolVersion' => '2025-03-26',
-            'capabilities' => ['tools' => true],
-            'clientInfo' => ['name' => 'test'],
+            'params' => [
+                'protocolVersion' => '2025-03-26',
+                'capabilities' => ['tools' => true],
+                'clientInfo' => ['name' => 'test'],
+            ],
         ];
 
         $request = InitializeRequest::fromArray($data);
@@ -193,9 +195,11 @@ class InitializeRequestTest extends TestCase
     public function testFromArrayWithoutId(): void
     {
         $data = [
-            'protocolVersion' => '2025-03-26',
-            'capabilities' => ['tools' => true],
-            'clientInfo' => ['name' => 'test'],
+            'params' => [
+                'protocolVersion' => '2025-03-26',
+                'capabilities' => ['tools' => true],
+                'clientInfo' => ['name' => 'test'],
+            ],
         ];
 
         $request = InitializeRequest::fromArray($data);
@@ -207,8 +211,10 @@ class InitializeRequestTest extends TestCase
     public function testFromArrayMissingProtocolVersion(): void
     {
         $data = [
-            'capabilities' => ['tools' => true],
-            'clientInfo' => ['name' => 'test'],
+            'params' => [
+                'capabilities' => ['tools' => true],
+                'clientInfo' => ['name' => 'test'],
+            ],
         ];
 
         $this->expectException(ValidationError::class);
@@ -218,8 +224,10 @@ class InitializeRequestTest extends TestCase
     public function testFromArrayMissingCapabilities(): void
     {
         $data = [
-            'protocolVersion' => '2025-03-26',
-            'clientInfo' => ['name' => 'test'],
+            'params' => [
+                'protocolVersion' => '2025-03-26',
+                'clientInfo' => ['name' => 'test'],
+            ],
         ];
 
         $this->expectException(ValidationError::class);
@@ -229,8 +237,10 @@ class InitializeRequestTest extends TestCase
     public function testFromArrayMissingClientInfo(): void
     {
         $data = [
-            'protocolVersion' => '2025-03-26',
-            'capabilities' => ['tools' => true],
+            'params' => [
+                'protocolVersion' => '2025-03-26',
+                'capabilities' => ['tools' => true],
+            ],
         ];
 
         $this->expectException(ValidationError::class);
