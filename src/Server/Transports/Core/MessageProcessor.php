@@ -15,11 +15,17 @@ use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
 use Dtyq\PhpMcp\Shared\Message\JsonRpcMessage;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Exception;
 use stdClass;
 use Throwable;
 
+/**
+ * Core message processor for handling JSON-RPC messages.
+ *
+ * This class focuses purely on business logic - routing messages
+ * to appropriate handlers and generating responses. Message validation
+ * is handled at the transport layer.
+ */
 class MessageProcessor
 {
     private Application $application;
@@ -38,13 +44,23 @@ class MessageProcessor
         $this->handlerFactory = new HandlerFactory();
     }
 
+    /**
+     * Process a JSON-RPC message.
+     *
+     * Note: Message validation should be done at the transport layer.
+     * This method assumes the message is already validated.
+     *
+     * @param string $jsonRpc Pre-validated JSON-RPC message string
+     * @return null|string The response JSON string or null
+     * @throws TransportError If processing fails
+     */
     public function processJsonRpc(string $jsonRpc): ?string
     {
         try {
             // Parse JSON using JsonUtils for better error handling
             $decoded = JsonUtils::decode($jsonRpc, true);
 
-            if (is_array($decoded) && isset($decoded[0])) {
+            if (is_array($decoded) && array_is_list($decoded)) {
                 throw new TransportError(
                     'Batch processing is not supported',
                     ErrorCodes::INVALID_REQUEST
@@ -59,41 +75,6 @@ class MessageProcessor
             ]);
             throw $e;
         }
-    }
-
-    /**
-     * Validate a JSON-RPC message structure.
-     *
-     * @param string $message The message to validate
-     * @return bool True if valid, false otherwise
-     */
-    public function validateMessage(string $message): bool
-    {
-        if (! $this->validateUtf8($message)) {
-            return false;
-        }
-
-        $decoded = json_decode($message, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return false;
-        }
-
-        // Basic JSON-RPC validation
-        if (is_array($decoded)) {
-            if (isset($decoded[0])) {
-                // Batch
-                foreach ($decoded as $item) {
-                    if (! $this->validateSingleMessage($item)) {
-                        return false;
-                    }
-                }
-            } else {
-                // Single message
-                return $this->validateSingleMessage($decoded);
-            }
-        }
-
-        return true;
     }
 
     /**
@@ -140,42 +121,5 @@ class MessageProcessor
             );
         }
         return $response ? $response->toJson() : null;
-    }
-
-    /**
-     * Validate that a message is valid UTF-8.
-     *
-     * @param string $message The message to validate
-     * @return bool True if valid UTF-8, false otherwise
-     */
-    private function validateUtf8(string $message): bool
-    {
-        return mb_check_encoding($message, 'UTF-8');
-    }
-
-    /**
-     * Validate a single JSON-RPC message.
-     *
-     * @param array<string, mixed> $message The message to validate
-     * @return bool True if valid, false otherwise
-     */
-    private function validateSingleMessage(array $message): bool
-    {
-        // Must have jsonrpc version
-        if (! isset($message['jsonrpc']) || $message['jsonrpc'] !== ProtocolConstants::JSONRPC_VERSION) {
-            return false;
-        }
-
-        // Request or notification must have method
-        if (isset($message['method'])) {
-            return is_string($message['method']);
-        }
-
-        // Response must have result or error, and id
-        if (isset($message['result']) || isset($message['error'])) {
-            return isset($message['id']);
-        }
-
-        return false;
     }
 }

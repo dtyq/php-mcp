@@ -170,6 +170,15 @@ final class ProtocolConstants
 
     public const MIME_TYPE_IMAGE_WEBP = 'image/webp';
 
+    // Transport types
+    public const TRANSPORT_TYPE_STDIO = 'stdio';
+
+    public const TRANSPORT_TYPE_HTTP = 'http';
+
+    public const TRANSPORT_TYPE_SSE = 'sse';
+
+    public const TRANSPORT_TYPE_WEBSOCKET = 'websocket';
+
     /**
      * Get all supported MCP methods.
      *
@@ -271,5 +280,28 @@ final class ProtocolConstants
     public static function isValidLogLevel(string $level): bool
     {
         return in_array($level, self::getValidLogLevels(), true);
+    }
+
+    /**
+     * Get all supported transport types.
+     *
+     * @return array<string>
+     */
+    public static function getSupportedTransportTypes(): array
+    {
+        return [
+            self::TRANSPORT_TYPE_STDIO,
+            self::TRANSPORT_TYPE_HTTP,
+            self::TRANSPORT_TYPE_SSE,
+            self::TRANSPORT_TYPE_WEBSOCKET,
+        ];
+    }
+
+    /**
+     * Check if a transport type is supported.
+     */
+    public static function isValidTransportType(string $transportType): bool
+    {
+        return in_array($transportType, self::getSupportedTransportTypes(), true);
     }
 }

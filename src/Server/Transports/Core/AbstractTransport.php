@@ -8,8 +8,11 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Server\Transports\Core;
 
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
+use Dtyq\PhpMcp\Types\Core\MessageValidator;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Exception;
 
 /**
@@ -44,18 +47,10 @@ abstract class AbstractTransport implements TransportInterface
     public function handleMessage(string $message): ?string
     {
         try {
-            // Validate message format
-            if (! $this->validateJsonRpc($message)) {
-                throw TransportError::malformedMessage(
-                    $this->getTransportType(),
-                    'Invalid JSON-RPC message format'
-                );
-            }
+            // Comprehensive message validation at transport layer
+            $this->validateMessage($message);
 
-            // Ensure UTF-8 encoding
-            $message = $this->ensureUtf8Encoding($message);
-
-            // Process through message processor
+            // Process through message processor (no validation needed)
             return $this->processor->processJsonRpc($message);
         } catch (Exception $e) {
             $this->logger->error('Message handling failed', [
@@ -92,46 +87,28 @@ abstract class AbstractTransport implements TransportInterface
     }
 
     /**
-     * Validate JSON-RPC message format.
+     * Comprehensive message validation at transport layer.
+     *
+     * This method validates the message format, encoding, and structure
+     * before passing it to the message processor.
      *
      * @param string $message The message to validate
-     * @return bool True if valid, false otherwise
+     * @throws TransportError If message validation fails
      */
-    protected function validateJsonRpc(string $message): bool
+    protected function validateMessage(string $message): void
     {
-        return $this->processor->validateMessage($message);
-    }
-
-    /**
-     * Ensure message is properly UTF-8 encoded.
-     *
-     * @param string $message The message to check/convert
-     * @return string The UTF-8 encoded message
-     * @throws TransportError If message cannot be converted to UTF-8
-     */
-    protected function ensureUtf8Encoding(string $message): string
-    {
-        if (! mb_check_encoding($message, 'UTF-8')) {
-            // Try to detect and convert encoding
-            $detected = mb_detect_encoding($message, ['UTF-8', 'ISO-8859-1', 'ASCII'], true);
-            if ($detected && $detected !== 'UTF-8') {
-                $converted = mb_convert_encoding($message, 'UTF-8', $detected);
-                if ($converted !== false) {
-                    $this->logger->warning('Message encoding converted', [
-                        'from' => $detected,
-                        'to' => 'UTF-8',
-                    ]);
-                    return $converted;
-                }
-            }
-
-            throw TransportError::encodingError(
-                'UTF-8 validation',
-                'Message is not valid UTF-8 and cannot be converted'
+        try {
+            // Use MessageValidator for comprehensive validation
+            // Apply strict stdio validation for stdio transports
+            $strictMode = $this->getTransportType() === ProtocolConstants::TRANSPORT_TYPE_STDIO;
+            MessageValidator::validateMessage($message, $strictMode);
+        } catch (ValidationError $e) {
+            // Convert ValidationError to TransportError for consistency
+            throw TransportError::malformedMessage(
+                $this->getTransportType(),
+                'Message validation failed: ' . $e->getMessage()
             );
         }
-
-        return $message;
     }
 
     /**

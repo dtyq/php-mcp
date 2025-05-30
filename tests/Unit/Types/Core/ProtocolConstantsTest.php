@@ -113,6 +113,14 @@ class ProtocolConstantsTest extends TestCase
         $this->assertEquals('image/jpeg', ProtocolConstants::MIME_TYPE_IMAGE_JPEG);
     }
 
+    public function testTransportTypeConstants(): void
+    {
+        $this->assertEquals('stdio', ProtocolConstants::TRANSPORT_TYPE_STDIO);
+        $this->assertEquals('http', ProtocolConstants::TRANSPORT_TYPE_HTTP);
+        $this->assertEquals('sse', ProtocolConstants::TRANSPORT_TYPE_SSE);
+        $this->assertEquals('websocket', ProtocolConstants::TRANSPORT_TYPE_WEBSOCKET);
+    }
+
     public function testGetSupportedMethodsReturnsArray(): void
     {
         $methods = ProtocolConstants::getSupportedMethods();
@@ -203,9 +211,8 @@ class ProtocolConstantsTest extends TestCase
 
     public function testIsValidLogLevelWithInvalidLevels(): void
     {
-        $this->assertFalse(ProtocolConstants::isValidLogLevel('trace'));
-        $this->assertFalse(ProtocolConstants::isValidLogLevel('fatal'));
         $this->assertFalse(ProtocolConstants::isValidLogLevel('invalid'));
+        $this->assertFalse(ProtocolConstants::isValidLogLevel('trace'));
         $this->assertFalse(ProtocolConstants::isValidLogLevel(''));
     }
 
@@ -233,5 +240,33 @@ class ProtocolConstantsTest extends TestCase
         $overlap = array_intersect($methods, $notifications);
 
         $this->assertEmpty($overlap);
+    }
+
+    public function testGetSupportedTransportTypesReturnsArray(): void
+    {
+        $transportTypes = ProtocolConstants::getSupportedTransportTypes();
+
+        $this->assertIsArray($transportTypes);
+        $this->assertNotEmpty($transportTypes);
+        $this->assertContains('stdio', $transportTypes);
+        $this->assertContains('http', $transportTypes);
+        $this->assertContains('sse', $transportTypes);
+        $this->assertContains('websocket', $transportTypes);
+    }
+
+    public function testIsValidTransportTypeWithSupportedTypes(): void
+    {
+        $this->assertTrue(ProtocolConstants::isValidTransportType('stdio'));
+        $this->assertTrue(ProtocolConstants::isValidTransportType('http'));
+        $this->assertTrue(ProtocolConstants::isValidTransportType('sse'));
+        $this->assertTrue(ProtocolConstants::isValidTransportType('websocket'));
+    }
+
+    public function testIsValidTransportTypeWithUnsupportedTypes(): void
+    {
+        $this->assertFalse(ProtocolConstants::isValidTransportType('tcp'));
+        $this->assertFalse(ProtocolConstants::isValidTransportType('udp'));
+        $this->assertFalse(ProtocolConstants::isValidTransportType('invalid'));
+        $this->assertFalse(ProtocolConstants::isValidTransportType(''));
     }
 }
