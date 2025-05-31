@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Client\Configuration;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use JsonSerializable;
 
 /**
  * Configuration for stdio transport.
@@ -15,7 +16,7 @@ use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
  * This class holds all stdio-specific configuration options including
  * timeouts, buffer sizes, environment handling, and validation settings.
  */
-class StdioConfig
+class StdioConfig implements JsonSerializable
 {
     /**
      * Default configuration values.
@@ -253,5 +254,13 @@ class StdioConfig
         $config = $this->toArray();
         $config = array_merge($config, $changes);
         return self::fromArray($config);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
     }
 }

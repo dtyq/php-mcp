@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Copyright (c) The Magic , Distributed under the software license
  */
 
-namespace Tests\Client\Session;
+namespace Dtyq\PhpMcp\Tests\Unit\Client\Session;
 
 use Dtyq\PhpMcp\Client\Core\TransportInterface;
 use Dtyq\PhpMcp\Client\Session\ClientSession;
