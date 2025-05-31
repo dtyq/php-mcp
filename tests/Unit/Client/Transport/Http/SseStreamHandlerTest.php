@@ -239,11 +239,20 @@ class SseStreamHandlerTest extends TestCase
 
     public function testConnectFailure(): void
     {
+        // Use a config with short timeout to avoid long delays in tests
+        $fastConfig = new HttpConfig(
+            'https://api.example.com',
+            1.0,  // timeout: 1 second
+            1.0,   // sse_timeout: 1 second
+            0
+        );
+        $fastHandler = new SseStreamHandler($fastConfig, $this->logger);
+
         // This will fail because we're trying to connect to a real URL without a server
         $this->expectException(TransportError::class);
         $this->expectExceptionMessage('SSE connection failed');
 
-        $this->handler->connect('test-session');
+        $fastHandler->connect('test-session');
     }
 
     public function testConnectionTimeoutConfiguration(): void

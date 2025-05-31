@@ -74,6 +74,16 @@ class HttpRequestHandlerTest extends TestCase
 
     public function testSendRequestThrowsTransportError(): void
     {
+        // Use a config with minimal retries to avoid long delays in tests
+        $fastConfig = new HttpConfig(
+            'https://api.example.com/mcp',
+            1.0,  // timeout: 1 second
+            1.0, // sse_timeout: 1 second
+            0,    // max_retries: 0 (no retries)
+            0.1   // retry_delay: 0.1 second (not used since max_retries=0)
+        );
+        $fastHandler = new HttpRequestHandler($fastConfig, $this->logger, $this->authenticator);
+
         // Since we can't easily mock HTTP requests without actual network calls,
         // we expect this to throw a TransportError due to network failure
         $this->expectException(TransportError::class);
@@ -81,7 +91,7 @@ class HttpRequestHandlerTest extends TestCase
         $message = '{"jsonrpc":"2.0","id":1,"method":"test"}';
         $sessionId = 'test-session-123';
 
-        $this->handler->sendRequest($message, $sessionId);
+        $fastHandler->sendRequest($message, $sessionId);
     }
 
     public function testBuildHeaders(): void
