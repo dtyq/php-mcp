@@ -243,8 +243,8 @@ class SseStreamHandlerTest extends TestCase
         $fastConfig = new HttpConfig(
             'https://api.example.com',
             1.0,  // timeout: 1 second
-            1.0,   // sse_timeout: 1 second
-            0
+            1.0,  // sse_timeout: 1 second
+            0     // max_retries: 0 (no retries)
         );
         $fastHandler = new SseStreamHandler($fastConfig, $this->logger);
 
