@@ -4,7 +4,8 @@ declare(strict_types=1);
 /**
  * Copyright (c) The Magic , Distributed under the software license
  */
-Dtyq\PhpMcp\Tests\Unit\Types\Content;
+
+namespace Dtyq\PhpMcp\Tests\Unit\Types\Content;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Content\Annotations;

@@ -4,7 +4,8 @@ declare(strict_types=1);
 /**
  * Copyright (c) The Magic , Distributed under the software license
  */
-Dtyq\PhpMcp\Tests\Client\Core;
+
+namespace Dtyq\PhpMcp\Tests\Unit\Client\Core;
 
 use Dtyq\PhpMcp\Client\Core\ClientStats;
 use PHPUnit\Framework\TestCase;
