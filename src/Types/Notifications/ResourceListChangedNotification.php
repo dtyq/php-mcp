@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Notifications;
 
 use Dtyq\PhpMcp\Types\Core\NotificationInterface;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 
 /**
  * Notification that the list of available resources has changed.
@@ -17,7 +18,7 @@ use Dtyq\PhpMcp\Types\Core\NotificationInterface;
  */
 class ResourceListChangedNotification implements NotificationInterface
 {
-    private string $method = 'notifications/resources/list_changed';
+    private string $method = ProtocolConstants::NOTIFICATION_RESOURCES_LIST_CHANGED;
 
     /** @var null|array<string, mixed> */
     private ?array $meta = null;
@@ -49,7 +50,7 @@ class ResourceListChangedNotification implements NotificationInterface
     public function toJsonRpc(): array
     {
         $data = [
-            'jsonrpc' => '2.0',
+            'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
             'method' => $this->method,
         ];
 

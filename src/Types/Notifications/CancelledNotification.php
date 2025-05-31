@@ -9,6 +9,7 @@ namespace Dtyq\PhpMcp\Types\Notifications;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Core\NotificationInterface;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 
 /**
  * Notification to cancel a previously-issued request.
@@ -66,7 +67,7 @@ class CancelledNotification implements NotificationInterface
     public function toJsonRpc(): array
     {
         return [
-            'jsonrpc' => '2.0',
+            'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
             'method' => $this->method,
             'params' => $this->getParams(),
         ];

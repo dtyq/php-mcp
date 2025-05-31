@@ -110,7 +110,7 @@ class CompleteRequest implements RequestInterface
     public function toJsonRpc(): array
     {
         return [
-            'jsonrpc' => '2.0',
+            'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
             'id' => $this->id,
             'method' => $this->method,
             'params' => $this->getParams(),

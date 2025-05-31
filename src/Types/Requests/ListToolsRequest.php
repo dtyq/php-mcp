@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Requests;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Core\RequestInterface;
 
 /**
@@ -17,7 +18,7 @@ use Dtyq\PhpMcp\Types\Core\RequestInterface;
  */
 class ListToolsRequest implements RequestInterface
 {
-    private string $method = 'tools/list';
+    private string $method = ProtocolConstants::METHOD_TOOLS_LIST;
 
     /** @var int|string */
     private $id;
@@ -106,7 +107,7 @@ class ListToolsRequest implements RequestInterface
     public function toJsonRpc(): array
     {
         $data = [
-            'jsonrpc' => '2.0',
+            'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
             'id' => $this->id,
             'method' => $this->method,
         ];

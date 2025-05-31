@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Notifications;
 
 use Dtyq\PhpMcp\Types\Core\NotificationInterface;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 
 /**
  * Notification that the list of available prompts has changed.
@@ -49,7 +50,7 @@ class PromptListChangedNotification implements NotificationInterface
     public function toJsonRpc(): array
     {
         $data = [
-            'jsonrpc' => '2.0',
+            'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
             'method' => $this->method,
         ];
 

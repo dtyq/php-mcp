@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Requests;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Core\RequestInterface;
 
 /**
@@ -86,7 +87,7 @@ class PingRequest implements RequestInterface
     public function toJsonRpc(): array
     {
         return [
-            'jsonrpc' => '2.0',
+            'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
             'id' => $this->id,
             'method' => $this->method,
         ];

@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Shared\Utilities;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Exception;
 use JsonException;
 
@@ -310,19 +311,18 @@ class JsonUtils
     /**
      * Validate JSON-RPC 2.0 message structure.
      *
-     * @param string $json JSON string
+     * @param array<string, mixed> $data The decoded JSON data
      * @return bool True if valid JSON-RPC 2.0 message
      */
-    public static function isValidJsonRpc(string $json): bool
+    public static function isValidJsonRpcMessage(array $data): bool
     {
-        $data = self::decode($json, true);
-
-        if (! is_array($data)) {
+        // Must be an associative array
+        if (empty($data) || array_keys($data) === range(0, count($data) - 1)) {
             return false;
         }
 
         // Must have jsonrpc field with value "2.0"
-        if (! isset($data['jsonrpc']) || $data['jsonrpc'] !== '2.0') {
+        if (! isset($data['jsonrpc']) || $data['jsonrpc'] !== ProtocolConstants::JSONRPC_VERSION) {
             return false;
         }
 
