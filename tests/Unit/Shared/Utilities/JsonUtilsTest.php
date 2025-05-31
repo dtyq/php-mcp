@@ -247,39 +247,38 @@ class JsonUtilsTest extends TestCase
         $this->assertTrue(JsonUtils::exceedsSize($json, 5));
     }
 
-    public function testIsValidJsonRpc(): void
+    public function testIsValidJsonRpcMessage(): void
     {
         // Valid request
-        $request = '{"jsonrpc":"2.0","method":"test","params":{},"id":1}';
-        $this->assertTrue(JsonUtils::isValidJsonRpc($request));
+        $request = ['jsonrpc' => '2.0', 'method' => 'test', 'params' => [], 'id' => 1];
+        $this->assertTrue(JsonUtils::isValidJsonRpcMessage($request));
 
         // Valid notification
-        $notification = '{"jsonrpc":"2.0","method":"test","params":{}}';
-        $this->assertTrue(JsonUtils::isValidJsonRpc($notification));
+        $notification = ['jsonrpc' => '2.0', 'method' => 'test', 'params' => []];
+        $this->assertTrue(JsonUtils::isValidJsonRpcMessage($notification));
 
         // Valid response
-        $response = '{"jsonrpc":"2.0","result":"success","id":1}';
-        $this->assertTrue(JsonUtils::isValidJsonRpc($response));
+        $response = ['jsonrpc' => '2.0', 'result' => 'success', 'id' => 1];
+        $this->assertTrue(JsonUtils::isValidJsonRpcMessage($response));
 
         // Valid error
-        $error = '{"jsonrpc":"2.0","error":{"code":-1,"message":"Error"},"id":1}';
-        $this->assertTrue(JsonUtils::isValidJsonRpc($error));
+        $error = ['jsonrpc' => '2.0', 'error' => ['code' => -1, 'message' => 'Error'], 'id' => 1];
+        $this->assertTrue(JsonUtils::isValidJsonRpcMessage($error));
 
         // Invalid: wrong version
-        $wrongVersion = '{"jsonrpc":"1.0","method":"test","id":1}';
-        $this->assertFalse(JsonUtils::isValidJsonRpc($wrongVersion));
+        $wrongVersion = ['jsonrpc' => '1.0', 'method' => 'test', 'id' => 1];
+        $this->assertFalse(JsonUtils::isValidJsonRpcMessage($wrongVersion));
 
         // Invalid: missing jsonrpc
-        $missingVersion = '{"method":"test","id":1}';
-        $this->assertFalse(JsonUtils::isValidJsonRpc($missingVersion));
+        $missingVersion = ['method' => 'test', 'id' => 1];
+        $this->assertFalse(JsonUtils::isValidJsonRpcMessage($missingVersion));
 
         // Invalid: response with both result and error
-        $invalidResponse = '{"jsonrpc":"2.0","result":"success","error":{"code":-1,"message":"Error"},"id":1}';
-        $this->assertFalse(JsonUtils::isValidJsonRpc($invalidResponse));
+        $invalidResponse = ['jsonrpc' => '2.0', 'result' => 'success', 'error' => ['code' => -1, 'message' => 'Error'], 'id' => 1];
+        $this->assertFalse(JsonUtils::isValidJsonRpcMessage($invalidResponse));
 
-        // Invalid: not an object
-        $notObject = '"string"';
-        $this->assertFalse(JsonUtils::isValidJsonRpc($notObject));
+        // Invalid: empty array
+        $this->assertFalse(JsonUtils::isValidJsonRpcMessage([]));
     }
 
     public function testConstants(): void

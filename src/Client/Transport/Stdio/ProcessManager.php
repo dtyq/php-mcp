@@ -111,6 +111,20 @@ class ProcessManager
             $this->processId = $status['pid'];
             $this->running = true;
 
+            // Wait a moment and check again to catch immediate failures
+            usleep(50000); // 50ms
+            $status = proc_get_status($this->process);
+            if (! $status['running']) {
+                $exitCode = $status['exitcode'];
+                $this->cleanup();
+
+                if ($exitCode === 127) {
+                    throw new TransportError('Command not found: ' . $this->command[0]);
+                }
+
+                throw new TransportError('Process failed to start (exit code: ' . $exitCode . ')');
+            }
+
             // Configure streams as non-blocking
             $this->configureStreams();
         } catch (Exception $e) {

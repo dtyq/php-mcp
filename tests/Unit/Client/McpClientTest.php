@@ -68,12 +68,11 @@ class McpClientTest extends TestCase
 
     public function testConnectStdioWithInvalidCommand(): void
     {
-        $this->markTestSkipped('Test requires actual process execution which may vary by environment');
-
         $this->expectException(TransportError::class);
 
+        // Use a command that definitely doesn't exist
         $this->client->connect('stdio', [
-            'command' => ['non-existent-command-12345'],
+            'command' => 'absolutely-nonexistent-command-xyz-123456789',
         ]);
     }
 

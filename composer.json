@@ -34,6 +34,8 @@
     },
     "scripts": {
         "test": "phpunit -c phpunit.xml --colors=always",
+        "test:unit": "phpunit -c phpunit.xml --testsuite=unit --colors=always",
+        "test:integration": "phpunit -c phpunit.xml --testsuite=integration --colors=always",
         "analyse": "phpstan analyse --memory-limit 1024M -c phpstan.neon",
         "cs-fix": "php-cs-fixer fix $1"
     }
