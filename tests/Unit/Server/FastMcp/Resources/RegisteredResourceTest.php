@@ -106,8 +106,8 @@ class RegisteredResourceTest extends TestCase
     public function testGetAnnotations(): void
     {
         $annotations = new Annotations(
-            audience: ['user'],
-            priority: 0.8
+            ['user'],
+            0.8
         );
 
         $resource = new Resource(
@@ -215,8 +215,10 @@ class RegisteredResourceTest extends TestCase
             function (string $uri): TextResourceContents {
                 return new TextResourceContents($uri, 'closure result', 'text/plain');
             },
-            // Arrow function
-            fn (string $uri) => new TextResourceContents($uri, 'arrow function result', 'text/plain'),
+            // Regular function
+            function (string $uri) {
+                return new TextResourceContents($uri, 'regular function result', 'text/plain');
+            },
         ];
 
         foreach ($callables as $callable) {

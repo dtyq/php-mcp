@@ -99,8 +99,9 @@ class RegisteredToolTest extends TestCase
     public function testGetAnnotations(): void
     {
         $annotations = new ToolAnnotations(
-            title: 'Test Tool',
-            readOnlyHint: true
+            'Test Tool',
+            null,
+            true
         );
 
         $schema = ['type' => 'object', 'properties' => []];
@@ -127,7 +128,9 @@ class RegisteredToolTest extends TestCase
                 return 'closure result';
             },
             // Anonymous function
-            fn (array $args) => 'arrow function result',
+            function (array $args) {
+                return 'regular function result';
+            },
         ];
 
         foreach ($callables as $callable) {

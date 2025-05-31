@@ -136,10 +136,14 @@ class TransportFactory
     {
         self::validateTransportType($type);
 
-        $defaults = match ($type) {
-            'stdio' => StdioConfig::getDefaults(),
-            default => []
-        };
+        switch ($type) {
+            case 'stdio':
+                $defaults = StdioConfig::getDefaults();
+                break;
+            default:
+                $defaults = [];
+                break;
+        }
 
         return array_merge($defaults, $overrides);
     }

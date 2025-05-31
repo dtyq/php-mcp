@@ -19,7 +19,8 @@ use PHPUnit\Framework\TestCase;
  */
 class ClientSessionTest extends TestCase
 {
-    private MockObject&TransportInterface $mockTransport;
+    /** @var MockObject&TransportInterface */
+    private $mockTransport;
 
     private SessionMetadata $metadata;
 

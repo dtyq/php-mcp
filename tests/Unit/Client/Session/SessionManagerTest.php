@@ -23,7 +23,8 @@ class SessionManagerTest extends TestCase
 {
     private SessionManager $sessionManager;
 
-    private MockObject&TransportInterface $mockTransport;
+    /** @var MockObject&TransportInterface */
+    private $mockTransport;
 
     private SessionMetadata $metadata;
 
