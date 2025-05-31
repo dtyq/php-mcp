@@ -18,7 +18,7 @@ use Dtyq\PhpMcp\Types\Resources\Resource;
  */
 class ListResourcesResult implements ResultInterface
 {
-    /** @var resource[] */
+    /** @var \Dtyq\PhpMcp\Types\Resources\Resource[] */
     private array $resources;
 
     private ?string $nextCursor = null;
@@ -27,7 +27,7 @@ class ListResourcesResult implements ResultInterface
     private ?array $meta = null;
 
     /**
-     * @param resource[] $resources Array of resources
+     * @param \Dtyq\PhpMcp\Types\Resources\Resource[] $resources Array of resources
      * @param null|string $nextCursor Next pagination cursor
      * @param null|array<string, mixed> $meta Optional meta information
      */
@@ -89,7 +89,7 @@ class ListResourcesResult implements ResultInterface
     }
 
     /**
-     * @return resource[]
+     * @return \Dtyq\PhpMcp\Types\Resources\Resource[]
      */
     public function getResources(): array
     {
@@ -97,7 +97,7 @@ class ListResourcesResult implements ResultInterface
     }
 
     /**
-     * @param resource[] $resources
+     * @param \Dtyq\PhpMcp\Types\Resources\Resource[] $resources
      * @throws ValidationError
      */
     public function setResources(array $resources): void
