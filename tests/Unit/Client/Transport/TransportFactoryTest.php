@@ -295,11 +295,14 @@ class TransportFactoryTest extends TestCase
 
             public function get($id)
             {
-                return match ($id) {
-                    LoggerInterface::class => new NullLogger(),
-                    EventDispatcherInterface::class => $this->eventDispatcher,
-                    default => throw new Exception("Service not found: {$id}"),
-                };
+                switch ($id) {
+                    case LoggerInterface::class:
+                        return new NullLogger();
+                    case EventDispatcherInterface::class:
+                        return $this->eventDispatcher;
+                    default:
+                        throw new Exception("Service not found: {$id}");
+                }
             }
 
             public function has($id): bool
