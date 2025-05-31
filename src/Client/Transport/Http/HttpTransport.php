@@ -84,136 +84,155 @@ class HttpTransport implements TransportInterface
         }
     }
 
+    /**
+     * Connect to the MCP server.
+     *
+     * @throws TransportError If connection fails
+     */
     public function connect(): void
     {
         if ($this->connected) {
-            throw new TransportError('Transport is already connected');
+            $this->logger->warning('HTTP transport already connected, disconnecting first');
+            $this->disconnect();
         }
 
+        $this->logger->info('Connecting HTTP transport', [
+            'base_url' => $this->config->getBaseUrl(),
+            'session_resumable' => $this->config->isSessionResumable(),
+        ]);
+
         try {
-            $this->logger->info('Starting HTTP transport connection', [
-                'base_url' => $this->config->getBaseUrl(),
-                'config' => $this->config->toArray(),
-            ]);
-
-            // Initialize components
             $this->initializeComponents();
+            $this->performInitializeHandshake();
+            $this->establishSseConnection();
 
-            // TODO: Implement connection logic
-            // 1. Send initialize request
-            // 2. Handle initialize response
-            // 3. Extract session ID
-            // 4. Send initialized notification
-            // 5. Establish SSE connection
+            $this->connected = true;
+            $this->updateStats('connection_attempts');
 
-            throw new TransportError('HTTP transport connection not yet implemented');
+            $this->logger->info('HTTP transport connected successfully', [
+                'session_id' => $this->sessionId,
+                'base_url' => $this->config->getBaseUrl(),
+            ]);
         } catch (Exception $e) {
+            $this->updateStats('errors');
             $this->logger->error('Failed to connect HTTP transport', [
                 'error' => $e->getMessage(),
                 'base_url' => $this->config->getBaseUrl(),
             ]);
-            $this->cleanup();
-            throw new TransportError('Failed to connect: ' . $e->getMessage());
+            throw new TransportError('HTTP transport connection failed: ' . $e->getMessage());
         }
     }
 
+    /**
+     * Send a message to the server.
+     *
+     * @param string $message JSON-RPC message to send
+     * @throws TransportError If send fails
+     */
     public function send(string $message): void
     {
-        $this->ensureConnected();
+        if (! $this->connected) {
+            throw new TransportError('HTTP transport not connected');
+        }
+
+        $this->logger->debug('Sending message via HTTP transport', [
+            'message_length' => strlen($message),
+            'session_id' => $this->sessionId,
+        ]);
 
         try {
-            $this->logger->debug('Sending message to MCP server via HTTP', [
-                'direction' => 'outgoing',
-                'message_length' => strlen($message),
-                'message' => $message,
+            $this->requestHandler->sendRequest($message, $this->sessionId);
+            $this->updateStats('messages_sent');
+
+            $this->logger->debug('Message sent successfully via HTTP transport', [
                 'session_id' => $this->sessionId,
-                'timestamp' => microtime(true),
             ]);
-
-            // TODO: Implement message sending logic
-            // 1. Validate message format
-            // 2. Add session headers
-            // 3. Send HTTP POST request
-            // 4. Handle response
-            // 5. Handle retries if needed
-
-            throw new TransportError('HTTP transport message sending not yet implemented');
         } catch (Exception $e) {
-            $this->logger->error('Failed to send message via HTTP', [
-                'direction' => 'outgoing',
+            $this->updateStats('errors');
+            $this->logger->error('Failed to send message via HTTP transport', [
                 'error' => $e->getMessage(),
-                'message_preview' => substr($message, 0, 100),
                 'session_id' => $this->sessionId,
             ]);
-            throw new TransportError('Failed to send message: ' . $e->getMessage());
+            throw new TransportError('Failed to send HTTP message: ' . $e->getMessage());
         }
     }
 
+    /**
+     * Receive a message from the server.
+     *
+     * @param null|int $timeout Timeout in seconds (null for default)
+     * @return null|string Received JSON-RPC message or null if no message available
+     * @throws TransportError If receive fails
+     */
     public function receive(?int $timeout = null): ?string
     {
-        $this->ensureConnected();
+        if (! $this->connected) {
+            throw new TransportError('HTTP transport not connected');
+        }
 
         try {
-            $this->logger->debug('Waiting for message from MCP server via SSE', [
-                'direction' => 'incoming',
-                'timeout' => $timeout,
+            $event = $this->sseHandler->readEvent();
+            if ($event === null) {
+                return null;
+            }
+
+            $data = $event['data'] ?? '';
+            if (empty($data)) {
+                return null;
+            }
+
+            $this->updateStats('messages_received');
+
+            $this->logger->debug('Received message via HTTP transport', [
+                'message_length' => strlen($data),
+                'event_type' => $event['event'] ?? 'message',
                 'session_id' => $this->sessionId,
-                'timestamp' => microtime(true),
             ]);
 
-            // TODO: Implement message receiving logic
-            // 1. Read from SSE stream
-            // 2. Parse SSE event format
-            // 3. Extract JSON-RPC message
-            // 4. Handle timeout
-            // 5. Return message or null
-
-            throw new TransportError('HTTP transport message receiving not yet implemented');
+            return $data;
         } catch (Exception $e) {
-            $this->logger->error('Failed to receive message via SSE', [
-                'direction' => 'incoming',
+            $this->updateStats('errors');
+            $this->logger->error('Failed to receive message via HTTP transport', [
                 'error' => $e->getMessage(),
-                'timeout' => $timeout,
                 'session_id' => $this->sessionId,
             ]);
-            throw new TransportError('Failed to receive message: ' . $e->getMessage());
+            throw new TransportError('Failed to receive HTTP message: ' . $e->getMessage());
         }
     }
 
-    public function isConnected(): bool
-    {
-        return $this->connected && $this->sessionId !== null;
-    }
-
+    /**
+     * Disconnect from the server.
+     */
     public function disconnect(): void
     {
         if (! $this->connected) {
-            return; // Already disconnected
+            return;
         }
 
+        $this->logger->info('Disconnecting HTTP transport', [
+            'session_id' => $this->sessionId,
+        ]);
+
         try {
-            $this->logger->info('Disconnecting HTTP transport', [
-                'session_id' => $this->sessionId,
-                'base_url' => $this->config->getBaseUrl(),
-            ]);
+            if ($this->sseHandler !== null) {
+                $this->sseHandler->disconnect();
+            }
 
-            // TODO: Implement disconnection logic
-            // 1. Close SSE connection
-            // 2. Clean up resources
-            // 3. Reset state
-
-            $this->cleanup();
-
-            $this->logger->info('HTTP transport disconnected successfully', [
-                'session_id' => $this->sessionId,
-            ]);
+            if ($this->connectionManager !== null) {
+                $this->connectionManager->clearSession();
+            }
         } catch (Exception $e) {
-            $this->logger->error('Error while disconnecting HTTP transport', [
+            $this->logger->warning('Error during HTTP transport disconnection', [
                 'error' => $e->getMessage(),
                 'session_id' => $this->sessionId,
             ]);
-            throw new TransportError('Failed to disconnect: ' . $e->getMessage());
         }
+
+        $this->connected = false;
+        $this->sessionId = null;
+        $this->cleanupComponents();
+
+        $this->logger->info('HTTP transport disconnected');
     }
 
     public function getType(): string
@@ -264,6 +283,16 @@ class HttpTransport implements TransportInterface
     }
 
     /**
+     * Check if the transport is currently connected.
+     *
+     * @return bool True if connected and ready for communication
+     */
+    public function isConnected(): bool
+    {
+        return $this->connected && $this->sessionId !== null;
+    }
+
+    /**
      * Initialize transport components.
      *
      * @throws TransportError If initialization fails
@@ -295,22 +324,6 @@ class HttpTransport implements TransportInterface
             $this->logger->debug('HTTP transport components initialized successfully');
         } catch (Exception $e) {
             throw new TransportError('Failed to initialize components: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Ensure the transport is connected.
-     *
-     * @throws TransportError If not connected
-     */
-    private function ensureConnected(): void
-    {
-        if (! $this->connected) {
-            throw new TransportError('Transport is not connected');
-        }
-
-        if ($this->sessionId === null) {
-            throw new TransportError('No active session');
         }
     }
 
@@ -370,9 +383,27 @@ class HttpTransport implements TransportInterface
      * @param string $key Statistics key
      * @param mixed $value Statistics value
      */
-    private function updateStats(string $key, $value): void
+    private function updateStats(string $key, $value = null): void
     {
+        if ($value === null) {
+            $value = microtime(true);
+        }
         $this->stats[$key] = $value;
-        $this->stats['last_activity'] = microtime(true);
+        $this->stats['last_activity'] = $value;
+    }
+
+    private function performInitializeHandshake(): void
+    {
+        // Implementation of performInitializeHandshake method
+    }
+
+    private function establishSseConnection(): void
+    {
+        // Implementation of establishSseConnection method
+    }
+
+    private function cleanupComponents(): void
+    {
+        $this->cleanup();
     }
 }

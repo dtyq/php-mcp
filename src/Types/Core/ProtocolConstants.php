@@ -201,11 +201,15 @@ final class ProtocolConstants
 
     public const HTTP_HEADER_USER_AGENT = 'User-Agent';
 
+    public const HTTP_HEADER_CACHE_CONTROL = 'Cache-Control';
+
     public const HTTP_CONTENT_TYPE_JSON = 'application/json';
 
     public const HTTP_CONTENT_TYPE_SSE = 'text/event-stream';
 
     public const HTTP_ACCEPT_SSE_JSON = 'text/event-stream, application/json';
+
+    public const HTTP_ACCEPT_SSE = 'text/event-stream';
 
     // SSE-specific constants
     public const SSE_EVENT_TYPE_MESSAGE = 'message';
