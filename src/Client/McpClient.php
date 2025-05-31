@@ -7,11 +7,13 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Client;
 
+use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
 use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
 use Dtyq\PhpMcp\Client\Core\ClientStats;
 use Dtyq\PhpMcp\Client\Session\ClientSession;
 use Dtyq\PhpMcp\Client\Session\SessionManager;
 use Dtyq\PhpMcp\Client\Session\SessionMetadata;
+use Dtyq\PhpMcp\Client\Transport\Http\HttpTransport;
 use Dtyq\PhpMcp\Client\Transport\Stdio\StdioTransport;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
@@ -71,7 +73,7 @@ class McpClient
     /**
      * Connect to an MCP server using specified transport.
      *
-     * @param string $transportType Transport type (e.g., 'stdio')
+     * @param string $transportType Transport type (e.g., 'stdio', 'http')
      * @param array<string, mixed> $config Transport configuration
      * @return ClientSession The created session
      * @throws TransportError If connection fails
@@ -211,6 +213,8 @@ class McpClient
         switch ($transportType) {
             case ProtocolConstants::TRANSPORT_TYPE_STDIO:
                 return $this->createStdioSession($config);
+            case ProtocolConstants::TRANSPORT_TYPE_HTTP:
+                return $this->createHttpSession($config);
             default:
                 throw ValidationError::invalidFieldValue(
                     'transportType',
@@ -219,6 +223,7 @@ class McpClient
                         'type' => $transportType,
                         'supported' => [
                             ProtocolConstants::TRANSPORT_TYPE_STDIO,
+                            ProtocolConstants::TRANSPORT_TYPE_HTTP,
                         ],
                     ]
                 );
@@ -267,6 +272,51 @@ class McpClient
             'client_version' => $this->version,
             'response_timeout' => $stdioConfig->getReadTimeout(),
             'initialization_timeout' => $stdioConfig->getReadTimeout() * 2,
+        ]);
+
+        // Create session
+        return new ClientSession($transport, $metadata);
+    }
+
+    /**
+     * Create a HTTP session.
+     *
+     * @param array<string, mixed> $config HTTP configuration
+     * @return ClientSession The created session
+     * @throws ValidationError If configuration is invalid
+     */
+    private function createHttpSession(array $config): ClientSession
+    {
+        // Validate required HTTP config
+        if (! isset($config['base_url'])) {
+            throw ValidationError::emptyField('base_url');
+        }
+
+        // Create HTTP config with defaults
+        $httpConfig = HttpConfig::fromArray(array_merge([
+            'timeout' => 30.0,
+            'sse_timeout' => 300.0,
+            'max_retries' => 3,
+            'retry_delay' => 1.0,
+            'session_resumable' => true,
+            'validate_ssl' => true,
+            'user_agent' => sprintf('%s/%s (php-mcp-client)', $this->name, $this->version),
+            'headers' => [],
+            'auth' => null,
+        ], $config));
+
+        // Create transport
+        $transport = new HttpTransport($httpConfig, $this->application);
+
+        // Connect transport
+        $transport->connect();
+
+        // Create session metadata
+        $metadata = SessionMetadata::fromArray([
+            'client_name' => $this->name,
+            'client_version' => $this->version,
+            'response_timeout' => $httpConfig->getTimeout(),
+            'initialization_timeout' => $httpConfig->getTimeout() * 2,
         ]);
 
         // Create session

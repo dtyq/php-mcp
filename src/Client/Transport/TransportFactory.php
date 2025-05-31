@@ -8,26 +8,29 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Client\Transport;
 
 use Dtyq\PhpMcp\Client\Configuration\ClientConfig;
+use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
 use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
 use Dtyq\PhpMcp\Client\Core\TransportInterface;
+use Dtyq\PhpMcp\Client\Transport\Http\HttpTransport;
 use Dtyq\PhpMcp\Client\Transport\Stdio\StdioTransport;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 
 /**
  * Factory for creating transport instances.
  *
  * This factory implements the factory method pattern to create
  * appropriate transport instances based on the requested type,
- * with support for future transport extensions.
+ * with support for multiple transport protocols.
  */
 class TransportFactory
 {
     /** @var array<string, class-string<TransportInterface>> */
     private static array $transportTypes = [
-        'stdio' => StdioTransport::class,  // Now implemented
+        ProtocolConstants::TRANSPORT_TYPE_STDIO => StdioTransport::class,
+        ProtocolConstants::TRANSPORT_TYPE_HTTP => HttpTransport::class,
         // Future transport types can be added here:
-        // 'http' => HttpTransport::class,
         // 'websocket' => WebSocketTransport::class,
     ];
 
@@ -50,20 +53,10 @@ class TransportFactory
 
         // Create transport based on type
         switch ($type) {
-            case 'stdio':
-                // Extract command from transport config
-                if (! isset($transportConfig['command']) || ! is_array($transportConfig['command'])) {
-                    throw ValidationError::invalidFieldValue(
-                        'command',
-                        'Stdio transport requires command array',
-                        ['transportConfig' => $transportConfig]
-                    );
-                }
-
-                // Create stdio config
-                $stdioConfig = StdioConfig::fromArray($transportConfig);
-
-                return new StdioTransport($transportConfig['command'], $stdioConfig, $application);
+            case ProtocolConstants::TRANSPORT_TYPE_STDIO:
+                return self::createStdioTransport($transportConfig, $application);
+            case ProtocolConstants::TRANSPORT_TYPE_HTTP:
+                return self::createHttpTransport($transportConfig, $application);
             default:
                 throw ValidationError::invalidFieldValue(
                     'transportType',
@@ -137,8 +130,11 @@ class TransportFactory
         self::validateTransportType($type);
 
         switch ($type) {
-            case 'stdio':
+            case ProtocolConstants::TRANSPORT_TYPE_STDIO:
                 $defaults = StdioConfig::getDefaults();
+                break;
+            case ProtocolConstants::TRANSPORT_TYPE_HTTP:
+                $defaults = HttpConfig::getDefaults();
                 break;
             default:
                 $defaults = [];
@@ -146,6 +142,56 @@ class TransportFactory
         }
 
         return array_merge($defaults, $overrides);
+    }
+
+    /**
+     * Create stdio transport instance.
+     *
+     * @param array<string, mixed> $transportConfig Transport configuration
+     * @param Application $application Application instance
+     * @return StdioTransport Created transport instance
+     * @throws ValidationError If configuration is invalid
+     */
+    private static function createStdioTransport(array $transportConfig, Application $application): StdioTransport
+    {
+        // Extract command from transport config
+        if (! isset($transportConfig['command']) || ! is_array($transportConfig['command'])) {
+            throw ValidationError::invalidFieldValue(
+                'command',
+                'Stdio transport requires command array',
+                ['transportConfig' => $transportConfig]
+            );
+        }
+
+        // Create stdio config
+        $stdioConfig = StdioConfig::fromArray($transportConfig);
+
+        return new StdioTransport($transportConfig['command'], $stdioConfig, $application);
+    }
+
+    /**
+     * Create HTTP transport instance.
+     *
+     * @param array<string, mixed> $transportConfig Transport configuration
+     * @param Application $application Application instance
+     * @return HttpTransport Created transport instance
+     * @throws ValidationError If configuration is invalid
+     */
+    private static function createHttpTransport(array $transportConfig, Application $application): HttpTransport
+    {
+        // Validate base_url is present
+        if (! isset($transportConfig['base_url']) || ! is_string($transportConfig['base_url'])) {
+            throw ValidationError::invalidFieldValue(
+                'base_url',
+                'HTTP transport requires base_url string',
+                ['transportConfig' => $transportConfig]
+            );
+        }
+
+        // Create HTTP config
+        $httpConfig = HttpConfig::fromArray($transportConfig);
+
+        return new HttpTransport($httpConfig, $application);
     }
 
     /**
@@ -160,8 +206,11 @@ class TransportFactory
             throw ValidationError::emptyField('transportType');
         }
 
-        // For now, only allow known types even if not implemented
-        $knownTypes = ['stdio']; // Add other types as they become available
+        // Use protocol constants for validation
+        $knownTypes = [
+            ProtocolConstants::TRANSPORT_TYPE_STDIO,
+            ProtocolConstants::TRANSPORT_TYPE_HTTP,
+        ];
 
         if (! in_array($type, $knownTypes, true)) {
             throw ValidationError::invalidFieldValue(

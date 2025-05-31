@@ -124,6 +124,11 @@ class HttpRequestHandler
         return $this->stats;
     }
 
+    public function getAuthenticator(): AuthenticatorInterface
+    {
+        return $this->authenticator;
+    }
+
     /**
      * Execute a single HTTP request.
      *

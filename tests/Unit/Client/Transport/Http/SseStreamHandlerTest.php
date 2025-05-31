@@ -11,6 +11,7 @@ use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
 use Dtyq\PhpMcp\Client\Transport\Http\SseStreamHandler;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -22,6 +23,7 @@ class SseStreamHandlerTest extends TestCase
 {
     private HttpConfig $config;
 
+    /** @var LoggerProxy&MockObject */
     private $logger;
 
     private SseStreamHandler $handler;
