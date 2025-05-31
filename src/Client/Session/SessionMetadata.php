@@ -21,12 +21,12 @@ class SessionMetadata
      * Default metadata values.
      */
     public const DEFAULTS = [
-        'responseTimeout' => 30.0,
-        'initializationTimeout' => 60.0,
-        'clientName' => 'php-mcp-client',
-        'clientVersion' => '1.0.0',
-        'clientCapabilities' => [],
-        'additionalMetadata' => [],
+        'response_timeout' => 30.0,
+        'initialization_timeout' => 60.0,
+        'client_name' => 'php-mcp-client',
+        'client_version' => '1.0.0',
+        'client_capabilities' => [],
+        'additional_metadata' => [],
     ];
 
     /** @var float Response timeout in seconds */
@@ -56,12 +56,12 @@ class SessionMetadata
      * @param array<string, mixed> $additionalMetadata Additional metadata
      */
     public function __construct(
-        float $responseTimeout = self::DEFAULTS['responseTimeout'],
-        float $initializationTimeout = self::DEFAULTS['initializationTimeout'],
-        string $clientName = self::DEFAULTS['clientName'],
-        string $clientVersion = self::DEFAULTS['clientVersion'],
-        array $clientCapabilities = self::DEFAULTS['clientCapabilities'],
-        array $additionalMetadata = self::DEFAULTS['additionalMetadata']
+        float $responseTimeout = 30.0,
+        float $initializationTimeout = 60.0,
+        string $clientName = 'php-mcp-client',
+        string $clientVersion = '1.0.0',
+        array $clientCapabilities = [],
+        array $additionalMetadata = []
     ) {
         $this->setResponseTimeout($responseTimeout);
         $this->setInitializationTimeout($initializationTimeout);
@@ -83,12 +83,12 @@ class SessionMetadata
         $data = array_merge(self::DEFAULTS, $data);
 
         return new self(
-            $data['responseTimeout'],
-            $data['initializationTimeout'],
-            $data['clientName'],
-            $data['clientVersion'],
-            $data['clientCapabilities'],
-            $data['additionalMetadata']
+            $data['response_timeout'],
+            $data['initialization_timeout'],
+            $data['client_name'],
+            $data['client_version'],
+            $data['client_capabilities'],
+            $data['additional_metadata']
         );
     }
 
@@ -100,12 +100,12 @@ class SessionMetadata
     public function toArray(): array
     {
         return [
-            'responseTimeout' => $this->responseTimeout,
-            'initializationTimeout' => $this->initializationTimeout,
-            'clientName' => $this->clientName,
-            'clientVersion' => $this->clientVersion,
-            'clientCapabilities' => $this->clientCapabilities,
-            'additionalMetadata' => $this->additionalMetadata,
+            'response_timeout' => $this->responseTimeout,
+            'initialization_timeout' => $this->initializationTimeout,
+            'client_name' => $this->clientName,
+            'client_version' => $this->clientVersion,
+            'client_capabilities' => $this->clientCapabilities,
+            'additional_metadata' => $this->additionalMetadata,
         ];
     }
 
@@ -272,18 +272,5 @@ class SessionMetadata
         $this->setInitializationTimeout($this->initializationTimeout);
         $this->setClientName($this->clientName);
         $this->setClientVersion($this->clientVersion);
-    }
-
-    /**
-     * Create a copy of this metadata with modified values.
-     *
-     * @param array<string, mixed> $changes Values to change
-     * @return self New metadata instance
-     */
-    public function withChanges(array $changes): self
-    {
-        $data = $this->toArray();
-        $data = array_merge($data, $changes);
-        return self::fromArray($data);
     }
 }

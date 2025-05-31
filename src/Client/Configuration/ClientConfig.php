@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Client\Configuration;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 
 /**
  * Configuration for MCP client instances.
@@ -21,7 +22,7 @@ class ClientConfig
      * Default configuration values.
      */
     public const DEFAULTS = [
-        'transportType' => 'stdio',
+        'transportType' => ProtocolConstants::TRANSPORT_TYPE_STDIO,
         'transportConfig' => [],
         'defaultTimeout' => 30,
         'maxRetries' => 3,

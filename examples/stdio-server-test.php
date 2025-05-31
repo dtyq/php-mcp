@@ -27,6 +27,9 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
 
+// Set timezone to Shanghai
+date_default_timezone_set('Asia/Shanghai');
+
 // Simple configuration
 $config = [
     'sdk_name' => 'php-mcp-stdio-test',

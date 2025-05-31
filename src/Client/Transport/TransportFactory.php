@@ -10,7 +10,9 @@ namespace Dtyq\PhpMcp\Client\Transport;
 use Dtyq\PhpMcp\Client\Configuration\ClientConfig;
 use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
 use Dtyq\PhpMcp\Client\Core\TransportInterface;
+use Dtyq\PhpMcp\Client\Transport\Stdio\StdioTransport;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Shared\Kernel\Application;
 
 /**
  * Factory for creating transport instances.
@@ -23,7 +25,7 @@ class TransportFactory
 {
     /** @var array<string, class-string<TransportInterface>> */
     private static array $transportTypes = [
-        // 'stdio' => StdioTransport::class,  // Will be added when StdioTransport is implemented
+        'stdio' => StdioTransport::class,  // Now implemented
         // Future transport types can be added here:
         // 'http' => HttpTransport::class,
         // 'websocket' => WebSocketTransport::class,
@@ -34,10 +36,11 @@ class TransportFactory
      *
      * @param string $type The transport type identifier
      * @param ClientConfig $config Client configuration containing transport settings
+     * @param Application $application Application instance for services
      * @return TransportInterface The created transport instance
      * @throws ValidationError If transport type is invalid or configuration is invalid
      */
-    public static function create(string $type, ClientConfig $config): TransportInterface
+    public static function create(string $type, ClientConfig $config, Application $application): TransportInterface
     {
         // Validate transport type
         self::validateTransportType($type);
@@ -48,12 +51,19 @@ class TransportFactory
         // Create transport based on type
         switch ($type) {
             case 'stdio':
-                throw ValidationError::invalidFieldValue(
-                    'transportType',
-                    'Stdio transport not yet implemented',
-                    ['type' => $type]
-                );
+                // Extract command from transport config
+                if (! isset($transportConfig['command']) || ! is_array($transportConfig['command'])) {
+                    throw ValidationError::invalidFieldValue(
+                        'command',
+                        'Stdio transport requires command array',
+                        ['transportConfig' => $transportConfig]
+                    );
+                }
 
+                // Create stdio config
+                $stdioConfig = StdioConfig::fromArray($transportConfig);
+
+                return new StdioTransport($transportConfig['command'], $stdioConfig, $application);
             default:
                 throw ValidationError::invalidFieldValue(
                     'transportType',

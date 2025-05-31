@@ -21,13 +21,13 @@ class StdioConfig
      * Default configuration values.
      */
     public const DEFAULTS = [
-        'readTimeout' => 30.0,
-        'writeTimeout' => 10.0,
-        'shutdownTimeout' => 5.0,
-        'bufferSize' => 8192,
-        'inheritEnvironment' => true,
-        'validateMessages' => true,
-        'captureStderr' => true,
+        'read_timeout' => 30.0,
+        'write_timeout' => 10.0,
+        'shutdown_timeout' => 5.0,
+        'buffer_size' => 8192,
+        'inherit_environment' => true,
+        'validate_messages' => true,
+        'capture_stderr' => true,
     ];
 
     /** @var float Timeout for read operations in seconds */
@@ -61,13 +61,13 @@ class StdioConfig
      * @param bool $captureStderr Whether to capture stderr output
      */
     public function __construct(
-        float $readTimeout = self::DEFAULTS['readTimeout'],
-        float $writeTimeout = self::DEFAULTS['writeTimeout'],
-        float $shutdownTimeout = self::DEFAULTS['shutdownTimeout'],
-        int $bufferSize = self::DEFAULTS['bufferSize'],
-        bool $inheritEnvironment = self::DEFAULTS['inheritEnvironment'],
-        bool $validateMessages = self::DEFAULTS['validateMessages'],
-        bool $captureStderr = self::DEFAULTS['captureStderr']
+        float $readTimeout = self::DEFAULTS['read_timeout'],
+        float $writeTimeout = self::DEFAULTS['write_timeout'],
+        float $shutdownTimeout = self::DEFAULTS['shutdown_timeout'],
+        int $bufferSize = self::DEFAULTS['buffer_size'],
+        bool $inheritEnvironment = self::DEFAULTS['inherit_environment'],
+        bool $validateMessages = self::DEFAULTS['validate_messages'],
+        bool $captureStderr = self::DEFAULTS['capture_stderr']
     ) {
         $this->setReadTimeout($readTimeout);
         $this->setWriteTimeout($writeTimeout);
@@ -90,13 +90,13 @@ class StdioConfig
         $config = array_merge(self::DEFAULTS, $config);
 
         return new self(
-            $config['readTimeout'],
-            $config['writeTimeout'],
-            $config['shutdownTimeout'],
-            $config['bufferSize'],
-            $config['inheritEnvironment'],
-            $config['validateMessages'],
-            $config['captureStderr']
+            $config['read_timeout'],
+            $config['write_timeout'],
+            $config['shutdown_timeout'],
+            $config['buffer_size'],
+            $config['inherit_environment'],
+            $config['validate_messages'],
+            $config['capture_stderr']
         );
     }
 
@@ -118,13 +118,13 @@ class StdioConfig
     public function toArray(): array
     {
         return [
-            'readTimeout' => $this->readTimeout,
-            'writeTimeout' => $this->writeTimeout,
-            'shutdownTimeout' => $this->shutdownTimeout,
-            'bufferSize' => $this->bufferSize,
-            'inheritEnvironment' => $this->inheritEnvironment,
-            'validateMessages' => $this->validateMessages,
-            'captureStderr' => $this->captureStderr,
+            'read_timeout' => $this->readTimeout,
+            'write_timeout' => $this->writeTimeout,
+            'shutdown_timeout' => $this->shutdownTimeout,
+            'buffer_size' => $this->bufferSize,
+            'inherit_environment' => $this->inheritEnvironment,
+            'validate_messages' => $this->validateMessages,
+            'capture_stderr' => $this->captureStderr,
         ];
     }
 
@@ -169,7 +169,7 @@ class StdioConfig
     {
         if ($readTimeout <= 0) {
             throw ValidationError::invalidFieldValue(
-                'readTimeout',
+                'read_timeout',
                 'must be greater than 0',
                 ['value' => $readTimeout]
             );
@@ -181,7 +181,7 @@ class StdioConfig
     {
         if ($writeTimeout <= 0) {
             throw ValidationError::invalidFieldValue(
-                'writeTimeout',
+                'write_timeout',
                 'must be greater than 0',
                 ['value' => $writeTimeout]
             );
@@ -193,7 +193,7 @@ class StdioConfig
     {
         if ($shutdownTimeout <= 0) {
             throw ValidationError::invalidFieldValue(
-                'shutdownTimeout',
+                'shutdown_timeout',
                 'must be greater than 0',
                 ['value' => $shutdownTimeout]
             );
@@ -205,7 +205,7 @@ class StdioConfig
     {
         if ($bufferSize <= 0) {
             throw ValidationError::invalidFieldValue(
-                'bufferSize',
+                'buffer_size',
                 'must be greater than 0',
                 ['value' => $bufferSize]
             );
