@@ -21,7 +21,6 @@ use Exception;
  */
 class RegisteredResource
 {
-    /** @var resource Resource metadata */
     private Resource $resource;
 
     /** @var Closure The function to execute for resource access */
