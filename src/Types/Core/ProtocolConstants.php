@@ -192,6 +192,43 @@ final class ProtocolConstants
 
     public const TRANSPORT_TYPE_WEBSOCKET = 'websocket';
 
+    // HTTP-specific constants
+    public const HTTP_HEADER_SESSION_ID = 'Mcp-Session-Id';
+
+    public const HTTP_HEADER_CONTENT_TYPE = 'Content-Type';
+
+    public const HTTP_HEADER_ACCEPT = 'Accept';
+
+    public const HTTP_HEADER_USER_AGENT = 'User-Agent';
+
+    public const HTTP_CONTENT_TYPE_JSON = 'application/json';
+
+    public const HTTP_CONTENT_TYPE_SSE = 'text/event-stream';
+
+    public const HTTP_ACCEPT_SSE_JSON = 'text/event-stream, application/json';
+
+    // SSE-specific constants
+    public const SSE_EVENT_TYPE_MESSAGE = 'message';
+
+    public const SSE_EVENT_TYPE_ERROR = 'error';
+
+    public const SSE_FIELD_EVENT = 'event';
+
+    public const SSE_FIELD_DATA = 'data';
+
+    public const SSE_FIELD_ID = 'id';
+
+    public const SSE_FIELD_RETRY = 'retry';
+
+    // HTTP error codes (in addition to JSON-RPC codes)
+    public const HTTP_ERROR_CONNECTION_FAILED = -32100;
+
+    public const HTTP_ERROR_SESSION_EXPIRED = -32101;
+
+    public const HTTP_ERROR_SSE_CONNECTION_LOST = -32102;
+
+    public const HTTP_ERROR_INVALID_SESSION = -32103;
+
     /**
      * Get all supported MCP methods.
      *
