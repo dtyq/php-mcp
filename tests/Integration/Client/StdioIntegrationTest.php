@@ -17,7 +17,6 @@ use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
-use Stringable;
 
 /**
  * Integration test for stdio transport between client and server.
@@ -58,8 +57,11 @@ class StdioIntegrationTest extends TestCase
             public function __construct()
             {
                 $this->services[LoggerInterface::class] = new class extends AbstractLogger {
-                    /** @param mixed $level */
-                    public function log($level, string|Stringable $message, array $context = []): void
+                    /**
+                     * @param mixed $level
+                     * @param string $message
+                     */
+                    public function log($level, $message, array $context = []): void
                     {
                         // Silent logger for tests
                     }

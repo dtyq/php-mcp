@@ -29,19 +29,16 @@ $container = new class implements ContainerInterface {
     public function __construct()
     {
         $this->services[LoggerInterface::class] = new class extends AbstractLogger {
-            /** @param mixed $level */
-            public function log($level, string|Stringable $message, array $context = []): void
+            /**
+             * @param mixed $level
+             * @param string $message
+             */
+            public function log($level, $message, array $context = []): void
             {
                 $timestamp = date('Y-m-d H:i:s');
-                $levelStr = match (true) {
-                    is_string($level) => $level,
-                    is_int($level) => (string) $level,
-                    $level instanceof Stringable => (string) $level,
-                    default => 'unknown'
-                };
                 $contextStr = empty($context) ? '' : ' ' . json_encode($context, JSON_UNESCAPED_SLASHES);
 
-                file_put_contents(__DIR__ . '/../.log/stdio-client-test.log', "[{$timestamp}] {$levelStr}: {$message}{$contextStr}\n", FILE_APPEND);
+                file_put_contents(__DIR__ . '/../.log/stdio-client-test.log', "[{$timestamp}] {$level}: {$message}{$contextStr}\n", FILE_APPEND);
             }
         };
 
