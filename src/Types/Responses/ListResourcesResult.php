@@ -89,7 +89,7 @@ class ListResourcesResult implements ResultInterface
     }
 
     /**
-     * @return Resource[]
+     * @return resource[]
      */
     public function getResources(): array
     {
@@ -97,7 +97,7 @@ class ListResourcesResult implements ResultInterface
     }
 
     /**
-     * @param Resource[] $resources
+     * @param resource[] $resources
      * @throws ValidationError
      */
     public function setResources(array $resources): void
