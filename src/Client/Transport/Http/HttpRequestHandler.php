@@ -35,6 +35,15 @@ class HttpRequestHandler
     /** @var array<string, mixed> Request statistics */
     private array $stats = [];
 
+    /** @var array<string, array<string, string>> Cached headers by session ID */
+    private array $headerCache = [];
+
+    /** @var array<string, mixed> Performance metrics */
+    private array $performanceMetrics = [];
+
+    /** @var float Last request time for rate limiting */
+    private float $lastRequestTime = 0.0;
+
     /**
      * @param HttpConfig $config Transport configuration
      * @param LoggerProxy $logger Logger instance
@@ -66,9 +75,13 @@ class HttpRequestHandler
         ?string $sessionId = null,
         string $endpoint = ''
     ): array {
+        $startTime = microtime(true);
         $url = $this->config->getEndpointUrl($endpoint);
         $attempt = 0;
         $maxRetries = $this->config->getMaxRetries();
+
+        // Rate limiting check
+        $this->enforceRateLimit();
 
         while ($attempt <= $maxRetries) {
             try {
@@ -82,7 +95,13 @@ class HttpRequestHandler
 
                 $response = $this->executeRequest($url, $message, $sessionId);
 
+                // Track performance metrics
+                $totalDuration = microtime(true) - $startTime;
+                $this->trackPerformanceMetrics($totalDuration, $response['duration'], $attempt);
+
                 $this->updateStats('requests_successful');
+                $this->lastRequestTime = microtime(true);
+
                 return $response;
             } catch (Exception $e) {
                 ++$attempt;
@@ -94,12 +113,18 @@ class HttpRequestHandler
                         'attempts' => $attempt,
                         'error' => $e->getMessage(),
                         'session_id' => $sessionId,
+                        'total_duration' => microtime(true) - $startTime,
                     ]);
                     throw new TransportError('HTTP request failed: ' . $e->getMessage());
                 }
 
-                $delay = $this->config->getRetryDelay() * $attempt; // Linear backoff
-                $this->logger->warning('HTTP request failed, retrying', [
+                // Exponential backoff with jitter
+                $baseDelay = $this->config->getRetryDelay();
+                $exponentialDelay = $baseDelay * pow(2, $attempt - 1);
+                $jitter = mt_rand(0, (int) ($exponentialDelay * 0.1 * 1000)) / 1000; // 10% jitter
+                $delay = $exponentialDelay + $jitter;
+
+                $this->logger->warning('HTTP request failed, retrying with exponential backoff', [
                     'url' => $url,
                     'attempt' => $attempt,
                     'error' => $e->getMessage(),
@@ -130,6 +155,24 @@ class HttpRequestHandler
     }
 
     /**
+     * Get performance metrics.
+     *
+     * @return array<string, mixed>
+     */
+    public function getPerformanceMetrics(): array
+    {
+        return $this->performanceMetrics;
+    }
+
+    /**
+     * Clear header cache (useful when configuration changes).
+     */
+    public function clearHeaderCache(): void
+    {
+        $this->headerCache = [];
+    }
+
+    /**
      * Execute a single HTTP request.
      *
      * @param string $url Target URL
@@ -140,6 +183,12 @@ class HttpRequestHandler
      */
     private function executeRequest(string $url, string $message, ?string $sessionId): array
     {
+        // Security: Validate URL scheme
+        $this->validateUrlSecurity($url);
+
+        // Security: Validate message size
+        $this->validateMessageSize($message);
+
         // Build headers
         $headers = $this->buildHeaders($sessionId);
 
@@ -151,20 +200,8 @@ class HttpRequestHandler
             $this->config->getTimeout()
         );
 
-        // Add SSL context if needed
-        if ($this->config->shouldValidateSsl()) {
-            $context['ssl'] = [
-                'verify_peer' => true,
-                'verify_peer_name' => true,
-                'allow_self_signed' => false,
-            ];
-        } else {
-            $context['ssl'] = [
-                'verify_peer' => false,
-                'verify_peer_name' => false,
-                'allow_self_signed' => true,
-            ];
-        }
+        // Enhanced SSL context with security settings
+        $this->configureSecureSSLContext($context);
 
         $streamContext = stream_context_create($context);
 
@@ -190,8 +227,8 @@ class HttpRequestHandler
             'session_id' => $sessionId,
         ]);
 
-        // Validate response
-        $this->validateResponse($responseHeaders, $responseBody);
+        // Enhanced response validation with security checks
+        $this->validateSecureResponse($responseHeaders, $responseBody);
 
         return [
             'headers' => $responseHeaders,
@@ -208,6 +245,13 @@ class HttpRequestHandler
      */
     private function buildHeaders(?string $sessionId): array
     {
+        $cacheKey = $sessionId ?? 'default';
+
+        // Use cached headers if available and session ID hasn't changed
+        if (isset($this->headerCache[$cacheKey])) {
+            return $this->headerCache[$cacheKey];
+        }
+
         $headers = [
             ProtocolConstants::HTTP_HEADER_CONTENT_TYPE => ProtocolConstants::HTTP_CONTENT_TYPE_JSON,
             ProtocolConstants::HTTP_HEADER_ACCEPT => ProtocolConstants::HTTP_ACCEPT_SSE_JSON,
@@ -226,7 +270,12 @@ class HttpRequestHandler
 
         // Add authentication headers
         $authHeaders = $this->buildAuthHeaders();
-        return array_merge($headers, $authHeaders);
+        $finalHeaders = array_merge($headers, $authHeaders);
+
+        // Cache the headers for future use
+        $this->headerCache[$cacheKey] = $finalHeaders;
+
+        return $finalHeaders;
     }
 
     /**
@@ -369,5 +418,247 @@ class HttpRequestHandler
         }
 
         $this->stats['last_request_time'] = microtime(true);
+    }
+
+    /**
+     * Enforce rate limiting to prevent overwhelming the server.
+     */
+    private function enforceRateLimit(): void
+    {
+        $minInterval = 0.01; // Minimum 10ms between requests
+        $timeSinceLastRequest = microtime(true) - $this->lastRequestTime;
+
+        if ($timeSinceLastRequest < $minInterval) {
+            $sleepTime = $minInterval - $timeSinceLastRequest;
+            usleep((int) ($sleepTime * 1000000));
+        }
+    }
+
+    /**
+     * Track performance metrics for monitoring and optimization.
+     *
+     * @param float $totalDuration Total request duration including retries
+     * @param float $requestDuration Single request duration
+     * @param int $attempt Number of attempts made
+     */
+    private function trackPerformanceMetrics(float $totalDuration, float $requestDuration, int $attempt): void
+    {
+        // Update running averages
+        if (! isset($this->performanceMetrics['avg_total_duration'])) {
+            $this->performanceMetrics['avg_total_duration'] = 0.0;
+            $this->performanceMetrics['avg_request_duration'] = 0.0;
+            $this->performanceMetrics['request_count'] = 0;
+        }
+
+        $count = $this->performanceMetrics['request_count'];
+        $this->performanceMetrics['avg_total_duration']
+            = ($this->performanceMetrics['avg_total_duration'] * $count + $totalDuration) / ($count + 1);
+        $this->performanceMetrics['avg_request_duration']
+            = ($this->performanceMetrics['avg_request_duration'] * $count + $requestDuration) / ($count + 1);
+
+        $this->performanceMetrics['request_count'] = $count + 1;
+        $this->performanceMetrics['last_total_duration'] = $totalDuration;
+        $this->performanceMetrics['last_request_duration'] = $requestDuration;
+        $this->performanceMetrics['last_attempt_count'] = $attempt;
+
+        // Track min/max durations
+        if (! isset($this->performanceMetrics['min_duration']) || $totalDuration < $this->performanceMetrics['min_duration']) {
+            $this->performanceMetrics['min_duration'] = $totalDuration;
+        }
+        if (! isset($this->performanceMetrics['max_duration']) || $totalDuration > $this->performanceMetrics['max_duration']) {
+            $this->performanceMetrics['max_duration'] = $totalDuration;
+        }
+    }
+
+    /**
+     * Validate URL security.
+     *
+     * @param string $url URL to validate
+     * @throws TransportError If URL is not secure
+     */
+    private function validateUrlSecurity(string $url): void
+    {
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+
+        // Check for HTTPS enforcement
+        if ($this->config->isHttpsForced() && $scheme !== 'https') {
+            throw new TransportError('HTTPS is required but URL uses: ' . $scheme);
+        }
+
+        // Validate against known insecure schemes
+        $insecureSchemes = ['ftp', 'file', 'data'];
+        if (in_array($scheme, $insecureSchemes, true)) {
+            throw new TransportError('Insecure URL scheme not allowed: ' . $scheme);
+        }
+
+        // Validate hostname
+        $host = parse_url($url, PHP_URL_HOST);
+        if (empty($host)) {
+            throw new TransportError('Invalid URL: missing hostname');
+        }
+
+        // Check for localhost/private IPs in production
+        if ($this->isPrivateOrLocalhost($host)) {
+            $this->logger->warning('Request to private/localhost address', [
+                'host' => $host,
+                'url' => $url,
+            ]);
+        }
+    }
+
+    /**
+     * Validate message size for security.
+     *
+     * @param string $message Message to validate
+     * @throws TransportError If message is too large
+     */
+    private function validateMessageSize(string $message): void
+    {
+        $maxSize = 10 * 1024 * 1024; // 10MB limit
+        $messageSize = strlen($message);
+
+        if ($messageSize > $maxSize) {
+            throw new TransportError(sprintf(
+                'Message size (%d bytes) exceeds maximum allowed (%d bytes)',
+                $messageSize,
+                $maxSize
+            ));
+        }
+    }
+
+    /**
+     * Configure secure SSL context.
+     *
+     * @param array<string, mixed> $context HTTP context array
+     */
+    private function configureSecureSSLContext(array &$context): void
+    {
+        if ($this->config->shouldValidateSsl()) {
+            $context['ssl'] = [
+                'verify_peer' => true,
+                'verify_peer_name' => $this->config->shouldVerifyHostname(),
+                'allow_self_signed' => false,
+                'disable_compression' => true, // Prevent CRIME attacks
+                'SNI_enabled' => true,
+                'ciphers' => $this->getSecureCipherSuites(),
+            ];
+
+            // Set minimum TLS version
+            $minTlsVersion = $this->config->getMinTlsVersion();
+            if ($minTlsVersion === '1.3') {
+                $context['ssl']['crypto_method'] = STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT;
+            } elseif ($minTlsVersion === '1.2') {
+                $context['ssl']['crypto_method'] = STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT;
+            }
+        } else {
+            $context['ssl'] = [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true,
+            ];
+        }
+    }
+
+    /**
+     * Enhanced response validation with security checks.
+     *
+     * @param array<string, mixed> $headers Response headers
+     * @param string $body Response body
+     * @throws TransportError If response is invalid or insecure
+     */
+    private function validateSecureResponse(array $headers, string $body): void
+    {
+        // Call original validation first
+        $this->validateResponse($headers, $body);
+
+        // Additional security validations
+        $statusCode = $headers['status_code'] ?? 0;
+
+        // Check for suspicious redirects
+        if ($statusCode >= 300 && $statusCode < 400) {
+            $location = $headers['Location'] ?? $headers['location'] ?? '';
+            if (! empty($location)) {
+                $this->validateUrlSecurity($location);
+            }
+        }
+
+        // Validate response size
+        $maxResponseSize = 50 * 1024 * 1024; // 50MB limit
+        if (strlen($body) > $maxResponseSize) {
+            throw new TransportError('Response size exceeds security limit');
+        }
+
+        // Check for security headers (log warnings if missing)
+        $this->checkSecurityHeaders($headers);
+    }
+
+    /**
+     * Get secure cipher suites.
+     *
+     * @return string Cipher suite string
+     */
+    private function getSecureCipherSuites(): string
+    {
+        $configuredSuites = $this->config->getAllowedCipherSuites();
+
+        if (! empty($configuredSuites)) {
+            return implode(':', $configuredSuites);
+        }
+
+        // Default secure cipher suites (TLS 1.2+)
+        return 'ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:'
+               . 'ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:'
+               . 'AES256-GCM-SHA384:AES128-GCM-SHA256';
+    }
+
+    /**
+     * Check if host is private or localhost.
+     *
+     * @param string $host Hostname to check
+     * @return bool True if private/localhost
+     */
+    private function isPrivateOrLocalhost(string $host): bool
+    {
+        // Check for localhost
+        if (in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
+            return true;
+        }
+
+        // Check for private IP ranges
+        $ip = filter_var($host, FILTER_VALIDATE_IP);
+        if ($ip !== false) {
+            return ! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+        }
+
+        return false;
+    }
+
+    /**
+     * Check for important security headers.
+     *
+     * @param array<string, mixed> $headers Response headers
+     */
+    private function checkSecurityHeaders(array $headers): void
+    {
+        $securityHeaders = [
+            'Strict-Transport-Security',
+            'X-Content-Type-Options',
+            'X-Frame-Options',
+            'X-XSS-Protection',
+            'Content-Security-Policy',
+        ];
+
+        $missingHeaders = [];
+        foreach ($securityHeaders as $header) {
+            if (! isset($headers[$header]) && ! isset($headers[strtolower($header)])) {
+                $missingHeaders[] = $header;
+            }
+        }
+
+        if (! empty($missingHeaders)) {
+            $this->logger->info('Response missing security headers', [
+                'missing_headers' => $missingHeaders,
+            ]);
+        }
     }
 }

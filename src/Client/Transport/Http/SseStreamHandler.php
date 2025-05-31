@@ -36,6 +36,15 @@ class SseStreamHandler
     /** @var array<string, mixed> Connection statistics */
     private array $stats = [];
 
+    /** @var string Buffer for incomplete SSE events */
+    private string $eventBuffer = '';
+
+    /** @var array<string, mixed> Performance metrics */
+    private array $performanceMetrics = [];
+
+    /** @var int Optimized buffer size for reading */
+    private int $readBufferSize = 8192;
+
     /** @var null|string Current session ID */
     private ?string $sessionId = null;
 
@@ -110,11 +119,17 @@ class SseStreamHandler
             throw new TransportError('SSE stream not connected');
         }
 
+        $startTime = microtime(true);
+
         try {
-            $eventData = $this->readSseEvent();
+            $eventData = $this->readSseEventOptimized();
             if ($eventData === null) {
                 return null;
             }
+
+            // Track performance metrics
+            $duration = microtime(true) - $startTime;
+            $this->trackEventPerformance($duration, strlen($eventData['data'] ?? ''));
 
             $this->updateStats('events_received');
 
@@ -122,6 +137,7 @@ class SseStreamHandler
                 'event_type' => $eventData['event'] ?? 'message',
                 'data_length' => strlen($eventData['data'] ?? ''),
                 'session_id' => $this->sessionId,
+                'parse_duration' => $duration,
             ]);
 
             return $eventData;
@@ -130,6 +146,7 @@ class SseStreamHandler
             $this->logger->error('Failed to read SSE event', [
                 'error' => $e->getMessage(),
                 'session_id' => $this->sessionId,
+                'read_duration' => microtime(true) - $startTime,
             ]);
 
             // Check if connection is still alive
@@ -183,6 +200,16 @@ class SseStreamHandler
             'session_id' => $this->sessionId,
             'stream_alive' => $this->stream !== null ? $this->isStreamAlive() : false,
         ]);
+    }
+
+    /**
+     * Get performance metrics.
+     *
+     * @return array<string, mixed>
+     */
+    public function getPerformanceMetrics(): array
+    {
+        return $this->performanceMetrics;
     }
 
     /**
@@ -278,17 +305,47 @@ class SseStreamHandler
     }
 
     /**
-     * Read a single SSE event from the stream.
+     * Read a single SSE event from the stream with optimization.
      *
      * @return null|array<string, mixed> Parsed event data or null if no complete event
      * @throws TransportError If read fails
      */
-    private function readSseEvent(): ?array
+    private function readSseEventOptimized(): ?array
     {
         if ($this->stream === null) {
             throw new TransportError('Stream not available');
         }
 
+        // Read data into buffer more efficiently
+        $data = fread($this->stream, $this->readBufferSize);
+        if ($data === false) {
+            throw new TransportError('Failed to read from SSE stream');
+        }
+
+        // Add to existing buffer
+        $this->eventBuffer .= $data;
+
+        // Check if we have a complete event (ends with double newline)
+        $eventEndPos = strpos($this->eventBuffer, "\n\n");
+        if ($eventEndPos === false) {
+            return null; // No complete event yet
+        }
+
+        // Extract the complete event
+        $eventText = substr($this->eventBuffer, 0, $eventEndPos);
+        $this->eventBuffer = substr($this->eventBuffer, $eventEndPos + 2);
+
+        return $this->parseEventData($eventText);
+    }
+
+    /**
+     * Parse SSE event data from text format.
+     *
+     * @param string $eventText Raw event text
+     * @return array<string, mixed> Parsed event data
+     */
+    private function parseEventData(string $eventText): array
+    {
         $event = [
             'event' => null,
             'data' => '',
@@ -296,69 +353,74 @@ class SseStreamHandler
             'retry' => null,
         ];
 
-        $buffer = '';
-        $hasData = false;
+        $lines = explode("\n", $eventText);
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line) || $line[0] === ':') {
+                continue; // Skip empty lines and comments
+            }
 
-        // Read until we get a complete event (empty line)
-        while (($line = fgets($this->stream)) !== false) {
-            $line = rtrim($line, "\r\n");
+            $colonPos = strpos($line, ':');
+            if ($colonPos === false) {
+                continue; // Invalid line format
+            }
 
-            // Empty line indicates end of event
-            if ($line === '') {
-                if ($hasData) {
+            $field = substr($line, 0, $colonPos);
+            $value = ltrim(substr($line, $colonPos + 1));
+
+            switch ($field) {
+                case 'event':
+                    $event['event'] = $value;
                     break;
-                }
-                continue;
-            }
-
-            // Parse SSE field
-            if (strpos($line, ':') !== false) {
-                [$field, $value] = explode(':', $line, 2);
-                $field = trim($field);
-                $value = ltrim($value, ' ');
-
-                switch ($field) {
-                    case ProtocolConstants::SSE_FIELD_EVENT:
-                        $event['event'] = $value;
-                        $hasData = true;
-                        break;
-                    case ProtocolConstants::SSE_FIELD_DATA:
-                        $event['data'] .= ($event['data'] ? "\n" : '') . $value;
-                        $hasData = true;
-                        break;
-                    case ProtocolConstants::SSE_FIELD_ID:
-                        $event['id'] = $value;
-                        break;
-                    case ProtocolConstants::SSE_FIELD_RETRY:
-                        $event['retry'] = (int) $value;
-                        break;
-                    default:
-                        // Ignore unknown fields
-                        break;
-                }
-            } elseif ($line[0] === ':') {
-                // Comment line, ignore
-                continue;
-            } else {
-                // Field without value
-                $field = trim($line);
-                if ($field === ProtocolConstants::SSE_FIELD_DATA) {
-                    $event['data'] .= ($event['data'] ? "\n" : '');
-                    $hasData = true;
-                }
+                case 'data':
+                    $event['data'] .= ($event['data'] ? "\n" : '') . $value;
+                    break;
+                case 'id':
+                    $event['id'] = $value;
+                    break;
+                case 'retry':
+                    $event['retry'] = (int) $value;
+                    break;
             }
         }
 
-        // Check for stream errors
-        $streamMeta = stream_get_meta_data($this->stream);
-        if ($streamMeta['timed_out']) {
-            throw new TransportError('SSE read timeout');
-        }
-        if ($streamMeta['eof']) {
-            throw new TransportError('SSE stream ended unexpectedly');
+        return $event;
+    }
+
+    /**
+     * Track performance metrics for event processing.
+     *
+     * @param float $duration Event processing duration
+     * @param int $dataSize Size of event data
+     */
+    private function trackEventPerformance(float $duration, int $dataSize): void
+    {
+        if (! isset($this->performanceMetrics['total_events'])) {
+            $this->performanceMetrics['total_events'] = 0;
+            $this->performanceMetrics['total_duration'] = 0.0;
+            $this->performanceMetrics['total_data_size'] = 0;
+            $this->performanceMetrics['avg_duration'] = 0.0;
+            $this->performanceMetrics['avg_data_size'] = 0.0;
         }
 
-        return $hasData ? $event : null;
+        ++$this->performanceMetrics['total_events'];
+        $this->performanceMetrics['total_duration'] += $duration;
+        $this->performanceMetrics['total_data_size'] += $dataSize;
+
+        $totalEvents = $this->performanceMetrics['total_events'];
+        $this->performanceMetrics['avg_duration'] = $this->performanceMetrics['total_duration'] / $totalEvents;
+        $this->performanceMetrics['avg_data_size'] = $this->performanceMetrics['total_data_size'] / $totalEvents;
+
+        $this->performanceMetrics['last_duration'] = $duration;
+        $this->performanceMetrics['last_data_size'] = $dataSize;
+
+        // Track min/max
+        if (! isset($this->performanceMetrics['min_duration']) || $duration < $this->performanceMetrics['min_duration']) {
+            $this->performanceMetrics['min_duration'] = $duration;
+        }
+        if (! isset($this->performanceMetrics['max_duration']) || $duration > $this->performanceMetrics['max_duration']) {
+            $this->performanceMetrics['max_duration'] = $duration;
+        }
     }
 
     /**

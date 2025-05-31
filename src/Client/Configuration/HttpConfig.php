@@ -22,15 +22,22 @@ class HttpConfig implements JsonSerializable
      * Default configuration values.
      */
     public const DEFAULTS = [
-        'timeout' => 30.0,
-        'sse_timeout' => 300.0,
-        'max_retries' => 3,
-        'retry_delay' => 1.0,
-        'session_resumable' => true,
-        'validate_ssl' => true,
-        'user_agent' => 'php-mcp-client/1.0',
-        'headers' => [],
-        'auth' => null,
+        'base_url' => null,                     // Server base URL (required)
+        'timeout' => 30.0,                     // Request timeout in seconds
+        'sse_timeout' => 300.0,                // SSE stream timeout in seconds
+        'max_retries' => 3,                    // Maximum retry attempts
+        'retry_delay' => 1.0,                  // Base retry delay in seconds
+        'session_resumable' => true,           // Whether sessions can be resumed
+        'validate_ssl' => true,                // SSL certificate validation
+        'user_agent' => 'php-mcp-client/1.0',  // HTTP User-Agent string
+        'headers' => [],                       // Custom HTTP headers
+        'auth' => null,                        // Authentication configuration
+        'force_https' => false,                // Force HTTPS for security
+        'min_tls_version' => '1.2',           // Minimum TLS version
+        'allowed_cipher_suites' => [],        // Allowed cipher suites (empty = default)
+        'verify_hostname' => true,            // Verify SSL hostname
+        'max_redirects' => 3,                 // Maximum HTTP redirects
+        'follow_redirects' => true,           // Whether to follow redirects
     ];
 
     /** @var string Base URL for the MCP server (required) */
@@ -62,6 +69,9 @@ class HttpConfig implements JsonSerializable
 
     /** @var null|array<string, mixed> Authentication configuration */
     private ?array $auth;
+
+    /** @var array<string, mixed> Security configuration */
+    private array $securityConfig = [];
 
     /**
      * @param string $baseUrl Base URL for the MCP server
@@ -97,6 +107,16 @@ class HttpConfig implements JsonSerializable
         $this->setUserAgent($userAgent);
         $this->setHeaders($headers);
         $this->setAuth($auth);
+
+        // Initialize security config with defaults
+        $this->securityConfig = [
+            'force_https' => self::DEFAULTS['force_https'],
+            'min_tls_version' => self::DEFAULTS['min_tls_version'],
+            'allowed_cipher_suites' => self::DEFAULTS['allowed_cipher_suites'],
+            'verify_hostname' => self::DEFAULTS['verify_hostname'],
+            'max_redirects' => self::DEFAULTS['max_redirects'],
+            'follow_redirects' => self::DEFAULTS['follow_redirects'],
+        ];
     }
 
     /**
@@ -424,5 +444,148 @@ class HttpConfig implements JsonSerializable
     public function jsonSerialize(): array
     {
         return $this->toArray();
+    }
+
+    /**
+     * Check if HTTPS is enforced.
+     *
+     * @return bool True if HTTPS is enforced
+     */
+    public function isHttpsForced(): bool
+    {
+        return $this->securityConfig['force_https'] ?? self::DEFAULTS['force_https'];
+    }
+
+    /**
+     * Set HTTPS enforcement.
+     *
+     * @param bool $force Whether to force HTTPS
+     */
+    public function setForceHttps(bool $force): self
+    {
+        $this->securityConfig['force_https'] = $force;
+        return $this;
+    }
+
+    /**
+     * Get minimum TLS version.
+     *
+     * @return string Minimum TLS version
+     */
+    public function getMinTlsVersion(): string
+    {
+        return $this->securityConfig['min_tls_version'] ?? self::DEFAULTS['min_tls_version'];
+    }
+
+    /**
+     * Set minimum TLS version.
+     *
+     * @param string $version TLS version (e.g., '1.2', '1.3')
+     * @throws ValidationError If version is invalid
+     */
+    public function setMinTlsVersion(string $version): self
+    {
+        $validVersions = ['1.0', '1.1', '1.2', '1.3'];
+        if (! in_array($version, $validVersions, true)) {
+            throw ValidationError::invalidFieldValue(
+                'min_tls_version',
+                $version,
+                'Must be one of: ' . implode(', ', $validVersions)
+            );
+        }
+        $this->securityConfig['min_tls_version'] = $version;
+        return $this;
+    }
+
+    /**
+     * Get allowed cipher suites.
+     *
+     * @return array<string> Allowed cipher suites
+     */
+    public function getAllowedCipherSuites(): array
+    {
+        return $this->securityConfig['allowed_cipher_suites'] ?? self::DEFAULTS['allowed_cipher_suites'];
+    }
+
+    /**
+     * Set allowed cipher suites.
+     *
+     * @param array<string> $cipherSuites Allowed cipher suites
+     */
+    public function setAllowedCipherSuites(array $cipherSuites): self
+    {
+        $this->securityConfig['allowed_cipher_suites'] = $cipherSuites;
+        return $this;
+    }
+
+    /**
+     * Check if hostname verification is enabled.
+     *
+     * @return bool True if hostname verification is enabled
+     */
+    public function shouldVerifyHostname(): bool
+    {
+        return $this->securityConfig['verify_hostname'] ?? self::DEFAULTS['verify_hostname'];
+    }
+
+    /**
+     * Set hostname verification.
+     *
+     * @param bool $verify Whether to verify hostname
+     */
+    public function setVerifyHostname(bool $verify): self
+    {
+        $this->securityConfig['verify_hostname'] = $verify;
+        return $this;
+    }
+
+    /**
+     * Get maximum redirects allowed.
+     *
+     * @return int Maximum redirects
+     */
+    public function getMaxRedirects(): int
+    {
+        return (int) ($this->securityConfig['max_redirects'] ?? self::DEFAULTS['max_redirects']);
+    }
+
+    /**
+     * Set maximum redirects.
+     *
+     * @param int $maxRedirects Maximum redirects (0-10)
+     * @throws ValidationError If value is invalid
+     */
+    public function setMaxRedirects(int $maxRedirects): self
+    {
+        if ($maxRedirects < 0 || $maxRedirects > 10) {
+            throw ValidationError::invalidFieldValue(
+                'max_redirects',
+                (string) $maxRedirects,
+                'Must be between 0 and 10'
+            );
+        }
+        $this->securityConfig['max_redirects'] = $maxRedirects;
+        return $this;
+    }
+
+    /**
+     * Check if redirects should be followed.
+     *
+     * @return bool True if redirects should be followed
+     */
+    public function shouldFollowRedirects(): bool
+    {
+        return $this->securityConfig['follow_redirects'] ?? self::DEFAULTS['follow_redirects'];
+    }
+
+    /**
+     * Set redirect following.
+     *
+     * @param bool $follow Whether to follow redirects
+     */
+    public function setFollowRedirects(bool $follow): self
+    {
+        $this->securityConfig['follow_redirects'] = $follow;
+        return $this;
     }
 }

@@ -34,6 +34,15 @@ class HttpConnectionManager
     /** @var array<string, mixed> Connection statistics */
     private array $stats = [];
 
+    /** @var array<string, float> Connection pool for future use */
+    private array $connectionPool = [];
+
+    /** @var array<string, mixed> Performance metrics */
+    private array $performanceMetrics = [];
+
+    /** @var int Maximum connections in pool */
+    private int $maxPoolSize = 5;
+
     /** @var bool Whether the connection is initialized */
     private bool $initialized = false;
 
@@ -62,6 +71,8 @@ class HttpConnectionManager
      */
     public function initialize(?string $sessionId = null): void
     {
+        $startTime = microtime(true);
+
         $this->logger->info('Initializing HTTP connection manager', [
             'base_url' => $this->config->getBaseUrl(),
             'existing_session_id' => $sessionId,
@@ -79,9 +90,14 @@ class HttpConnectionManager
         $this->updateActivity();
         $this->updateStats('initializations');
 
+        // Track performance
+        $duration = microtime(true) - $startTime;
+        $this->trackPerformance('initialize', $duration);
+
         $this->logger->debug('HTTP connection manager initialized', [
             'session_id' => $this->sessionId,
             'initialized' => $this->initialized,
+            'init_duration' => $duration,
         ]);
     }
 
@@ -102,6 +118,7 @@ class HttpConnectionManager
      */
     public function setSessionId(?string $sessionId): void
     {
+        $startTime = microtime(true);
         $oldSessionId = $this->sessionId;
         $this->sessionId = $sessionId;
 
@@ -114,9 +131,14 @@ class HttpConnectionManager
             $this->updateSessionHeaders();
         }
 
+        // Track performance
+        $duration = microtime(true) - $startTime;
+        $this->trackPerformance('set_session_id', $duration);
+
         $this->logger->debug('Session ID updated', [
             'old_session_id' => $oldSessionId,
             'new_session_id' => $sessionId,
+            'operation_duration' => $duration,
         ]);
     }
 
@@ -251,6 +273,21 @@ class HttpConnectionManager
     }
 
     /**
+     * Get performance metrics.
+     *
+     * @return array<string, mixed>
+     */
+    public function getPerformanceMetrics(): array
+    {
+        return array_merge($this->performanceMetrics, [
+            'connection_pool_size' => count($this->connectionPool),
+            'max_pool_size' => $this->maxPoolSize,
+            'session_valid' => $this->isSessionValid(),
+            'session_age' => $this->getSessionAge(),
+        ]);
+    }
+
+    /**
      * Build default headers for all requests.
      */
     private function buildDefaultHeaders(): void
@@ -312,6 +349,50 @@ class HttpConnectionManager
             if (isset($this->stats[$key])) {
                 ++$this->stats[$key];
             }
+        }
+    }
+
+    /**
+     * Get session age in seconds.
+     *
+     * @return float Session age in seconds
+     */
+    private function getSessionAge(): float
+    {
+        if ($this->sessionCreatedAt === null) {
+            return 0.0;
+        }
+        return microtime(true) - $this->sessionCreatedAt;
+    }
+
+    /**
+     * Track connection performance.
+     *
+     * @param string $operation Operation name
+     * @param float $duration Operation duration
+     */
+    private function trackPerformance(string $operation, float $duration): void
+    {
+        if (! isset($this->performanceMetrics[$operation])) {
+            $this->performanceMetrics[$operation] = [
+                'count' => 0,
+                'total_duration' => 0.0,
+                'avg_duration' => 0.0,
+                'min_duration' => null,
+                'max_duration' => null,
+            ];
+        }
+
+        $metric = &$this->performanceMetrics[$operation];
+        ++$metric['count'];
+        $metric['total_duration'] += $duration;
+        $metric['avg_duration'] = $metric['total_duration'] / $metric['count'];
+
+        if ($metric['min_duration'] === null || $duration < $metric['min_duration']) {
+            $metric['min_duration'] = $duration;
+        }
+        if ($metric['max_duration'] === null || $duration > $metric['max_duration']) {
+            $metric['max_duration'] = $duration;
         }
     }
 }
