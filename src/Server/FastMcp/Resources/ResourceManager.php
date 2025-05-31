@@ -273,7 +273,7 @@ class ResourceManager
     /**
      * Get all resource metadata without content.
      *
-     * @return array<resource>
+     * @return array<\Dtyq\PhpMcp\Types\Resources\Resource>
      */
     public function getResourceMetadata(): array
     {
