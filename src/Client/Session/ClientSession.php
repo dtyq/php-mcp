@@ -387,14 +387,14 @@ class ClientSession extends AbstractSession implements SessionInterface
     {
         return [
             'tools' => [
-                'listChanged' => true,
+                'listChanged' => false,
             ],
             'resources' => [
-                'subscribe' => true,
-                'listChanged' => true,
+                'subscribe' => false,
+                'listChanged' => false,
             ],
             'prompts' => [
-                'listChanged' => true,
+                'listChanged' => false,
             ],
             'sampling' => [],
         ];
