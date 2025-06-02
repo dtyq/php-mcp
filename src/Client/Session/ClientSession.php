@@ -147,6 +147,12 @@ class ClientSession extends AbstractSession implements SessionInterface
     {
         $this->validateSessionState('listTools');
 
+        // Check if server supports tools capability
+        if (! $this->hasServerCapability('tools')) {
+            // Return empty result if server doesn't support tools
+            return ListToolsResult::fromArray(['tools' => []]);
+        }
+
         $request = new ListToolsRequest();
         $response = $this->sendRequestAndWaitForResponse($request);
 
@@ -156,6 +162,11 @@ class ClientSession extends AbstractSession implements SessionInterface
     public function callTool(string $name, ?array $arguments = null): CallToolResult
     {
         $this->validateSessionState('callTool');
+
+        // Check if server supports tools capability
+        if (! $this->hasServerCapability('tools')) {
+            throw new ProtocolError('Server does not support tools capability');
+        }
 
         $request = new CallToolRequest($name, $arguments);
         $response = $this->sendRequestAndWaitForResponse($request);
@@ -167,6 +178,12 @@ class ClientSession extends AbstractSession implements SessionInterface
     {
         $this->validateSessionState('listResources');
 
+        // Check if server supports resources capability
+        if (! $this->hasServerCapability('resources')) {
+            // Return empty result if server doesn't support resources
+            return ListResourcesResult::fromArray(['resources' => []]);
+        }
+
         $request = new ListResourcesRequest();
         $response = $this->sendRequestAndWaitForResponse($request);
 
@@ -176,6 +193,12 @@ class ClientSession extends AbstractSession implements SessionInterface
     public function listPrompts(): ListPromptsResult
     {
         $this->validateSessionState('listPrompts');
+
+        // Check if server supports prompts capability
+        if (! $this->hasServerCapability('prompts')) {
+            // Return empty result if server doesn't support prompts
+            return ListPromptsResult::fromArray(['prompts' => []]);
+        }
 
         $request = new ListPromptsRequest();
         $response = $this->sendRequestAndWaitForResponse($request);
@@ -194,6 +217,11 @@ class ClientSession extends AbstractSession implements SessionInterface
     {
         $this->validateSessionState('getPrompt');
 
+        // Check if server supports prompts capability
+        if (! $this->hasServerCapability('prompts')) {
+            throw new ProtocolError('Server does not support prompts capability');
+        }
+
         $request = new GetPromptRequest($name, $arguments);
         $response = $this->sendRequestAndWaitForResponse($request);
 
@@ -203,6 +231,11 @@ class ClientSession extends AbstractSession implements SessionInterface
     public function readResource(string $uri): ReadResourceResult
     {
         $this->validateSessionState('readResource');
+
+        // Check if server supports resources capability
+        if (! $this->hasServerCapability('resources')) {
+            throw new ProtocolError('Server does not support resources capability');
+        }
 
         $request = new ReadResourceRequest($uri);
         $response = $this->sendRequestAndWaitForResponse($request);
