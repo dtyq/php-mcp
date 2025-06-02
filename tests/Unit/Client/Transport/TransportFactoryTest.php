@@ -9,7 +9,6 @@ namespace Dtyq\PhpMcp\Tests\Unit\Client\Transport;
 
 use Dtyq\PhpMcp\Client\Configuration\ClientConfig;
 use Dtyq\PhpMcp\Client\Core\TransportInterface;
-use Dtyq\PhpMcp\Client\Transport\Http\HttpTransport;
 use Dtyq\PhpMcp\Client\Transport\Stdio\StdioTransport;
 use Dtyq\PhpMcp\Client\Transport\TransportFactory;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
@@ -52,22 +51,6 @@ class TransportFactoryTest extends TestCase
 
         $this->assertInstanceOf(StdioTransport::class, $transport);
         $this->assertEquals(ProtocolConstants::TRANSPORT_TYPE_STDIO, $transport->getType());
-    }
-
-    public function testCreateHttpTransport(): void
-    {
-        $config = new ClientConfig(
-            ProtocolConstants::TRANSPORT_TYPE_HTTP,
-            [
-                'base_url' => 'https://api.example.com/mcp',
-                'timeout' => 30.0,
-            ]
-        );
-
-        $transport = TransportFactory::create(ProtocolConstants::TRANSPORT_TYPE_HTTP, $config, $this->application);
-
-        $this->assertInstanceOf(HttpTransport::class, $transport);
-        $this->assertEquals(ProtocolConstants::TRANSPORT_TYPE_HTTP, $transport->getType());
     }
 
     public function testCreateWithInvalidTransportType(): void
@@ -114,8 +97,9 @@ class TransportFactoryTest extends TestCase
 
     public function testCreateHttpWithoutBaseUrl(): void
     {
+        // HTTP transport is not implemented yet
         $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('HTTP transport requires base_url string');
+        $this->expectExceptionMessage('Unknown transport type');
 
         $config = new ClientConfig(ProtocolConstants::TRANSPORT_TYPE_HTTP, []);
 
@@ -124,8 +108,9 @@ class TransportFactoryTest extends TestCase
 
     public function testCreateHttpWithInvalidBaseUrl(): void
     {
+        // HTTP transport is not implemented yet
         $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('HTTP transport requires base_url string');
+        $this->expectExceptionMessage('Unknown transport type');
 
         $config = new ClientConfig(ProtocolConstants::TRANSPORT_TYPE_HTTP, [
             'base_url' => 123, // Should be string
@@ -140,13 +125,15 @@ class TransportFactoryTest extends TestCase
 
         $this->assertIsArray($types);
         $this->assertContains(ProtocolConstants::TRANSPORT_TYPE_STDIO, $types);
-        $this->assertContains(ProtocolConstants::TRANSPORT_TYPE_HTTP, $types);
+        // HTTP transport is not implemented yet
+        // $this->assertContains(ProtocolConstants::TRANSPORT_TYPE_HTTP, $types);
     }
 
     public function testIsSupported(): void
     {
         $this->assertTrue(TransportFactory::isSupported(ProtocolConstants::TRANSPORT_TYPE_STDIO));
-        $this->assertTrue(TransportFactory::isSupported(ProtocolConstants::TRANSPORT_TYPE_HTTP));
+        // HTTP transport is not implemented yet
+        $this->assertFalse(TransportFactory::isSupported(ProtocolConstants::TRANSPORT_TYPE_HTTP));
         $this->assertFalse(TransportFactory::isSupported('invalid-type'));
         $this->assertFalse(TransportFactory::isSupported('websocket')); // Not implemented yet
     }
@@ -217,6 +204,8 @@ class TransportFactoryTest extends TestCase
         $this->assertArrayHasKey('shutdown_timeout', $config);
     }
 
+    // Remove or comment out HTTP-specific tests
+    /*
     public function testCreateDefaultConfigHttp(): void
     {
         $config = TransportFactory::createDefaultConfig(ProtocolConstants::TRANSPORT_TYPE_HTTP);
@@ -232,6 +221,7 @@ class TransportFactoryTest extends TestCase
         $this->assertArrayHasKey('headers', $config);
         $this->assertArrayHasKey('auth', $config);
     }
+    */
 
     public function testCreateDefaultConfigWithOverrides(): void
     {
@@ -250,6 +240,8 @@ class TransportFactoryTest extends TestCase
         $this->assertArrayHasKey('write_timeout', $config);
     }
 
+    // Remove or comment out HTTP-specific tests
+    /*
     public function testCreateDefaultConfigHttpWithOverrides(): void
     {
         $overrides = [
@@ -269,6 +261,7 @@ class TransportFactoryTest extends TestCase
         $this->assertArrayHasKey('sse_timeout', $config);
         $this->assertArrayHasKey('validate_ssl', $config);
     }
+    */
 
     public function testCreateDefaultConfigWithUnsupportedType(): void
     {

@@ -9,6 +9,8 @@ namespace Dtyq\PhpMcp\Client\Core;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ProtocolError;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
+use Dtyq\PhpMcp\Types\Core\NotificationInterface;
+use Dtyq\PhpMcp\Types\Core\RequestInterface;
 use Dtyq\PhpMcp\Types\Responses\CallToolResult;
 use Dtyq\PhpMcp\Types\Responses\ListResourcesResult;
 use Dtyq\PhpMcp\Types\Responses\ListToolsResult;
@@ -42,14 +44,12 @@ interface SessionInterface
      * request ID generation, message serialization, response waiting,
      * and timeout handling.
      *
-     * @param string $method The RPC method name
-     * @param null|array<string, mixed> $params Method parameters
      * @param null|int $timeout Timeout in seconds (null for default)
      * @return array<string, mixed> The response result
      * @throws ProtocolError If response contains an error
      * @throws TransportError If communication fails or times out
      */
-    public function sendRequest(string $method, ?array $params = null, ?int $timeout = null): array;
+    public function sendRequest(RequestInterface $request, ?int $timeout = null): array;
 
     /**
      * Send a notification to the server (no response expected).
@@ -57,11 +57,10 @@ interface SessionInterface
      * Notifications are fire-and-forget messages that do not expect
      * a response from the server.
      *
-     * @param string $method The RPC method name
-     * @param null|array<string, mixed> $params Method parameters
+     * @param NotificationInterface $notification The notification to send
      * @throws TransportError If communication fails
      */
-    public function sendNotification(string $method, ?array $params = null): void;
+    public function sendNotification(NotificationInterface $notification): void;
 
     /**
      * List available tools on the server.

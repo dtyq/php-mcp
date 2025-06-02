@@ -22,12 +22,12 @@ class ClientConfig
      * Default configuration values.
      */
     public const DEFAULTS = [
-        'transportType' => ProtocolConstants::TRANSPORT_TYPE_STDIO,
-        'transportConfig' => [],
-        'defaultTimeout' => 30,
-        'maxRetries' => 3,
-        'clientName' => 'php-mcp-client',
-        'clientVersion' => '1.0.0',
+        'transport_type' => ProtocolConstants::TRANSPORT_TYPE_STDIO,
+        'transport_config' => [],
+        'default_timeout' => 30,
+        'max_retries' => 3,
+        'client_name' => 'php-mcp-client',
+        'client_version' => '1.0.0',
         'capabilities' => [],
         'debug' => false,
     ];
@@ -67,12 +67,12 @@ class ClientConfig
      * @param bool $debug Enable debug mode
      */
     public function __construct(
-        string $transportType = self::DEFAULTS['transportType'],
-        array $transportConfig = self::DEFAULTS['transportConfig'],
-        int $defaultTimeout = self::DEFAULTS['defaultTimeout'],
-        int $maxRetries = self::DEFAULTS['maxRetries'],
-        string $clientName = self::DEFAULTS['clientName'],
-        string $clientVersion = self::DEFAULTS['clientVersion'],
+        string $transportType = self::DEFAULTS['transport_type'],
+        array $transportConfig = self::DEFAULTS['transport_config'],
+        int $defaultTimeout = self::DEFAULTS['default_timeout'],
+        int $maxRetries = self::DEFAULTS['max_retries'],
+        string $clientName = self::DEFAULTS['client_name'],
+        string $clientVersion = self::DEFAULTS['client_version'],
         array $capabilities = self::DEFAULTS['capabilities'],
         bool $debug = self::DEFAULTS['debug']
     ) {
@@ -98,12 +98,12 @@ class ClientConfig
         $config = array_merge(self::DEFAULTS, $config);
 
         return new self(
-            $config['transportType'],
-            $config['transportConfig'],
-            $config['defaultTimeout'],
-            $config['maxRetries'],
-            $config['clientName'],
-            $config['clientVersion'],
+            $config['transport_type'],
+            $config['transport_config'],
+            $config['default_timeout'],
+            $config['max_retries'],
+            $config['client_name'],
+            $config['client_version'],
             $config['capabilities'],
             $config['debug']
         );
@@ -117,12 +117,12 @@ class ClientConfig
     public function toArray(): array
     {
         return [
-            'transportType' => $this->transportType,
-            'transportConfig' => $this->transportConfig,
-            'defaultTimeout' => $this->defaultTimeout,
-            'maxRetries' => $this->maxRetries,
-            'clientName' => $this->clientName,
-            'clientVersion' => $this->clientVersion,
+            'transport_type' => $this->transportType,
+            'transport_config' => $this->transportConfig,
+            'default_timeout' => $this->defaultTimeout,
+            'max_retries' => $this->maxRetries,
+            'client_name' => $this->clientName,
+            'client_version' => $this->clientVersion,
             'capabilities' => $this->capabilities,
             'debug' => $this->debug,
         ];
@@ -179,7 +179,7 @@ class ClientConfig
     public function setTransportType(string $transportType): void
     {
         if (empty($transportType)) {
-            throw ValidationError::emptyField('transportType');
+            throw ValidationError::emptyField('transport_type');
         }
         $this->transportType = $transportType;
     }
@@ -196,7 +196,7 @@ class ClientConfig
     {
         if ($defaultTimeout <= 0) {
             throw ValidationError::invalidFieldValue(
-                'defaultTimeout',
+                'default_timeout',
                 'must be greater than 0',
                 ['value' => $defaultTimeout]
             );
@@ -208,7 +208,7 @@ class ClientConfig
     {
         if ($maxRetries < 0) {
             throw ValidationError::invalidFieldValue(
-                'maxRetries',
+                'max_retries',
                 'must be non-negative',
                 ['value' => $maxRetries]
             );
@@ -219,7 +219,7 @@ class ClientConfig
     public function setClientName(string $clientName): void
     {
         if (empty($clientName)) {
-            throw ValidationError::emptyField('clientName');
+            throw ValidationError::emptyField('client_name');
         }
         $this->clientName = $clientName;
     }
@@ -227,7 +227,7 @@ class ClientConfig
     public function setClientVersion(string $clientVersion): void
     {
         if (empty($clientVersion)) {
-            throw ValidationError::emptyField('clientVersion');
+            throw ValidationError::emptyField('client_version');
         }
         $this->clientVersion = $clientVersion;
     }

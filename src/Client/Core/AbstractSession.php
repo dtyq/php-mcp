@@ -12,6 +12,7 @@ use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 use Dtyq\PhpMcp\Types\Core\JsonRpcRequest;
 use Dtyq\PhpMcp\Types\Core\JsonRpcResponse;
+use Dtyq\PhpMcp\Types\Core\RequestInterface;
 use Exception;
 use InvalidArgumentException;
 
@@ -62,22 +63,25 @@ abstract class AbstractSession implements SessionInterface
      * This method handles the low-level request/response cycle including
      * ID generation, timeout handling, and response correlation.
      *
-     * @param JsonRpcRequest $request The request to send
+     * @param RequestInterface $request The request to send
      * @param null|float $timeout Optional timeout override
      * @return JsonRpcResponse The server response
      * @throws ProtocolError If protocol error occurs
      * @throws TransportError If transport error occurs
      */
     protected function sendRequestAndWaitForResponse(
-        JsonRpcRequest $request,
+        RequestInterface $request,
         ?float $timeout = null
     ): JsonRpcResponse {
         // Generate unique request ID
         $requestId = $this->generateRequestId();
         $request->setId($requestId);
 
+        // Create JsonRpcRequest from RequestInterface
+        $jsonRpcRequest = new JsonRpcRequest($request->getMethod(), $request->getParams(), $requestId);
+
         // Serialize and send request
-        $message = JsonUtils::encode($request->toJsonRpc());
+        $message = JsonUtils::encode($jsonRpcRequest->toJsonRpc());
         $this->transport->send($message);
 
         // Track pending request
@@ -90,18 +94,6 @@ abstract class AbstractSession implements SessionInterface
             // Cleanup pending request
             unset($this->pendingRequests[$requestId]);
         }
-    }
-
-    /**
-     * Send a notification (no response expected).
-     *
-     * @param JsonRpcRequest $notification The notification to send
-     * @throws TransportError If send fails
-     */
-    protected function sendNotificationMessage(JsonRpcRequest $notification): void
-    {
-        $message = JsonUtils::encode($notification->toJsonRpc());
-        $this->transport->send($message);
     }
 
     /**

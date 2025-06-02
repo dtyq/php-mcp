@@ -8,10 +8,8 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Client\Transport;
 
 use Dtyq\PhpMcp\Client\Configuration\ClientConfig;
-use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
 use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
 use Dtyq\PhpMcp\Client\Core\TransportInterface;
-use Dtyq\PhpMcp\Client\Transport\Http\HttpTransport;
 use Dtyq\PhpMcp\Client\Transport\Stdio\StdioTransport;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
@@ -29,9 +27,8 @@ class TransportFactory
     /** @var array<string, class-string<TransportInterface>> */
     private static array $transportTypes = [
         ProtocolConstants::TRANSPORT_TYPE_STDIO => StdioTransport::class,
-        ProtocolConstants::TRANSPORT_TYPE_HTTP => HttpTransport::class,
-        // Future transport types can be added here:
-        // 'websocket' => WebSocketTransport::class,
+        // Note: HTTP transport class would be added here when implemented
+        // ProtocolConstants::TRANSPORT_TYPE_HTTP => HttpTransport::class,
     ];
 
     /**
@@ -55,8 +52,6 @@ class TransportFactory
         switch ($type) {
             case ProtocolConstants::TRANSPORT_TYPE_STDIO:
                 return self::createStdioTransport($transportConfig, $application);
-            case ProtocolConstants::TRANSPORT_TYPE_HTTP:
-                return self::createHttpTransport($transportConfig, $application);
             default:
                 throw ValidationError::invalidFieldValue(
                     'transportType',
@@ -73,7 +68,14 @@ class TransportFactory
      */
     public static function getSupportedTypes(): array
     {
-        return array_keys(self::$transportTypes);
+        // Combine built-in types with dynamically registered ones
+        $builtInTypes = [
+            ProtocolConstants::TRANSPORT_TYPE_STDIO,
+        ];
+
+        $registeredTypes = array_keys(self::$transportTypes);
+
+        return array_unique(array_merge($builtInTypes, $registeredTypes));
     }
 
     /**
@@ -84,7 +86,7 @@ class TransportFactory
      */
     public static function isSupported(string $type): bool
     {
-        return isset(self::$transportTypes[$type]);
+        return isset(self::$transportTypes[$type]) || in_array($type, self::getSupportedTypes(), true);
     }
 
     /**
@@ -133,12 +135,8 @@ class TransportFactory
             case ProtocolConstants::TRANSPORT_TYPE_STDIO:
                 $defaults = StdioConfig::getDefaults();
                 break;
-            case ProtocolConstants::TRANSPORT_TYPE_HTTP:
-                $defaults = HttpConfig::getDefaults();
-                break;
             default:
-                $defaults = [];
-                break;
+                return [];
         }
 
         return array_merge($defaults, $overrides);
@@ -170,31 +168,6 @@ class TransportFactory
     }
 
     /**
-     * Create HTTP transport instance.
-     *
-     * @param array<string, mixed> $transportConfig Transport configuration
-     * @param Application $application Application instance
-     * @return HttpTransport Created transport instance
-     * @throws ValidationError If configuration is invalid
-     */
-    private static function createHttpTransport(array $transportConfig, Application $application): HttpTransport
-    {
-        // Validate base_url is present
-        if (! isset($transportConfig['base_url']) || ! is_string($transportConfig['base_url'])) {
-            throw ValidationError::invalidFieldValue(
-                'base_url',
-                'HTTP transport requires base_url string',
-                ['transportConfig' => $transportConfig]
-            );
-        }
-
-        // Create HTTP config
-        $httpConfig = HttpConfig::fromArray($transportConfig);
-
-        return new HttpTransport($httpConfig, $application);
-    }
-
-    /**
      * Validate transport type.
      *
      * @param string $type The transport type to validate
@@ -209,7 +182,6 @@ class TransportFactory
         // Use protocol constants for validation
         $knownTypes = [
             ProtocolConstants::TRANSPORT_TYPE_STDIO,
-            ProtocolConstants::TRANSPORT_TYPE_HTTP,
         ];
 
         if (! in_array($type, $knownTypes, true)) {

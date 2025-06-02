@@ -61,12 +61,12 @@ class ClientConfigTest extends TestCase
     public function testFromArray(): void
     {
         $data = [
-            'transportType' => 'test-transport',
-            'transportConfig' => ['key' => 'value'],
-            'defaultTimeout' => 45,
-            'maxRetries' => 2,
-            'clientName' => 'array-client',
-            'clientVersion' => '1.5.0',
+            'transport_type' => 'test-transport',
+            'transport_config' => ['key' => 'value'],
+            'default_timeout' => 45,
+            'max_retries' => 2,
+            'client_name' => 'array-client',
+            'client_version' => '1.5.0',
             'capabilities' => ['prompts' => true],
             'debug' => true,
         ];
@@ -86,8 +86,8 @@ class ClientConfigTest extends TestCase
     public function testFromArrayWithPartialData(): void
     {
         $data = [
-            'clientName' => 'partial-client',
-            'defaultTimeout' => 90,
+            'client_name' => 'partial-client',
+            'default_timeout' => 90,
         ];
 
         $config = ClientConfig::fromArray($data);
@@ -113,12 +113,12 @@ class ClientConfigTest extends TestCase
         );
 
         $expected = [
-            'transportType' => 'test-transport',
-            'transportConfig' => ['test' => true],
-            'defaultTimeout' => 120,
-            'maxRetries' => 4,
-            'clientName' => 'test-client',
-            'clientVersion' => '3.0.0',
+            'transport_type' => 'test-transport',
+            'transport_config' => ['test' => true],
+            'default_timeout' => 120,
+            'max_retries' => 4,
+            'client_name' => 'test-client',
+            'client_version' => '3.0.0',
             'capabilities' => ['resources' => true],
             'debug' => true,
         ];
@@ -129,7 +129,7 @@ class ClientConfigTest extends TestCase
     public function testSetTransportTypeEmpty(): void
     {
         $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('transportType');
+        $this->expectExceptionMessage('transport_type');
 
         $config = new ClientConfig();
         $config->setTransportType('');
@@ -165,7 +165,7 @@ class ClientConfigTest extends TestCase
     public function testSetClientNameEmpty(): void
     {
         $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('clientName');
+        $this->expectExceptionMessage('client_name');
 
         $config = new ClientConfig();
         $config->setClientName('');
@@ -174,7 +174,7 @@ class ClientConfigTest extends TestCase
     public function testSetClientVersionEmpty(): void
     {
         $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('clientVersion');
+        $this->expectExceptionMessage('client_version');
 
         $config = new ClientConfig();
         $config->setClientVersion('');
@@ -235,8 +235,8 @@ class ClientConfigTest extends TestCase
         );
 
         $changes = [
-            'clientName' => 'modified-client',
-            'defaultTimeout' => 60,
+            'client_name' => 'modified-client',
+            'default_timeout' => 60,
             'debug' => true,
         ];
 
@@ -264,7 +264,7 @@ class ClientConfigTest extends TestCase
         $this->expectException(ValidationError::class);
 
         $config->withChanges([
-            'defaultTimeout' => -1,
+            'default_timeout' => -1,
         ]);
     }
 }

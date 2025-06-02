@@ -11,9 +11,12 @@ use Dtyq\PhpMcp\Client\Core\AbstractSession;
 use Dtyq\PhpMcp\Client\Core\SessionInterface;
 use Dtyq\PhpMcp\Client\Core\TransportInterface;
 use Dtyq\PhpMcp\Shared\Exceptions\ProtocolError;
+use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 use Dtyq\PhpMcp\Types\Core\JsonRpcRequest;
 use Dtyq\PhpMcp\Types\Core\JsonRpcResponse;
+use Dtyq\PhpMcp\Types\Core\NotificationInterface;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Core\RequestInterface;
 use Dtyq\PhpMcp\Types\Notifications\InitializedNotification;
 use Dtyq\PhpMcp\Types\Prompts\GetPromptResult;
 use Dtyq\PhpMcp\Types\Requests\CallToolRequest;
@@ -86,15 +89,12 @@ class ClientSession extends AbstractSession implements SessionInterface
         }
 
         try {
-            // Create and send initialize request
-            $initRequest = new InitializeRequest(
-                ProtocolConstants::LATEST_PROTOCOL_VERSION,
-                $this->clientCapabilities,
-                $this->metadata->createClientInfo()
-            );
-
             $response = $this->sendRequestAndWaitForResponse(
-                new JsonRpcRequest($initRequest->getMethod(), $initRequest->getParams()),
+                new InitializeRequest(
+                    ProtocolConstants::LATEST_PROTOCOL_VERSION,
+                    $this->clientCapabilities,
+                    $this->metadata->createClientInfo()
+                ),
                 $this->metadata->getInitializationTimeout()
             );
 
@@ -108,14 +108,12 @@ class ClientSession extends AbstractSession implements SessionInterface
             // Validate protocol version compatibility
             $this->validateProtocolVersion($initResult->getProtocolVersion());
 
-            // Send initialized notification to complete handshake
-            $initializedNotification = new InitializedNotification();
-            $this->sendNotificationMessage(
-                new JsonRpcRequest($initializedNotification->getMethod(), $initializedNotification->getParams())
-            );
-
             // Mark session as initialized
             $this->markAsInitialized();
+
+            // Send initialized notification to complete handshake
+            $this->sendNotification(new InitializedNotification());
+
             $this->state->setState(SessionState::STATE_READY);
         } catch (Exception $e) {
             $this->state->setState(SessionState::STATE_ERROR);
@@ -123,11 +121,10 @@ class ClientSession extends AbstractSession implements SessionInterface
         }
     }
 
-    public function sendRequest(string $method, ?array $params = null, ?int $timeout = null): array
+    public function sendRequest(RequestInterface $request, ?int $timeout = null): array
     {
         $this->validateSessionState('sendRequest');
 
-        $request = new JsonRpcRequest($method, $params);
         $response = $this->sendRequestAndWaitForResponse($request, $timeout ? (float) $timeout : null);
 
         if (isset($response->getResult()['error'])) {
@@ -137,12 +134,13 @@ class ClientSession extends AbstractSession implements SessionInterface
         return $response->getResult();
     }
 
-    public function sendNotification(string $method, ?array $params = null): void
+    public function sendNotification(NotificationInterface $notification): void
     {
         $this->validateSessionState('sendNotification');
 
-        $notification = new JsonRpcRequest($method, $params);
-        $this->sendNotificationMessage($notification);
+        $jsonRpcRequest = new JsonRpcRequest($notification->getMethod(), $notification->getParams());
+        $message = JsonUtils::encode($jsonRpcRequest->toJsonRpc());
+        $this->transport->send($message);
     }
 
     public function listTools(): ListToolsResult
@@ -150,9 +148,7 @@ class ClientSession extends AbstractSession implements SessionInterface
         $this->validateSessionState('listTools');
 
         $request = new ListToolsRequest();
-        $response = $this->sendRequestAndWaitForResponse(
-            new JsonRpcRequest($request->getMethod(), $request->getParams())
-        );
+        $response = $this->sendRequestAndWaitForResponse($request);
 
         return ListToolsResult::fromArray($response->getResult());
     }
@@ -162,9 +158,7 @@ class ClientSession extends AbstractSession implements SessionInterface
         $this->validateSessionState('callTool');
 
         $request = new CallToolRequest($name, $arguments);
-        $response = $this->sendRequestAndWaitForResponse(
-            new JsonRpcRequest($request->getMethod(), $request->getParams())
-        );
+        $response = $this->sendRequestAndWaitForResponse($request);
 
         return CallToolResult::fromArray($response->getResult());
     }
@@ -174,9 +168,7 @@ class ClientSession extends AbstractSession implements SessionInterface
         $this->validateSessionState('listResources');
 
         $request = new ListResourcesRequest();
-        $response = $this->sendRequestAndWaitForResponse(
-            new JsonRpcRequest($request->getMethod(), $request->getParams())
-        );
+        $response = $this->sendRequestAndWaitForResponse($request);
 
         return ListResourcesResult::fromArray($response->getResult());
     }
@@ -186,9 +178,7 @@ class ClientSession extends AbstractSession implements SessionInterface
         $this->validateSessionState('listPrompts');
 
         $request = new ListPromptsRequest();
-        $response = $this->sendRequestAndWaitForResponse(
-            new JsonRpcRequest($request->getMethod(), $request->getParams())
-        );
+        $response = $this->sendRequestAndWaitForResponse($request);
 
         return ListPromptsResult::fromArray($response->getResult());
     }
@@ -205,9 +195,7 @@ class ClientSession extends AbstractSession implements SessionInterface
         $this->validateSessionState('getPrompt');
 
         $request = new GetPromptRequest($name, $arguments);
-        $response = $this->sendRequestAndWaitForResponse(
-            new JsonRpcRequest($request->getMethod(), $request->getParams())
-        );
+        $response = $this->sendRequestAndWaitForResponse($request);
 
         return GetPromptResult::fromArray($response->getResult());
     }
@@ -217,9 +205,7 @@ class ClientSession extends AbstractSession implements SessionInterface
         $this->validateSessionState('readResource');
 
         $request = new ReadResourceRequest($uri);
-        $response = $this->sendRequestAndWaitForResponse(
-            new JsonRpcRequest($request->getMethod(), $request->getParams())
-        );
+        $response = $this->sendRequestAndWaitForResponse($request);
 
         return ReadResourceResult::fromArray($response->getResult());
     }
@@ -368,9 +354,7 @@ class ClientSession extends AbstractSession implements SessionInterface
      */
     private function validateProtocolVersion(string $serverVersion): void
     {
-        // For now, we require exact version match
-        // Future versions could implement more sophisticated compatibility checks
-        if ($serverVersion !== ProtocolConstants::LATEST_PROTOCOL_VERSION) {
+        if (! in_array($serverVersion, ProtocolConstants::getSupportedProtocolVersions())) {
             throw new ProtocolError(
                 'Protocol version mismatch. Client: ' . ProtocolConstants::LATEST_PROTOCOL_VERSION
                 . ', Server: ' . $serverVersion
@@ -390,13 +374,11 @@ class ClientSession extends AbstractSession implements SessionInterface
                 'listChanged' => false,
             ],
             'resources' => [
-                'subscribe' => false,
                 'listChanged' => false,
             ],
             'prompts' => [
                 'listChanged' => false,
             ],
-            'sampling' => [],
         ];
     }
 

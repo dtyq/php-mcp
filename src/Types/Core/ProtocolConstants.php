@@ -18,6 +18,10 @@ final class ProtocolConstants
     /** Current MCP protocol version */
     public const LATEST_PROTOCOL_VERSION = '2025-03-26';
 
+    public const PROTOCOL_VERSION_20250326 = '2025-03-26';
+
+    public const PROTOCOL_VERSION_20241105 = '2024-11-05';
+
     /** JSON-RPC 2.0 version */
     public const JSONRPC_VERSION = '2.0';
 
@@ -276,6 +280,20 @@ final class ProtocolConstants
             self::NOTIFICATION_TOOLS_LIST_CHANGED,
             self::NOTIFICATION_PROMPTS_LIST_CHANGED,
             self::NOTIFICATION_ROOTS_LIST_CHANGED,
+        ];
+    }
+
+    /**
+     * Get all supported protocol versions.
+     *
+     * @return array<string>
+     */
+    public static function getSupportedProtocolVersions(): array
+    {
+        return [
+            self::PROTOCOL_VERSION_20250326,
+            self::PROTOCOL_VERSION_20241105,
+            self::LATEST_PROTOCOL_VERSION,
         ];
     }
 
