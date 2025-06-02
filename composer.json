@@ -24,6 +24,12 @@
         "mockery/mockery": "^1.0",
         "phpstan/phpstan": "^1.0"
     },
+    "suggest": {
+        "hyperf/config": "^2.2 || ^3.0",
+        "hyperf/di": "^2.2 || ^3.0",
+        "hyperf/logger": "^2.2 || ^3.0",
+        "hyperf/framework": "^2.2 || ^3.0"
+    },
     "autoload": {
         "psr-4": {
             "Dtyq\\PhpMcp\\": "src/"
@@ -40,5 +46,10 @@
         "test:integration": "phpunit -c phpunit.xml --testsuite=integration --colors=always",
         "analyse": "phpstan analyse --memory-limit 1024M -c phpstan.neon",
         "cs-fix": "php-cs-fixer fix $1"
+    },
+    "extra": {
+        "hyperf": {
+            "config": "Dtyq\\PhpMcp\\Server\\Framework\\Hyperf\\ConfigProvider"
+        }
     }
 }
