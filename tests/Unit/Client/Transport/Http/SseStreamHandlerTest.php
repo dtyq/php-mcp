@@ -201,7 +201,7 @@ class SseStreamHandlerTest extends TestCase
              * @param array<string, string> $headers
              * @return resource
              */
-            protected function createSseConnection(string $url, array $headers): mixed
+            protected function createSseConnection(string $url, array $headers)
             {
                 $this->connectionAttempted = true;
                 $this->lastUrl = $url;
@@ -241,7 +241,7 @@ class SseStreamHandlerTest extends TestCase
              * @param array<string, string> $headers
              * @return resource
              */
-            protected function createSseConnection(string $url, array $headers): mixed
+            protected function createSseConnection(string $url, array $headers)
             {
                 $this->connectionAttempted = true;
                 $this->lastHeaders = $headers;
@@ -282,7 +282,7 @@ class SseStreamHandlerTest extends TestCase
              * @param array<string, string> $headers
              * @return resource
              */
-            protected function createSseConnection(string $url, array $headers): mixed
+            protected function createSseConnection(string $url, array $headers)
             {
                 $this->connectionAttempted = true;
 
@@ -332,7 +332,7 @@ class SseStreamHandlerTest extends TestCase
              * @param array<string, string> $headers
              * @return resource
              */
-            protected function createSseConnection(string $url, array $headers): mixed
+            protected function createSseConnection(string $url, array $headers)
             {
                 $stream = fopen('php://memory', 'r+');
                 if ($stream === false) {

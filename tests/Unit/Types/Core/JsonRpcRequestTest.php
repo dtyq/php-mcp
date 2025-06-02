@@ -31,7 +31,7 @@ class JsonRpcRequestTest extends TestCase
 
         $this->assertEquals('test.method', $request->getMethod());
         $this->assertNull($request->getParams());
-        $this->assertEquals(0, $request->getId()); // Default ID is 0
+        $this->assertNull($request->getId()); // Default ID is null
     }
 
     public function testConstructorWithEmptyMethodThrowsException(): void
@@ -242,8 +242,8 @@ class JsonRpcRequestTest extends TestCase
 
         $expected = [
             'jsonrpc' => '2.0',
-            'id' => 0, // toJsonRpc() converts ID to int, so string 'test-id' becomes 0
             'method' => 'test.method',
+            'id' => 0, // toJsonRpc() converts ID to int, so string 'test-id' becomes 0
             'params' => ['param' => 'value'],
         ];
 
@@ -258,8 +258,8 @@ class JsonRpcRequestTest extends TestCase
 
         $expected = [
             'jsonrpc' => '2.0',
-            'id' => 123, // Integer ID remains as integer
             'method' => 'test.method',
+            'id' => 123, // Integer ID remains as integer
         ];
 
         $this->assertEquals($expected, $jsonRpc);
@@ -271,7 +271,7 @@ class JsonRpcRequestTest extends TestCase
 
         $json = $request->toJson();
 
-        $expected = '{"jsonrpc":"2.0","id":123,"method":"test.method","params":{"param":"value"}}';
+        $expected = '{"jsonrpc":"2.0","method":"test.method","id":123,"params":{"param":"value"}}';
         $this->assertEquals($expected, $json);
     }
 
@@ -280,9 +280,9 @@ class JsonRpcRequestTest extends TestCase
         $request1 = new JsonRpcRequest('test.method');
         $request2 = new JsonRpcRequest('test.method');
 
-        // Both requests should have the same default ID (0) since no auto-generation is implemented
-        $this->assertEquals(0, $request1->getId());
-        $this->assertEquals(0, $request2->getId());
+        // Both requests should have null as default ID since no ID is provided
+        $this->assertNull($request1->getId());
+        $this->assertNull($request2->getId());
         $this->assertEquals($request1->getId(), $request2->getId());
     }
 }
