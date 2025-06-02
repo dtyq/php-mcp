@@ -40,7 +40,7 @@ class JsonRpcRequest implements RequestInterface
     {
         $this->setMethod($method);
         $this->params = $params;
-        $this->id = $id ?? 0;
+        $this->id = $id;
 
         // Extract progress token from params meta
         $this->extractProgressToken();
@@ -157,9 +157,11 @@ class JsonRpcRequest implements RequestInterface
     {
         $data = [
             'jsonrpc' => $this->jsonrpc,
-            'id' => (int) $this->id,
             'method' => $this->method,
         ];
+        if (! is_null($this->id)) {
+            $data['id'] = (int) $this->id;
+        }
 
         if ($this->params !== null) {
             $data['params'] = $this->params;
