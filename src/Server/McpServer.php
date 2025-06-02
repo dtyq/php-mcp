@@ -15,10 +15,19 @@ use Dtyq\PhpMcp\Server\FastMcp\Resources\ResourceManager;
 use Dtyq\PhpMcp\Server\FastMcp\Tools\RegisteredTool;
 use Dtyq\PhpMcp\Server\FastMcp\Tools\ToolManager;
 use Dtyq\PhpMcp\Server\Transports\Core\TransportMetadata;
+use Dtyq\PhpMcp\Server\Transports\Http\HttpTransport;
 use Dtyq\PhpMcp\Server\Transports\Stdio\StdioTransport;
-use Dtyq\PhpMcp\Shared\Exceptions\SystemException;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
+/**
+ * MCP Server - Core business logic for Model Context Protocol.
+ *
+ * This class manages MCP-specific functionality like tools, prompts, and resources.
+ * It does not handle transport concerns - those are handled by separate classes
+ * like HttpServer for HTTP transport or StdioTransport for stdio transport.
+ */
 class McpServer
 {
     private string $name;
@@ -47,38 +56,100 @@ class McpServer
         $this->resourceManager = new ResourceManager();
     }
 
+    /**
+     * Register a tool with the MCP server.
+     *
+     * @param RegisteredTool $tool Tool to register
+     */
     public function registerTool(RegisteredTool $tool): self
     {
         $this->toolManager->register($tool);
         return $this;
     }
 
+    /**
+     * Register a prompt with the MCP server.
+     *
+     * @param RegisteredPrompt $prompt Prompt to register
+     */
     public function registerPrompt(RegisteredPrompt $prompt): self
     {
         $this->promptManager->register($prompt);
         return $this;
     }
 
+    /**
+     * Register a resource with the MCP server.
+     *
+     * @param RegisteredResource $resource Resource to register
+     */
     public function registerResource(RegisteredResource $resource): self
     {
         $this->resourceManager->register($resource);
         return $this;
     }
 
+    /**
+     * Register a resource template with the MCP server.
+     *
+     * @param RegisteredResourceTemplate $template Template to register
+     */
     public function registerTemplate(RegisteredResourceTemplate $template): self
     {
         $this->resourceManager->registerTemplate($template);
         return $this;
     }
 
+    /**
+     * Start stdio transport for command-line usage.
+     *
+     * This method starts the stdio transport which is commonly used
+     * for command-line MCP servers.
+     */
     public function stdio(): void
     {
-        $this->start('stdio');
+        $transportMetadata = $this->createTransportMetadata();
+        $transport = new StdioTransport(
+            $this->application,
+            $transportMetadata
+        );
+        $transport->handleSubprocessLifecycle();
+        $transport->start();
     }
 
-    public function start(string $transport): void
+    public function http(RequestInterface $request): ResponseInterface
     {
-        $transportMetadata = new TransportMetadata(
+        $transportMetadata = $this->createTransportMetadata();
+        $transport = new HttpTransport(
+            $this->application,
+            $transportMetadata,
+        );
+        return $transport->handleRequest($request);
+    }
+
+    /**
+     * Get the server name.
+     *
+     * @return string Server name
+     */
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    /**
+     * Get the server version.
+     *
+     * @return string Server version
+     */
+    public function getVersion(): string
+    {
+        return $this->version;
+    }
+
+    protected function createTransportMetadata(): TransportMetadata
+    {
+        return new TransportMetadata(
             $this->name,
             $this->version,
             '',
@@ -86,17 +157,5 @@ class McpServer
             $this->promptManager,
             $this->resourceManager
         );
-        switch ($transport) {
-            case 'stdio':
-                $transport = new StdioTransport(
-                    $this->application,
-                    $transportMetadata
-                );
-                $transport->handleSubprocessLifecycle();
-                break;
-            default:
-                throw new SystemException('Transport not set');
-        }
-        $transport->start();
     }
 }

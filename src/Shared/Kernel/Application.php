@@ -40,6 +40,24 @@ class Application
         $this->config = new Config($configs);
     }
 
+    public function has(string $id): bool
+    {
+        return $this->container->has($id);
+    }
+
+    /**
+     * Get the container instance.
+     *
+     * @return mixed
+     */
+    public function get(string $id)
+    {
+        if (! $this->container->has($id)) {
+            throw new SystemException(sprintf('Service "%s" not found in container.', $id));
+        }
+        return $this->container->get($id);
+    }
+
     public function getConfig(): Config
     {
         return $this->config;

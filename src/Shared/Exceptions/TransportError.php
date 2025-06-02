@@ -248,4 +248,62 @@ class TransportError extends McpError
     {
         return new self("Transport {$transport} is not started", $data);
     }
+
+    /**
+     * Create a TransportError for configuration errors.
+     *
+     * @param string $message The configuration error message
+     * @param mixed $data Additional error data (optional)
+     */
+    public static function configurationError(string $message, $data = null): TransportError
+    {
+        return new self("Configuration error: {$message}", $data);
+    }
+
+    /**
+     * Create a TransportError for startup failures.
+     *
+     * @param string $transport The transport type
+     * @param string $reason The reason for startup failure
+     * @param mixed $data Additional error data (optional)
+     */
+    public static function startupFailed(string $transport, string $reason, $data = null): TransportError
+    {
+        return new self("Failed to start {$transport} transport: {$reason}", $data);
+    }
+
+    /**
+     * Create a TransportError for shutdown failures.
+     *
+     * @param string $transport The transport type
+     * @param string $reason The reason for shutdown failure
+     * @param mixed $data Additional error data (optional)
+     */
+    public static function shutdownFailed(string $transport, string $reason, $data = null): TransportError
+    {
+        return new self("Failed to shutdown {$transport} transport: {$reason}", $data);
+    }
+
+    /**
+     * Create a TransportError for shutdown in progress.
+     *
+     * @param string $transport The transport type
+     * @param mixed $data Additional error data (optional)
+     */
+    public static function shutdownInProgress(string $transport, $data = null): TransportError
+    {
+        return new self("Transport {$transport} is shutting down", $data);
+    }
+
+    /**
+     * Create a TransportError for message send failures.
+     *
+     * @param string $transport The transport type
+     * @param string $reason The reason for send failure
+     * @param mixed $data Additional error data (optional)
+     */
+    public static function messageSendFailed(string $transport, string $reason, $data = null): TransportError
+    {
+        return new self("Failed to send message on {$transport} transport: {$reason}", $data);
+    }
 }
