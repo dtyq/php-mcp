@@ -9,6 +9,7 @@ namespace Dtyq\PhpMcp\Tests\Unit\Client\Transport;
 
 use Dtyq\PhpMcp\Client\Configuration\ClientConfig;
 use Dtyq\PhpMcp\Client\Core\TransportInterface;
+use Dtyq\PhpMcp\Client\Transport\Http\HttpTransport;
 use Dtyq\PhpMcp\Client\Transport\Stdio\StdioTransport;
 use Dtyq\PhpMcp\Client\Transport\TransportFactory;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
@@ -89,7 +90,7 @@ class TransportFactoryTest extends TestCase
         $this->expectExceptionMessage('Stdio transport requires command array');
 
         $config = new ClientConfig(ProtocolConstants::TRANSPORT_TYPE_STDIO, [
-            'command' => 'not-an-array', // Should be array
+            'command' => 'not-an-array', // Should be arrayed
         ]);
 
         TransportFactory::create(ProtocolConstants::TRANSPORT_TYPE_STDIO, $config, $this->application);
@@ -97,9 +98,8 @@ class TransportFactoryTest extends TestCase
 
     public function testCreateHttpWithoutBaseUrl(): void
     {
-        // HTTP transport is not implemented yet
         $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('Unknown transport type');
+        $this->expectExceptionMessage('HTTP transport requires base_url');
 
         $config = new ClientConfig(ProtocolConstants::TRANSPORT_TYPE_HTTP, []);
 
@@ -108,9 +108,8 @@ class TransportFactoryTest extends TestCase
 
     public function testCreateHttpWithInvalidBaseUrl(): void
     {
-        // HTTP transport is not implemented yet
         $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('Unknown transport type');
+        $this->expectExceptionMessage('HTTP transport requires base_url');
 
         $config = new ClientConfig(ProtocolConstants::TRANSPORT_TYPE_HTTP, [
             'base_url' => 123, // Should be string
@@ -119,21 +118,52 @@ class TransportFactoryTest extends TestCase
         TransportFactory::create(ProtocolConstants::TRANSPORT_TYPE_HTTP, $config, $this->application);
     }
 
+    public function testCreateHttpTransport(): void
+    {
+        $config = new ClientConfig(
+            ProtocolConstants::TRANSPORT_TYPE_HTTP,
+            [
+                'base_url' => 'https://example.com/mcp',
+                'timeout' => 60.0,
+                'max_retries' => 5,
+                'validate_ssl' => false,
+            ]
+        );
+
+        $transport = TransportFactory::create(ProtocolConstants::TRANSPORT_TYPE_HTTP, $config, $this->application);
+
+        $this->assertInstanceOf(HttpTransport::class, $transport);
+        $this->assertEquals(ProtocolConstants::TRANSPORT_TYPE_HTTP, $transport->getType());
+    }
+
+    public function testCreateHttpTransportWithMinimalConfig(): void
+    {
+        $config = new ClientConfig(
+            ProtocolConstants::TRANSPORT_TYPE_HTTP,
+            [
+                'base_url' => 'https://example.com/mcp',
+            ]
+        );
+
+        $transport = TransportFactory::create(ProtocolConstants::TRANSPORT_TYPE_HTTP, $config, $this->application);
+
+        $this->assertInstanceOf(HttpTransport::class, $transport);
+        $this->assertEquals(ProtocolConstants::TRANSPORT_TYPE_HTTP, $transport->getType());
+    }
+
     public function testGetSupportedTypes(): void
     {
         $types = TransportFactory::getSupportedTypes();
 
         $this->assertIsArray($types);
         $this->assertContains(ProtocolConstants::TRANSPORT_TYPE_STDIO, $types);
-        // HTTP transport is not implemented yet
-        // $this->assertContains(ProtocolConstants::TRANSPORT_TYPE_HTTP, $types);
+        $this->assertContains(ProtocolConstants::TRANSPORT_TYPE_HTTP, $types);
     }
 
     public function testIsSupported(): void
     {
         $this->assertTrue(TransportFactory::isSupported(ProtocolConstants::TRANSPORT_TYPE_STDIO));
-        // HTTP transport is not implemented yet
-        $this->assertFalse(TransportFactory::isSupported(ProtocolConstants::TRANSPORT_TYPE_HTTP));
+        $this->assertTrue(TransportFactory::isSupported(ProtocolConstants::TRANSPORT_TYPE_HTTP));
         $this->assertFalse(TransportFactory::isSupported('invalid-type'));
         $this->assertFalse(TransportFactory::isSupported('websocket')); // Not implemented yet
     }
@@ -204,8 +234,6 @@ class TransportFactoryTest extends TestCase
         $this->assertArrayHasKey('shutdown_timeout', $config);
     }
 
-    // Remove or comment out HTTP-specific tests
-    /*
     public function testCreateDefaultConfigHttp(): void
     {
         $config = TransportFactory::createDefaultConfig(ProtocolConstants::TRANSPORT_TYPE_HTTP);
@@ -215,13 +243,14 @@ class TransportFactoryTest extends TestCase
         $this->assertArrayHasKey('sse_timeout', $config);
         $this->assertArrayHasKey('max_retries', $config);
         $this->assertArrayHasKey('retry_delay', $config);
-        $this->assertArrayHasKey('session_resumable', $config);
         $this->assertArrayHasKey('validate_ssl', $config);
         $this->assertArrayHasKey('user_agent', $config);
         $this->assertArrayHasKey('headers', $config);
         $this->assertArrayHasKey('auth', $config);
+        $this->assertArrayHasKey('protocol_version', $config);
+        $this->assertArrayHasKey('enable_resumption', $config);
+        $this->assertArrayHasKey('event_store_type', $config);
     }
-    */
 
     public function testCreateDefaultConfigWithOverrides(): void
     {
@@ -240,8 +269,6 @@ class TransportFactoryTest extends TestCase
         $this->assertArrayHasKey('write_timeout', $config);
     }
 
-    // Remove or comment out HTTP-specific tests
-    /*
     public function testCreateDefaultConfigHttpWithOverrides(): void
     {
         $overrides = [
@@ -261,7 +288,6 @@ class TransportFactoryTest extends TestCase
         $this->assertArrayHasKey('sse_timeout', $config);
         $this->assertArrayHasKey('validate_ssl', $config);
     }
-    */
 
     public function testCreateDefaultConfigWithUnsupportedType(): void
     {

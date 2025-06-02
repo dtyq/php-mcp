@@ -200,6 +200,9 @@ class McpClient
             case ProtocolConstants::TRANSPORT_TYPE_STDIO:
                 $session = $this->createStdioSession($config);
                 break;
+            case ProtocolConstants::TRANSPORT_TYPE_HTTP:
+                $session = $this->createHttpSession($config);
+                break;
             default:
                 throw ValidationError::invalidFieldValue(
                     'transportType',
@@ -208,6 +211,7 @@ class McpClient
                         'type' => $transportType,
                         'supported' => [
                             ProtocolConstants::TRANSPORT_TYPE_STDIO,
+                            ProtocolConstants::TRANSPORT_TYPE_HTTP,
                         ],
                     ]
                 );
@@ -271,6 +275,66 @@ class McpClient
             'client_version' => $this->version,
             'response_timeout' => $transportConfig['read_timeout'],
             'initialization_timeout' => $transportConfig['read_timeout'] * 2,
+        ]);
+
+        // Create session
+        return new ClientSession($transport, $metadata);
+    }
+
+    /**
+     * Create an HTTP session.
+     *
+     * @param array<string, mixed> $config HTTP configuration
+     * @return ClientSession The created session
+     * @throws ValidationError If configuration is invalid
+     */
+    private function createHttpSession(array $config): ClientSession
+    {
+        // Validate required HTTP config
+        if (! isset($config['base_url'])) {
+            throw ValidationError::emptyField('base_url');
+        }
+
+        // Create transport config with defaults
+        $transportConfig = array_merge([
+            'timeout' => 30.0,
+            'sse_timeout' => 300.0,
+            'max_retries' => 3,
+            'retry_delay' => 1.0,
+            'validate_ssl' => true,
+            'user_agent' => 'php-mcp-client/1.0',
+            'headers' => [],
+            'auth' => null,
+            'protocol_version' => 'auto',
+            'enable_resumption' => true,
+            'event_store_type' => 'memory',
+            'event_store_config' => [],
+            'json_response_mode' => false,
+            'terminate_on_close' => true,
+        ], $config);
+
+        // Create client config
+        $clientConfig = new ClientConfig(
+            ProtocolConstants::TRANSPORT_TYPE_HTTP,
+            $transportConfig
+        );
+
+        // Create transport using factory
+        $transport = TransportFactory::create(
+            ProtocolConstants::TRANSPORT_TYPE_HTTP,
+            $clientConfig,
+            $this->application
+        );
+
+        // Connect transport
+        $transport->connect();
+
+        // Create session metadata
+        $metadata = SessionMetadata::fromArray([
+            'client_name' => $this->name,
+            'client_version' => $this->version,
+            'response_timeout' => $transportConfig['timeout'],
+            'initialization_timeout' => $transportConfig['timeout'] * 2,
         ]);
 
         // Create session

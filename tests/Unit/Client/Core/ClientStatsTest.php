@@ -112,14 +112,14 @@ class ClientStatsTest extends TestCase
 
         // After connection
         $this->stats->recordConnectionAttempt();
-        usleep(100000); // 0.1 seconds
+        usleep(20000); // Reduced from 100ms to 20ms
 
         $uptime = $this->stats->getUptime();
         $this->assertGreaterThan(0.0, $uptime);
         $this->assertLessThan(1.0, $uptime); // Should be less than 1 second
 
         // After closure
-        usleep(100000); // Another 0.1 seconds
+        usleep(20000); // Reduced from 100ms to 20ms
         $this->stats->recordClosure();
 
         $finalUptime = $this->stats->getUptime();

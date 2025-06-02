@@ -8,8 +8,10 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Client\Transport;
 
 use Dtyq\PhpMcp\Client\Configuration\ClientConfig;
+use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
 use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
 use Dtyq\PhpMcp\Client\Core\TransportInterface;
+use Dtyq\PhpMcp\Client\Transport\Http\HttpTransport;
 use Dtyq\PhpMcp\Client\Transport\Stdio\StdioTransport;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
@@ -20,15 +22,14 @@ use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
  *
  * This factory implements the factory method pattern to create
  * appropriate transport instances based on the requested type,
- * with support for multiple transport protocols.
+ * with support for multiple transport protocols including stdio and HTTP.
  */
 class TransportFactory
 {
     /** @var array<string, class-string<TransportInterface>> */
     private static array $transportTypes = [
         ProtocolConstants::TRANSPORT_TYPE_STDIO => StdioTransport::class,
-        // Note: HTTP transport class would be added here when implemented
-        // ProtocolConstants::TRANSPORT_TYPE_HTTP => HttpTransport::class,
+        ProtocolConstants::TRANSPORT_TYPE_HTTP => HttpTransport::class,
     ];
 
     /**
@@ -52,6 +53,8 @@ class TransportFactory
         switch ($type) {
             case ProtocolConstants::TRANSPORT_TYPE_STDIO:
                 return self::createStdioTransport($transportConfig, $application);
+            case ProtocolConstants::TRANSPORT_TYPE_HTTP:
+                return self::createHttpTransport($transportConfig, $application);
             default:
                 throw ValidationError::invalidFieldValue(
                     'transportType',
@@ -71,6 +74,7 @@ class TransportFactory
         // Combine built-in types with dynamically registered ones
         $builtInTypes = [
             ProtocolConstants::TRANSPORT_TYPE_STDIO,
+            ProtocolConstants::TRANSPORT_TYPE_HTTP,
         ];
 
         $registeredTypes = array_keys(self::$transportTypes);
@@ -135,6 +139,9 @@ class TransportFactory
             case ProtocolConstants::TRANSPORT_TYPE_STDIO:
                 $defaults = StdioConfig::getDefaults();
                 break;
+            case ProtocolConstants::TRANSPORT_TYPE_HTTP:
+                $defaults = HttpConfig::DEFAULTS;
+                break;
             default:
                 return [];
         }
@@ -168,6 +175,47 @@ class TransportFactory
     }
 
     /**
+     * Create HTTP transport instance.
+     *
+     * @param array<string, mixed> $transportConfig Transport configuration
+     * @param Application $application Application instance
+     * @return HttpTransport Created transport instance
+     * @throws ValidationError If configuration is invalid
+     */
+    private static function createHttpTransport(array $transportConfig, Application $application): HttpTransport
+    {
+        // Extract base URL from transport config
+        if (! isset($transportConfig['base_url']) || ! is_string($transportConfig['base_url'])) {
+            throw ValidationError::invalidFieldValue(
+                'base_url',
+                'HTTP transport requires base_url',
+                ['transportConfig' => $transportConfig]
+            );
+        }
+
+        // Create HTTP config with all parameters
+        $httpConfig = new HttpConfig(
+            $transportConfig['base_url'],
+            $transportConfig['timeout'] ?? HttpConfig::DEFAULTS['timeout'],
+            $transportConfig['sse_timeout'] ?? HttpConfig::DEFAULTS['sse_timeout'],
+            $transportConfig['max_retries'] ?? HttpConfig::DEFAULTS['max_retries'],
+            $transportConfig['retry_delay'] ?? HttpConfig::DEFAULTS['retry_delay'],
+            $transportConfig['validate_ssl'] ?? HttpConfig::DEFAULTS['validate_ssl'],
+            $transportConfig['user_agent'] ?? HttpConfig::DEFAULTS['user_agent'],
+            $transportConfig['headers'] ?? HttpConfig::DEFAULTS['headers'],
+            $transportConfig['auth'] ?? HttpConfig::DEFAULTS['auth'],
+            $transportConfig['protocol_version'] ?? HttpConfig::DEFAULTS['protocol_version'],
+            $transportConfig['enable_resumption'] ?? HttpConfig::DEFAULTS['enable_resumption'],
+            $transportConfig['event_store_type'] ?? HttpConfig::DEFAULTS['event_store_type'],
+            $transportConfig['event_store_config'] ?? HttpConfig::DEFAULTS['event_store_config'],
+            $transportConfig['json_response_mode'] ?? HttpConfig::DEFAULTS['json_response_mode'],
+            $transportConfig['terminate_on_close'] ?? HttpConfig::DEFAULTS['terminate_on_close']
+        );
+
+        return new HttpTransport($httpConfig, $application);
+    }
+
+    /**
      * Validate transport type.
      *
      * @param string $type The transport type to validate
@@ -182,6 +230,7 @@ class TransportFactory
         // Use protocol constants for validation
         $knownTypes = [
             ProtocolConstants::TRANSPORT_TYPE_STDIO,
+            ProtocolConstants::TRANSPORT_TYPE_HTTP,
         ];
 
         if (! in_array($type, $knownTypes, true)) {

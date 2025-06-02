@@ -31,7 +31,7 @@ class JsonRpcRequestTest extends TestCase
 
         $this->assertEquals('test.method', $request->getMethod());
         $this->assertNull($request->getParams());
-        $this->assertIsString($request->getId()); // Auto-generated ID
+        $this->assertEquals(0, $request->getId()); // Default ID is 0
     }
 
     public function testConstructorWithEmptyMethodThrowsException(): void
@@ -242,7 +242,7 @@ class JsonRpcRequestTest extends TestCase
 
         $expected = [
             'jsonrpc' => '2.0',
-            'id' => 'test-id',
+            'id' => 0, // toJsonRpc() converts ID to int, so string 'test-id' becomes 0
             'method' => 'test.method',
             'params' => ['param' => 'value'],
         ];
@@ -252,13 +252,13 @@ class JsonRpcRequestTest extends TestCase
 
     public function testToJsonRpcFormatWithoutParams(): void
     {
-        $request = new JsonRpcRequest('test.method', null, 'test-id');
+        $request = new JsonRpcRequest('test.method', null, 123);
 
         $jsonRpc = $request->toJsonRpc();
 
         $expected = [
             'jsonrpc' => '2.0',
-            'id' => 'test-id',
+            'id' => 123, // Integer ID remains as integer
             'method' => 'test.method',
         ];
 
@@ -267,11 +267,11 @@ class JsonRpcRequestTest extends TestCase
 
     public function testToJsonString(): void
     {
-        $request = new JsonRpcRequest('test.method', ['param' => 'value'], 'test-id');
+        $request = new JsonRpcRequest('test.method', ['param' => 'value'], 123);
 
         $json = $request->toJson();
 
-        $expected = '{"jsonrpc":"2.0","id":"test-id","method":"test.method","params":{"param":"value"}}';
+        $expected = '{"jsonrpc":"2.0","id":123,"method":"test.method","params":{"param":"value"}}';
         $this->assertEquals($expected, $json);
     }
 
@@ -280,8 +280,9 @@ class JsonRpcRequestTest extends TestCase
         $request1 = new JsonRpcRequest('test.method');
         $request2 = new JsonRpcRequest('test.method');
 
-        $this->assertNotEquals($request1->getId(), $request2->getId());
-        $this->assertStringStartsWith('req_', $request1->getId());
-        $this->assertStringStartsWith('req_', $request2->getId());
+        // Both requests should have the same default ID (0) since no auto-generation is implemented
+        $this->assertEquals(0, $request1->getId());
+        $this->assertEquals(0, $request2->getId());
+        $this->assertEquals($request1->getId(), $request2->getId());
     }
 }
