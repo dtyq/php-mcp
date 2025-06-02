@@ -272,7 +272,7 @@ class HttpConfigTest extends TestCase
     public function testValidateBearerAuth(): void
     {
         $auth = ['type' => 'bearer', 'token' => 'valid-token'];
-        $config = new HttpConfig('https://example.com', auth: $auth);
+        $config = new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
         $config->validate();
 
         $this->addToAssertionCount(1); // No exception thrown
@@ -284,13 +284,13 @@ class HttpConfigTest extends TestCase
         $this->expectExceptionMessage('is required for bearer authentication');
 
         $auth = ['type' => 'bearer']; // Missing token
-        new HttpConfig('https://example.com', auth: $auth);
+        new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
     }
 
     public function testValidateBasicAuth(): void
     {
         $auth = ['type' => 'basic', 'username' => 'user', 'password' => 'pass'];
-        $config = new HttpConfig('https://example.com', auth: $auth);
+        $config = new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
         $config->validate();
 
         $this->addToAssertionCount(1); // No exception thrown
@@ -302,13 +302,13 @@ class HttpConfigTest extends TestCase
         $this->expectExceptionMessage('is required for basic authentication');
 
         $auth = ['type' => 'basic', 'username' => 'user']; // Missing password
-        new HttpConfig('https://example.com', auth: $auth);
+        new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
     }
 
     public function testValidateOAuth2Auth(): void
     {
         $auth = ['type' => 'oauth2', 'client_id' => 'id', 'client_secret' => 'secret'];
-        $config = new HttpConfig('https://example.com', auth: $auth);
+        $config = new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
         $config->validate();
 
         $this->addToAssertionCount(1); // No exception thrown
@@ -320,13 +320,13 @@ class HttpConfigTest extends TestCase
         $this->expectExceptionMessage('is required for OAuth2 authentication');
 
         $auth = ['type' => 'oauth2', 'client_id' => 'id']; // Missing client_secret
-        new HttpConfig('https://example.com', auth: $auth);
+        new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
     }
 
     public function testValidateCustomAuth(): void
     {
         $auth = ['type' => 'custom', 'headers' => ['X-API-Key' => 'key123']];
-        $config = new HttpConfig('https://example.com', auth: $auth);
+        $config = new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
         $config->validate();
 
         $this->addToAssertionCount(1); // No exception thrown
@@ -338,7 +338,7 @@ class HttpConfigTest extends TestCase
         $this->expectExceptionMessage('is required for custom authentication');
 
         $auth = ['type' => 'custom']; // Missing headers
-        new HttpConfig('https://example.com', auth: $auth);
+        new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
     }
 
     public function testValidateInvalidAuthType(): void
@@ -347,7 +347,7 @@ class HttpConfigTest extends TestCase
         $this->expectExceptionMessage('must be one of');
 
         $auth = ['type' => 'invalid'];
-        new HttpConfig('https://example.com', auth: $auth);
+        new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
     }
 
     public function testValidateEmptyAuthType(): void
@@ -356,6 +356,6 @@ class HttpConfigTest extends TestCase
         $this->expectExceptionMessage('auth.type');
 
         $auth = []; // Missing type
-        new HttpConfig('https://example.com', auth: $auth);
+        new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
     }
 }

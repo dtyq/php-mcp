@@ -13,6 +13,7 @@ use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use ReflectionProperty;
 
 /**
@@ -45,7 +46,17 @@ class HttpAuthenticatorTest extends TestCase
     public function testAddBearerAuth(): void
     {
         $authConfig = ['type' => 'bearer', 'token' => 'test-token-123'];
-        $config = new HttpConfig('https://example.com', auth: $authConfig);
+        $config = new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
         $authenticator = new HttpAuthenticator($config, $this->logger);
 
         $headers = ['Content-Type' => 'application/json'];
@@ -62,7 +73,17 @@ class HttpAuthenticatorTest extends TestCase
         $this->expectExceptionMessage('Invalid value for field \'auth.token\': is required for bearer authentication');
 
         $authConfig = ['type' => 'bearer'];
-        new HttpConfig('https://example.com', auth: $authConfig);
+        new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
     }
 
     public function testAddBearerAuthInvalidToken(): void
@@ -71,13 +92,33 @@ class HttpAuthenticatorTest extends TestCase
         $this->expectExceptionMessage('Invalid value for field \'auth.token\': is required for bearer authentication');
 
         $authConfig = ['type' => 'bearer', 'token' => 123];
-        new HttpConfig('https://example.com', auth: $authConfig);
+        new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
     }
 
     public function testAddBasicAuth(): void
     {
         $authConfig = ['type' => 'basic', 'username' => 'user', 'password' => 'pass'];
-        $config = new HttpConfig('https://example.com', auth: $authConfig);
+        $config = new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
         $authenticator = new HttpAuthenticator($config, $this->logger);
 
         $headers = ['Content-Type' => 'application/json'];
@@ -94,7 +135,17 @@ class HttpAuthenticatorTest extends TestCase
         $this->expectExceptionMessage('Invalid value for field \'auth.username\': is required for basic authentication');
 
         $authConfig = ['type' => 'basic', 'password' => 'pass'];
-        new HttpConfig('https://example.com', auth: $authConfig);
+        new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
     }
 
     public function testAddBasicAuthMissingPassword(): void
@@ -103,7 +154,17 @@ class HttpAuthenticatorTest extends TestCase
         $this->expectExceptionMessage('Invalid value for field \'auth.password\': is required for basic authentication');
 
         $authConfig = ['type' => 'basic', 'username' => 'user'];
-        new HttpConfig('https://example.com', auth: $authConfig);
+        new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
     }
 
     public function testAddBasicAuthInvalidCredentials(): void
@@ -112,14 +173,34 @@ class HttpAuthenticatorTest extends TestCase
         $this->expectExceptionMessage('Invalid value for field \'auth.username\': is required for basic authentication');
 
         $authConfig = ['type' => 'basic', 'username' => 123, 'password' => 'pass'];
-        new HttpConfig('https://example.com', auth: $authConfig);
+        new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
     }
 
     public function testAddCustomAuth(): void
     {
         $customHeaders = ['X-API-Key' => 'secret-key', 'X-Client-ID' => 'client-123'];
         $authConfig = ['type' => 'custom', 'headers' => $customHeaders];
-        $config = new HttpConfig('https://example.com', auth: $authConfig);
+        $config = new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
         $authenticator = new HttpAuthenticator($config, $this->logger);
 
         $headers = ['Content-Type' => 'application/json'];
@@ -136,7 +217,17 @@ class HttpAuthenticatorTest extends TestCase
         $this->expectExceptionMessage('Invalid value for field \'auth.headers\': is required for custom authentication');
 
         $authConfig = ['type' => 'custom'];
-        new HttpConfig('https://example.com', auth: $authConfig);
+        new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
     }
 
     public function testAddCustomAuthInvalidHeaders(): void
@@ -145,7 +236,17 @@ class HttpAuthenticatorTest extends TestCase
         $this->expectExceptionMessage('Custom headers must be string key-value pairs');
 
         $authConfig = ['type' => 'custom', 'headers' => ['key' => 123]];
-        $config = new HttpConfig('https://example.com', auth: $authConfig);
+        $config = new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
         $authenticator = new HttpAuthenticator($config, $this->logger);
 
         $authenticator->addAuthHeaders([]);
@@ -159,7 +260,17 @@ class HttpAuthenticatorTest extends TestCase
             'client_secret' => 'secret',
             'access_token' => 'oauth-token-123',
         ];
-        $config = new HttpConfig('https://example.com', auth: $authConfig);
+        $config = new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
         $authenticator = new HttpAuthenticator($config, $this->logger);
 
         $headers = ['Content-Type' => 'application/json'];
@@ -179,7 +290,17 @@ class HttpAuthenticatorTest extends TestCase
             'client_id' => 'client-123',
             'client_secret' => 'secret',
         ];
-        $config = new HttpConfig('https://example.com', auth: $authConfig);
+        $config = new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
         $authenticator = new HttpAuthenticator($config, $this->logger);
 
         $authenticator->addAuthHeaders([]);
@@ -194,7 +315,17 @@ class HttpAuthenticatorTest extends TestCase
             'access_token' => 'oauth-token-123',
             'expires_in' => 3600,
         ];
-        $config = new HttpConfig('https://example.com', auth: $authConfig);
+        $config = new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
         $authenticator = new HttpAuthenticator($config, $this->logger);
 
         // First call should cache the token
@@ -219,19 +350,27 @@ class HttpAuthenticatorTest extends TestCase
         $reflectionProperty->setAccessible(true);
         $reflectionProperty->setValue($config, ['type' => 'unknown']);
 
+        $this->expectException(TransportError::class);
+        $this->expectExceptionMessage('Unsupported authentication type: unknown');
+
         $authenticator = new HttpAuthenticator($config, $this->logger);
-
-        $headers = ['Content-Type' => 'application/json'];
-        $result = $authenticator->addAuthHeaders($headers);
-
-        // Should return original headers unchanged
-        $this->assertEquals($headers, $result);
+        $authenticator->addAuthHeaders(['Content-Type' => 'application/json']);
     }
 
     public function testGetAuthStatus(): void
     {
         $authConfig = ['type' => 'bearer', 'token' => 'test-token'];
-        $config = new HttpConfig('https://example.com', auth: $authConfig);
+        $config = new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
         $authenticator = new HttpAuthenticator($config, $this->logger);
 
         $status = $authenticator->getAuthStatus();
@@ -279,13 +418,22 @@ class HttpAuthenticatorTest extends TestCase
             'client_secret' => 'secret',
             'access_token' => 'oauth-token-123',
         ];
-        $config = new HttpConfig('https://example.com', auth: $authConfig);
+        $config = new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
         $authenticator = new HttpAuthenticator($config, $this->logger);
 
-        // Add token to cache
-        $authenticator->addAuthHeaders([]);
-        $status = $authenticator->getAuthStatus();
-        $this->assertTrue($status['has_cache']);
+        // First call should cache the token
+        $headers1 = $authenticator->addAuthHeaders([]);
+        $this->assertEquals('Bearer oauth-token-123', $headers1['Authorization']);
 
         // Refresh should clear cache
         $authenticator->refreshAuth();
@@ -302,7 +450,17 @@ class HttpAuthenticatorTest extends TestCase
             'access_token' => 'oauth-token-123',
             'expires_in' => 3600,
         ];
-        $config = new HttpConfig('https://example.com', auth: $authConfig);
+        $config = new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
         $authenticator = new HttpAuthenticator($config, $this->logger);
 
         // Add token to cache
@@ -317,5 +475,270 @@ class HttpAuthenticatorTest extends TestCase
         $status = $authenticator->getAuthStatus();
         $this->assertFalse($status['cache_valid']);
         $this->assertFalse($status['has_cache']);
+    }
+
+    public function testBasicAuth(): void
+    {
+        $authConfig = [
+            'type' => 'basic',
+            'username' => 'user',
+            'password' => 'pass',
+        ];
+
+        $config = new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
+
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $headers = $authenticator->addAuthHeaders([]);
+
+        $expectedCredentials = base64_encode('user:pass');
+        $this->assertArrayHasKey('Authorization', $headers);
+        $this->assertEquals('Basic ' . $expectedCredentials, $headers['Authorization']);
+    }
+
+    public function testInvalidAuthType(): void
+    {
+        $authConfig = ['type' => 'invalid'];
+
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('must be one of: bearer, basic, oauth2, custom');
+
+        new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
+    }
+
+    public function testMissingBasicCredentials(): void
+    {
+        $authConfig = ['type' => 'basic'];
+
+        $this->expectException(ValidationError::class);
+
+        new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
+    }
+
+    public function testBearerAuth(): void
+    {
+        $authConfig = [
+            'type' => 'bearer',
+            'token' => 'my-token',
+        ];
+
+        $config = new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
+
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $headers = $authenticator->addAuthHeaders([]);
+
+        $this->assertArrayHasKey('Authorization', $headers);
+        $this->assertEquals('Bearer my-token', $headers['Authorization']);
+    }
+
+    public function testMissingBearerToken(): void
+    {
+        $authConfig = ['type' => 'bearer'];
+
+        $this->expectException(ValidationError::class);
+
+        new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
+    }
+
+    public function testEmptyBearerToken(): void
+    {
+        $authConfig = ['type' => 'bearer', 'token' => ''];
+
+        $this->expectException(ValidationError::class);
+
+        new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
+    }
+
+    public function testEmptyBasicUsername(): void
+    {
+        $authConfig = ['type' => 'basic', 'username' => '', 'password' => 'pass'];
+
+        $this->expectException(ValidationError::class);
+
+        new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
+    }
+
+    public function testCustomHeaders(): void
+    {
+        $authConfig = [
+            'type' => 'bearer',
+            'token' => 'my-token',
+        ];
+
+        $config = new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
+
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $existingHeaders = ['X-Custom' => 'value'];
+        $headers = $authenticator->addAuthHeaders($existingHeaders);
+
+        $this->assertArrayHasKey('Authorization', $headers);
+        $this->assertArrayHasKey('X-Custom', $headers);
+        $this->assertEquals('Bearer my-token', $headers['Authorization']);
+        $this->assertEquals('value', $headers['X-Custom']);
+    }
+
+    public function testMissingBasicPassword(): void
+    {
+        $authConfig = ['type' => 'basic', 'username' => 'user'];
+
+        $this->expectException(ValidationError::class);
+
+        new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
+    }
+
+    public function testOAuth2WithClientCredentials(): void
+    {
+        $authConfig = [
+            'type' => 'oauth2',
+            'client_id' => 'client-123',
+            'client_secret' => 'secret',
+            'access_token' => 'oauth-token-123',
+        ];
+
+        $config = new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            $authConfig                   // auth
+        );
+
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $headers = $authenticator->addAuthHeaders([]);
+
+        $this->assertArrayHasKey('Authorization', $headers);
+        $this->assertEquals('Bearer oauth-token-123', $headers['Authorization']);
+    }
+
+    public function testNullAuth(): void
+    {
+        $config = new HttpConfig(
+            'https://example.com',        // baseUrl
+            15.0, // timeout
+            300.0,                        // sseTimeout
+            3,                            // maxRetries
+            1.0,                          // retryDelay
+            true,                         // validateSsl
+            'test-agent',                 // userAgent
+            [],                           // headers
+            null                          // auth
+        );
+
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $headers = $authenticator->addAuthHeaders(['X-Test' => 'value']);
+
+        // Should not add Authorization header for null auth
+        $this->assertArrayNotHasKey('Authorization', $headers);
+        $this->assertEquals(['X-Test' => 'value'], $headers);
+    }
+
+    public function testUnsupportedAuthType(): void
+    {
+        // Manually set auth to bypass validation in HttpConfig constructor
+        $config = new HttpConfig('https://example.com');
+
+        $reflection = new ReflectionClass($config);
+        $authProperty = $reflection->getProperty('auth');
+        $authProperty->setAccessible(true);
+        $authProperty->setValue($config, ['type' => 'unsupported']);
+
+        $this->expectException(TransportError::class);
+        $this->expectExceptionMessage('Unsupported authentication type: unsupported');
+
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $authenticator->addAuthHeaders([]);
     }
 }

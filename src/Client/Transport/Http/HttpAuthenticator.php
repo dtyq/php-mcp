@@ -73,8 +73,9 @@ class HttpAuthenticator
             case 'custom':
                 return $this->addCustomAuth($headers, $authConfig);
             default:
-                $this->logger->warning('Unknown authentication type', ['type' => $authConfig['type'] ?? 'null']);
-                return $headers;
+                $authType = $authConfig['type'] ?? 'null';
+                $this->logger->error('Unsupported authentication type', ['type' => $authType]);
+                throw new TransportError("Unsupported authentication type: {$authType}");
         }
     }
 

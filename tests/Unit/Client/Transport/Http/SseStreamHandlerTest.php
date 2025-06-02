@@ -462,11 +462,14 @@ class SseStreamHandlerTest extends TestCase
     {
         // Test with custom configuration
         $customConfig = new HttpConfig(
-            'https://custom.example.com',
-            sseTimeout: 120.0,
-            validateSsl: false,
-            userAgent: 'custom-sse-client/1.0',
-            headers: ['X-Custom-Header' => 'custom-value']
+            'https://example.com',
+            15.0,                           // timeout
+            120.0,                          // sseTimeout
+            3, // maxRetries
+            1.0,                            // retryDelay
+            false,                          // validateSsl
+            'custom-sse-client/1.0',        // userAgent
+            ['X-Custom-Header' => 'custom-value']  // headers
         );
 
         $customHandler = new SseStreamHandler($customConfig, $this->logger);
