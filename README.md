@@ -1,6 +1,6 @@
 # PHP MCP
 
-一个功能完整的 **MCP (Model Context Protocol)** 的 PHP 实现，提供服务器和客户端功能。
+A complete PHP implementation of the **Model Context Protocol (MCP)**, providing both server and client functionality with support for multiple transport protocols.
 
 [![CI](https://github.com/dtyq/php-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/dtyq/php-mcp/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/dtyq/php-mcp/branch/master/graph/badge.svg)](https://codecov.io/gh/dtyq/php-mcp)
@@ -8,96 +8,279 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Latest Version](https://img.shields.io/github/v/release/dtyq/php-mcp)](https://github.com/dtyq/php-mcp/releases)
 
-## 📖 项目简介
+> **Language**: [English](./README.md) | [简体中文](./README_CN.md)
 
-PHP MCP 是 [Model Context Protocol](https://modelcontextprotocol.io/) 的原生 PHP 实现，基于官方 [Python SDK](https://github.com/modelcontextprotocol/python-sdk) 的设计思路。MCP 是一个标准化协议，使 AI 应用能够与外部数据源和工具进行安全、可控的交互。
+## ✨ Key Features
 
-### 🎯 设计目标
+- 🚀 **Latest MCP Protocol** - Supports MCP 2025-03-26 specification
+- 🔧 **Complete MCP Implementation** - Full protocol compliance with tools, resources, and prompts
+- 🔌 **Multiple Transports** - STDIO ✅, HTTP ✅, Streamable HTTP 🚧
+- 📦 **Production Ready** - Suitable for production environments
+- 🌐 **Framework Integration** - Compatible with any PHP framework
+- 📚 **Comprehensive Documentation** - Complete guides in English and Chinese
 
-- **🔧 功能完整**: 实现完整的 MCP 协议规范
-- **⚡ 高性能**: 针对 PHP 生态优化的高效实现
-- **🔌 易集成**: 支持主流 PHP 框架 (Laravel, Symfony, Hyperf 等)
-- **🛡️ 生产就绪**: 内置认证、授权、日志等企业级功能
-- **🔄 协议兼容**: 与官方 Python SDK 完全兼容
-
-## ✨ 核心特性
-
-### 🚀 传输层支持
-- **STDIO**: 标准输入输出传输 (开发调试)
-- **HTTP SSE**: Server-Sent Events 传输 (实时通信)
-- **WebSocket**: 双向实时通信 (低延迟)
-- **Streamable HTTP**: 生产环境 HTTP 传输
-
-### 🔧 MCP 功能
-- **🛠️ Tools**: 工具定义、注册和调用
-- **📄 Resources**: 资源管理和访问控制
-- **💬 Prompts**: 提示模板和参数化
-- **📊 Progress**: 进度报告和状态跟踪
-- **📝 Logging**: 结构化日志和调试
-
-### 🏗️ 架构特性
-- **🎨 高级 API**: FastMCP 风格的声明式开发
-- **🔌 框架集成**: 无缝集成主流 PHP 框架
-- **🔐 安全认证**: OAuth 2.0、Bearer Token 等
-- **📈 可扩展**: 模块化设计，易于扩展
-
-## 📋 系统要求
-
-- **PHP**: >= 7.4 (兼容 PHP 8.x)
-- **扩展**: `json`, `curl`, `mbstring`
-- **Composer**: 最新版本
-- **内存**: 建议 >= 128MB
-
-## 📦 安装
-
-### Composer 安装 (推荐)
+## 🚀 Quick Start
 
 ```bash
 composer require dtyq/php-mcp
 ```
 
-### 从源码安装
+### Simple Server Example
+
+```php
+<?php
+require_once 'vendor/autoload.php';
+
+use Dtyq\PhpMcp\Server\McpServer;
+use Dtyq\PhpMcp\Shared\Kernel\Application;
+use Psr\Container\ContainerInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\AbstractLogger;
+
+// Create a simple DI container
+$container = new class implements ContainerInterface {
+    private array $services = [];
+
+    public function __construct() {
+        $this->services[LoggerInterface::class] = new class extends AbstractLogger {
+            public function log($level, $message, array $context = []): void {
+                echo "[{$level}] {$message}\n";
+            }
+        };
+
+        $this->services[EventDispatcherInterface::class] = 
+            new class implements EventDispatcherInterface {
+                public function dispatch(object $event): object { return $event; }
+            };
+    }
+
+    public function get($id) { return $this->services[$id]; }
+    public function has($id): bool { return isset($this->services[$id]); }
+};
+
+// Create server
+$app = new Application($container, ['sdk_name' => 'my-server']);
+$server = new McpServer('my-server', '1.0.0', $app);
+
+// Add a simple tool
+$server->registerTool(
+    new \Dtyq\PhpMcp\Types\Tools\Tool('echo', [
+        'type' => 'object',
+        'properties' => ['message' => ['type' => 'string']],
+        'required' => ['message']
+    ], 'Echo a message'),
+    function(array $args): array {
+        return ['response' => $args['message']];
+    }
+);
+
+// Start STDIO server
+$server->stdio();
+```
+
+### Simple Client Example
+
+```php
+<?php
+require_once 'vendor/autoload.php';
+
+use Dtyq\PhpMcp\Client\McpClient;
+use Dtyq\PhpMcp\Shared\Kernel\Application;
+// ... same container setup as above ...
+
+// Create client
+$app = new Application($container, ['sdk_name' => 'my-client']);
+$client = new McpClient('my-client', '1.0.0', $app);
+
+// Connect to server
+$session = $client->connect('stdio', ['command' => 'php server.php']);
+$session->initialize();
+
+// Call a tool
+$result = $session->callTool('echo', ['message' => 'Hello, MCP!']);
+echo $result->getContent()[0]->getText(); // "Hello, MCP!"
+```
+
+## 📖 Documentation
+
+### Quick Links
+- [**📚 Complete Documentation**](./docs/README.md) - All guides and references
+- [**🚀 Quick Start Guide**](./docs/en/quick-start.md) - 5-minute tutorial
+- [**🔧 Server Guides**](./docs/en/server/) - Create MCP servers
+- [**📡 Client Guides**](./docs/en/client/) - Build MCP clients
+
+### Transport Guides
+- [**STDIO Transport**](./docs/en/server/stdio-server.md) - Process communication
+- [**HTTP Transport**](./docs/en/server/http-server.md) - Web-based communication
+
+### Working Examples
+Check the `/examples` directory for complete working implementations:
+- `stdio-server-test.php` - Complete STDIO server example
+- `stdio-client-test.php` - STDIO client example
+- `http-server-test.php` - HTTP server example
+- `http-client-test.php` - HTTP client example
+
+## 🏗️ Architecture
+
+```mermaid
+graph TB
+    A[MCP Client] -->|STDIO/HTTP| B[Transport Layer]
+    B --> C[MCP Server]
+    C --> D[Tools]
+    C --> E[Resources] 
+    C --> F[Prompts]
+    
+    subgraph "Supported Transports"
+        G[STDIO]
+        H[HTTP + JSON-RPC]
+        I[Streamable HTTP]
+    end
+    
+    B --> G
+    B --> H
+    B --> I
+```
+
+### Core Components
+
+1. **Server** (`src/Server/`) - MCP server implementation
+2. **Client** (`src/Client/`) - MCP client implementation  
+3. **Transport** (`src/Shared/Transport/`) - Communication protocols
+4. **Types** (`src/Types/`) - Protocol data structures
+5. **Kernel** (`src/Shared/Kernel/`) - Core application framework
+
+## 🌟 Features
+
+### Transport Protocols
+
+| Protocol | Status | Description |
+|----------|--------|-------------|
+| STDIO | ✅ | Standard Input/Output communication |
+| HTTP | ✅ | JSON-RPC over HTTP |
+| Streamable HTTP | 🚧 | HTTP POST + Server-Sent Events |
+
+### MCP Capabilities
+
+- ✅ **Tools** - Function calling with dynamic arguments
+- ✅ **Resources** - Data access and content management  
+- ✅ **Prompts** - Template and prompt management
+- ✅ **Error Handling** - Comprehensive error management
+- ✅ **Logging** - Structured logging with PSR-3
+- ✅ **Events** - Event-driven architecture with PSR-14
+
+## 🔧 Advanced Usage
+
+### Custom Tool Registration
+
+```php
+// Register multiple tools
+$server
+    ->registerTool($calculatorTool, $calculatorHandler)
+    ->registerTool($fileReadTool, $fileReadHandler)
+    ->registerResource($configResource, $configHandler);
+```
+
+### HTTP Server Deployment
+
+```php
+// HTTP server with custom endpoint
+$response = $server->http($request); // PSR-7 Request/Response
+```
+
+### Framework Integration
+
+Compatible with any PHP framework that supports PSR standards:
+- **Laravel** - Use with service providers and dependency injection
+- **Symfony** - Integrate with Symfony's DI container
+- **Hyperf** - Compatible with coroutine environments
+- **ThinkPHP** - Works with TP's container system
+- **CodeIgniter** - Can be used as a library
+- **Custom Frameworks** - Just implement PSR ContainerInterface
+
+## 📊 Current Development Status
+
+### ✅ Completed
+- MCP Protocol 2025-03-26 implementation
+- STDIO transport (server + client)
+- HTTP transport (basic JSON-RPC)
+- Core MCP features (tools, resources, prompts)
+- Comprehensive documentation
+- Working examples
+
+### 🚧 In Progress  
+- Streamable HTTP transport (HTTP + SSE)
+- Authorization framework (OAuth 2.1)
+- JSON-RPC batching support
+- Performance optimizations
+
+### 📋 Planned
+- Tool annotations and metadata
+- Enhanced monitoring and metrics
+- Framework-specific integrations
+- Docker deployment templates
+
+## 🛠️ Requirements
+
+- **PHP**: 7.4+ (8.0+ recommended)
+- **Extensions**: `json`, `mbstring`, `openssl`, `pcntl`, `curl`
+- **Composer**: For dependency management
+
+### Dependencies
+- **Guzzle HTTP**: For HTTP transport (auto-installed)
+- **PSR Log**: For logging (auto-installed)
+- **PSR Event Dispatcher**: For events (auto-installed)
+- **PSR Container**: For dependency injection (auto-installed)
+
+## 📦 Installation
+
+```bash
+# Install via Composer
+composer require dtyq/php-mcp
+
+# For development
+composer require dtyq/php-mcp --dev
+```
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our issues and discussions for areas where you can help.
+
+### Development Setup
 
 ```bash
 git clone https://github.com/dtyq/php-mcp.git
 cd php-mcp
 composer install
+./vendor/bin/phpunit
 ```
 
-## 🤝 贡献指南
+### Running Tests
 
-欢迎贡献代码、报告问题或提出改进建议！
+```bash
+# Run all tests
+composer test
 
-### 贡献流程
+# Run unit tests only
+composer test:unit
 
-1. Fork 项目到你的 GitHub 账户
-2. 创建特性分支: `git checkout -b feature/amazing-feature`
-3. 提交更改: `git commit -m 'feat: add amazing feature'`
-4. 推送分支: `git push origin feature/amazing-feature`
-5. 提交 Pull Request
+# Run static analysis
+composer analyse
 
-### 开发规范
+# Fix code style
+composer cs-fix
+```
 
-- 遵循 [PSR-12](https://www.php-fig.org/psr/psr-12/) 编码标准
-- 编写完整的单元测试
-- 更新相关文档
-- 确保所有质量检查通过
+## 📄 License
 
-## 🙏 致谢
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-- [Model Context Protocol](https://modelcontextprotocol.io/) - 官方协议规范
-- [Python SDK](https://github.com/modelcontextprotocol/python-sdk) - 参考实现
-- PHP 社区的优秀开源项目
+## 🙏 Acknowledgments
 
-## 📄 许可证
-
-本项目基于 [MIT 许可证](LICENSE) 开源。
-
-## 📞 联系方式
-
-- **GitHub Issues**: [提交问题和建议](https://github.com/dtyq/php-mcp/issues)
-- **讨论**: [GitHub Discussions](https://github.com/dtyq/php-mcp/discussions)
+- [Model Context Protocol](https://modelcontextprotocol.io/) for the specification
+- [Anthropic](https://anthropic.com/) for creating MCP
+- The PHP community for excellent tooling and support
 
 ---
 
-**⭐ 如果这个项目对你有帮助，请给我们一个 Star！** 
+**Star ⭐ this repository if you find it useful!** 
