@@ -26,8 +26,6 @@ abstract class AbstractTransport implements TransportInterface
 {
     protected Application $app;
 
-    protected MessageProcessor $processor;
-
     protected TransportMetadata $transportMetadata;
 
     protected LoggerProxy $logger;
@@ -38,7 +36,6 @@ abstract class AbstractTransport implements TransportInterface
     {
         $this->app = $app;
         $this->transportMetadata = $transportMetadata;
-        $this->processor = new MessageProcessor($app, $transportMetadata);
         $this->logger = $app->getLogger();
     }
 
@@ -54,7 +51,8 @@ abstract class AbstractTransport implements TransportInterface
             $this->validateMessage($message);
 
             // Process through message processor (no validation needed)
-            return $this->processor->processJsonRpc($message);
+            $processor = new MessageProcessor($this->app, $this->transportMetadata);
+            return $processor->processJsonRpc($message);
         } catch (Exception $e) {
             $this->logger->error('Message handling failed', [
                 'transport' => $this->getTransportType(),
@@ -63,14 +61,6 @@ abstract class AbstractTransport implements TransportInterface
             ]);
             throw $e;
         }
-    }
-
-    /**
-     * Get the message processor instance.
-     */
-    public function getMessageProcessor(): MessageProcessor
-    {
-        return $this->processor;
     }
 
     /**

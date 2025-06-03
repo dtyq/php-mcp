@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Server\Transports\Http;
 
+use Dtyq\PhpMcp\Shared\Kernel\Packer\PackerInterface;
+
 /**
  * File-based session manager implementation.
  *
@@ -22,8 +24,12 @@ class FileSessionManager implements SessionManagerInterface
 {
     private string $sessionFile;
 
-    public function __construct(?string $runtimePath = null)
+    private PackerInterface $packer;
+
+    public function __construct(PackerInterface $packer, ?string $runtimePath = null)
     {
+        $this->packer = $packer;
+
         // Default to runtime directory in project root
         $runtimePath = $runtimePath ?? dirname(__DIR__, 4) . '/runtime';
 
@@ -136,6 +142,39 @@ class FileSessionManager implements SessionManagerInterface
     {
         $sessions = $this->loadSessions();
         return count($sessions);
+    }
+
+    /**
+     * Set metadata for a session.
+     */
+    public function setSessionMetadata(string $sessionId, array $metadata): bool
+    {
+        $sessions = $this->loadSessions();
+
+        if (! isset($sessions[$sessionId])) {
+            return false;
+        }
+
+        $sessions[$sessionId]['metadata'] = $this->packer->pack($metadata);
+        $sessions[$sessionId]['last_activity'] = time();
+
+        $this->saveSessions($sessions);
+        return true;
+    }
+
+    /**
+     * Get metadata for a session.
+     *
+     * @return null|array<string, mixed>
+     */
+    public function getSessionMetadata(string $sessionId): ?array
+    {
+        $sessions = $this->loadSessions();
+
+        if (! isset($sessions[$sessionId])) {
+            return null;
+        }
+        return $this->packer->unpack($sessions[$sessionId]['metadata'] ?? '');
     }
 
     /**

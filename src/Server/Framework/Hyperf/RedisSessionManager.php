@@ -8,8 +8,10 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Server\Framework\Hyperf;
 
 use Dtyq\PhpMcp\Server\Transports\Http\SessionManagerInterface;
+use Dtyq\PhpMcp\Shared\Kernel\Packer\PackerInterface;
 use Hyperf\Redis\RedisFactory;
 use Hyperf\Redis\RedisProxy;
+use Psr\Container\ContainerInterface;
 
 /**
  * Redis-based session manager implementation.
@@ -34,11 +36,15 @@ class RedisSessionManager implements SessionManagerInterface
     // Redis key prefix for sessions
     private string $keyPrefix = 'mcp:session:';
 
+    private PackerInterface $packer;
+
     public function __construct(
-        private RedisFactory $redisFactory,
+        ContainerInterface $container,
+        RedisFactory $redisFactory,
         ?int $sessionTtl = null
     ) {
-        $this->redisProxy = $this->redisFactory->get('default');
+        $this->packer = $container->get(PackerInterface::class);
+        $this->redisProxy = $redisFactory->get('default');
         if ($sessionTtl !== null) {
             $this->sessionTtl = $sessionTtl;
         }
@@ -182,6 +188,47 @@ class RedisSessionManager implements SessionManagerInterface
         $pattern = $this->keyPrefix . '*';
         $keys = $this->redisProxy->keys($pattern);
         return count($keys);
+    }
+
+    /**
+     * Set metadata for a session.
+     */
+    public function setSessionMetadata(string $sessionId, array $metadata): bool
+    {
+        $sessionKey = $this->getSessionKey($sessionId);
+
+        if (! $this->isValidSession($sessionId)) {
+            return false;
+        }
+
+        // Store metadata as JSON string in Redis hash
+        $this->redisProxy->hSet($sessionKey, 'metadata', $this->packer->pack($metadata));
+
+        // Update last activity and refresh TTL
+        $this->redisProxy->hSet($sessionKey, 'last_activity', time());
+        $this->redisProxy->expire($sessionKey, $this->sessionTtl);
+
+        return true;
+    }
+
+    /**
+     * Get metadata for a session.
+     */
+    public function getSessionMetadata(string $sessionId): ?array
+    {
+        $sessionKey = $this->getSessionKey($sessionId);
+
+        if (! $this->isValidSession($sessionId)) {
+            return null;
+        }
+
+        $metadata = $this->redisProxy->hGet($sessionKey, 'metadata');
+
+        if ($metadata === false || $metadata === null) {
+            return [];
+        }
+
+        return $this->packer->unpack($metadata);
     }
 
     /**

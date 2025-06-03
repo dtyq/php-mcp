@@ -59,4 +59,21 @@ interface SessionManagerInterface
      * @return int Number of sessions cleaned up
      */
     public function cleanupExpiredSessions(): int;
+
+    /**
+     * Set metadata for a session.
+     *
+     * @param string $sessionId The session ID
+     * @param array<string, mixed> $metadata The metadata to store
+     * @return bool True if metadata was set, false if session doesn't exist
+     */
+    public function setSessionMetadata(string $sessionId, array $metadata): bool;
+
+    /**
+     * Get metadata for a session.
+     *
+     * @param string $sessionId The session ID
+     * @return null|array<string, mixed> The session metadata or null if session doesn't exist
+     */
+    public function getSessionMetadata(string $sessionId): ?array;
 }

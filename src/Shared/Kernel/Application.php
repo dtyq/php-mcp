@@ -12,6 +12,8 @@ use Dtyq\PhpMcp\Shared\Auth\NullAuthenticator;
 use Dtyq\PhpMcp\Shared\Exceptions\SystemException;
 use Dtyq\PhpMcp\Shared\Kernel\Config\Config;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
+use Dtyq\PhpMcp\Shared\Kernel\Packer\OpisClosurePacker;
+use Dtyq\PhpMcp\Shared\Kernel\Packer\PackerInterface;
 use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
@@ -26,6 +28,8 @@ class Application
     protected CacheInterface $cache;
 
     protected EventDispatcherInterface $eventDispatcher;
+
+    protected PackerInterface $packer;
 
     protected ContainerInterface $container;
 
@@ -101,6 +105,22 @@ class Application
         }
         $this->eventDispatcher = $dispatcher;
         return $this->eventDispatcher;
+    }
+
+    public function getPacker(): PackerInterface
+    {
+        if (! empty($this->packer)) {
+            return $this->packer;
+        }
+        if ($this->container->has(PackerInterface::class)) {
+            /** @var PackerInterface $packer */
+            $packer = $this->container->get(PackerInterface::class);
+        } else {
+            // Default to OpisClosurePacker if no PackerInterface is configured
+            $packer = new OpisClosurePacker();
+        }
+        $this->packer = $packer;
+        return $this->packer;
     }
 
     /**

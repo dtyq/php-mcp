@@ -38,7 +38,7 @@ class HttpTransport extends AbstractTransport
                 $sessionManager = $application->get(SessionManagerInterface::class);
             } else {
                 // Default to file-based session manager if none provided
-                $sessionManager = new FileSessionManager();
+                $sessionManager = new FileSessionManager($application->getPacker());
             }
         }
         if (is_null($authenticator)) {
@@ -100,12 +100,17 @@ class HttpTransport extends AbstractTransport
                     ], JSON_UNESCAPED_UNICODE));
                 }
                 $this->sessionManager->updateSessionActivity($sessionId);
+
+                $historyTransportMetadata = $this->sessionManager->getSessionMetadata($sessionId)['transport_metadata'] ?? null;
+                if ($historyTransportMetadata instanceof TransportMetadata) {
+                    $this->transportMetadata = $historyTransportMetadata;
+                }
             } else {
-                // Initialization requests do not require a session ID
                 $authInfo = $this->authenticator->authenticate();
                 $this->app->getEventDispatcher()->dispatch(new HttpTransportAuthenticatedEvent($authInfo, $this->transportMetadata));
 
                 $sessionId = $this->sessionManager->createSession();
+                $this->sessionManager->setSessionMetadata($sessionId, ['transport_metadata' => $this->transportMetadata]);
                 $headers['Mcp-Session-Id'] = $sessionId;
             }
 
@@ -203,7 +208,7 @@ class HttpTransport extends AbstractTransport
         }
 
         // Handle batch requests
-        if (is_array($jsonData) && isset($jsonData[0])) {
+        if (isset($jsonData[0])) {
             foreach ($jsonData as $request) {
                 if (isset($request['method']) && $request['method'] === 'initialize') {
                     return true;

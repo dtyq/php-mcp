@@ -8,6 +8,10 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Server\Framework\Hyperf;
 
 use Dtyq\PhpMcp\Server\Transports\Http\SessionManagerInterface;
+use Dtyq\PhpMcp\Shared\Auth\AuthenticatorInterface;
+use Dtyq\PhpMcp\Shared\Auth\NullAuthenticator;
+use Dtyq\PhpMcp\Shared\Kernel\Packer\OpisClosurePacker;
+use Dtyq\PhpMcp\Shared\Kernel\Packer\PackerInterface;
 
 class ConfigProvider
 {
@@ -20,6 +24,8 @@ class ConfigProvider
             'publish' => [
             ],
             'dependencies' => [
+                PackerInterface::class => OpisClosurePacker::class,
+                AuthenticatorInterface::class => NullAuthenticator::class,
                 SessionManagerInterface::class => RedisSessionManager::class,
             ],
         ];
