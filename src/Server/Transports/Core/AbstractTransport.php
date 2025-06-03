@@ -28,6 +28,8 @@ abstract class AbstractTransport implements TransportInterface
 
     protected MessageProcessor $processor;
 
+    protected TransportMetadata $transportMetadata;
+
     protected LoggerProxy $logger;
 
     protected bool $running = false;
@@ -35,6 +37,7 @@ abstract class AbstractTransport implements TransportInterface
     public function __construct(Application $app, TransportMetadata $transportMetadata)
     {
         $this->app = $app;
+        $this->transportMetadata = $transportMetadata;
         $this->processor = new MessageProcessor($app, $transportMetadata);
         $this->logger = $app->getLogger();
     }

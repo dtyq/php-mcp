@@ -16,7 +16,9 @@ use Dtyq\PhpMcp\Server\FastMcp\Tools\RegisteredTool;
 use Dtyq\PhpMcp\Server\FastMcp\Tools\ToolManager;
 use Dtyq\PhpMcp\Server\Transports\Core\TransportMetadata;
 use Dtyq\PhpMcp\Server\Transports\Http\HttpTransport;
+use Dtyq\PhpMcp\Server\Transports\Http\SessionManagerInterface;
 use Dtyq\PhpMcp\Server\Transports\Stdio\StdioTransport;
+use Dtyq\PhpMcp\Shared\Auth\AuthenticatorInterface;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -117,12 +119,17 @@ class McpServer
         $transport->start();
     }
 
-    public function http(RequestInterface $request): ResponseInterface
-    {
+    public function http(
+        RequestInterface $request,
+        ?SessionManagerInterface $sessionManager = null,
+        ?AuthenticatorInterface $authenticator = null
+    ): ResponseInterface {
         $transportMetadata = $this->createTransportMetadata();
         $transport = new HttpTransport(
             $this->application,
             $transportMetadata,
+            $sessionManager,
+            $authenticator
         );
         return $transport->handleRequest($request);
     }

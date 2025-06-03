@@ -9,18 +9,28 @@ namespace Dtyq\PhpMcp\Server\Transports\Http;
 
 use Dtyq\PhpMcp\Server\Transports\Core\AbstractTransport;
 use Dtyq\PhpMcp\Server\Transports\Core\TransportMetadata;
+use Dtyq\PhpMcp\Server\Transports\Http\Event\HttpTransportAuthenticatedEvent;
+use Dtyq\PhpMcp\Shared\Auth\AuthenticatorInterface;
+use Dtyq\PhpMcp\Shared\Auth\NullAuthenticator;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Throwable;
 
 class HttpTransport extends AbstractTransport
 {
     private SessionManagerInterface $sessionManager;
 
-    public function __construct(Application $application, TransportMetadata $transportMetadata, ?SessionManagerInterface $sessionManager = null)
-    {
+    private AuthenticatorInterface $authenticator;
+
+    public function __construct(
+        Application $application,
+        TransportMetadata $transportMetadata,
+        ?SessionManagerInterface $sessionManager = null,
+        ?AuthenticatorInterface $authenticator = null
+    ) {
         parent::__construct($application, $transportMetadata);
 
         if (is_null($sessionManager)) {
@@ -31,8 +41,17 @@ class HttpTransport extends AbstractTransport
                 $sessionManager = new FileSessionManager();
             }
         }
+        if (is_null($authenticator)) {
+            if ($application->has(NullAuthenticator::class)) {
+                $authenticator = $application->get(NullAuthenticator::class);
+            } else {
+                // Default to null authenticator if none provided
+                $authenticator = new NullAuthenticator();
+            }
+        }
 
         $this->sessionManager = $sessionManager;
+        $this->authenticator = $authenticator;
     }
 
     public function handleRequest(RequestInterface $request): ResponseInterface
@@ -48,58 +67,62 @@ class HttpTransport extends AbstractTransport
             ], json_encode(['error' => 'Method Not Allowed'], JSON_UNESCAPED_UNICODE));
         }
 
-        // Get session ID from header
-        $sessionId = $this->getSessionIdFromRequest($request);
+        try {
+            // Get session ID from header
+            $sessionId = $this->getSessionIdFromRequest($request);
 
-        // Parse the request body to check if it's an initialization request
-        $body = $request->getBody()->getContents();
-        $jsonData = json_decode($body, true);
+            // Parse the request body to check if it's an initialization request
+            $body = $request->getBody()->getContents();
+            $jsonData = json_decode($body, true);
 
-        $isInitializeRequest = $this->isInitializeRequest($jsonData);
+            $headers = [
+                'Content-Type' => 'application/json',
+                'Access-Control-Allow-Origin' => '*',
+                'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Headers' => 'Content-Type, Accept, Mcp-Session-Id',
+            ];
 
-        // Handle session validation
-        if (! $isInitializeRequest) {
-            // Non-initialization requests must have valid session ID
-            if (! $sessionId || ! $this->sessionManager->isValidSession($sessionId)) {
-                return new Response(400, [
-                    'Content-Type' => 'application/json',
-                ], json_encode([
-                    'jsonrpc' => '2.0',
-                    'error' => [
-                        'code' => -32600,
-                        'message' => 'Invalid or missing Mcp-Session-Id header',
-                    ],
-                    'id' => $jsonData['id'] ?? null,
-                ], JSON_UNESCAPED_UNICODE));
+            $isInitializeRequest = $this->isInitializeRequest($jsonData);
+
+            // Handle session validation
+            if (! $isInitializeRequest) {
+                // Non-initialization requests must have valid session ID
+                if (! $sessionId || ! $this->sessionManager->isValidSession($sessionId)) {
+                    return new Response(400, [
+                        'Content-Type' => 'application/json',
+                    ], json_encode([
+                        'jsonrpc' => '2.0',
+                        'error' => [
+                            'code' => -32600,
+                            'message' => 'Invalid or missing Mcp-Session-Id header',
+                        ],
+                        'id' => $jsonData['id'] ?? null,
+                    ], JSON_UNESCAPED_UNICODE));
+                }
+                $this->sessionManager->updateSessionActivity($sessionId);
+            } else {
+                // Initialization requests do not require a session ID
+                $authInfo = $this->authenticator->authenticate();
+                $this->app->getEventDispatcher()->dispatch(new HttpTransportAuthenticatedEvent($authInfo, $this->transportMetadata));
+
+                $sessionId = $this->sessionManager->createSession();
+                $headers['Mcp-Session-Id'] = $sessionId;
             }
+
+            $this->logger->info('Handling request', [
+                'method' => $method,
+                'sessionId' => $sessionId,
+                'isInitialize' => $isInitializeRequest,
+            ]);
+
+            $responseBody = $this->handleMessage($body);
+
+            return new Response(200, $headers, $responseBody);
+        } catch (Throwable $exception) {
+            return new Response(500, [
+                'Content-Type' => 'application/json',
+            ], json_encode(['error' => 'Error: ' . $exception->getMessage()], JSON_UNESCAPED_UNICODE));
         }
-
-        $this->logger->info('Handling request', [
-            'method' => $method,
-            'sessionId' => $sessionId,
-            'isInitialize' => $isInitializeRequest,
-        ]);
-
-        $responseBody = $this->handleMessage($body);
-
-        $headers = [
-            'Content-Type' => 'application/json',
-            'Access-Control-Allow-Origin' => '*',
-            'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers' => 'Content-Type, Accept, Mcp-Session-Id',
-        ];
-
-        // Add session ID header only for initialize response
-        if ($isInitializeRequest) {
-            $newSessionId = $this->sessionManager->createSession();
-            $headers['Mcp-Session-Id'] = $newSessionId;
-            $this->logger->info('Created new session', ['sessionId' => $newSessionId]);
-        } elseif ($sessionId) {
-            // Update session activity
-            $this->sessionManager->updateSessionActivity($sessionId);
-        }
-
-        return new Response(200, $headers, $responseBody);
     }
 
     /**

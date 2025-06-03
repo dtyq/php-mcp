@@ -34,7 +34,7 @@ class Application
     /**
      * @param array<string, mixed> $configs
      */
-    public function __construct(ContainerInterface $container, array $configs)
+    public function __construct(ContainerInterface $container, array $configs = [])
     {
         $this->container = $container;
         $this->config = new Config($configs);
