@@ -28,26 +28,18 @@ composer require dtyq/php-mcp
 
 ### Hyperf Framework Quick Integration
 
-If you're using Hyperf framework, integration is just two steps away:
+If you're using Hyperf framework, integration is extremely simple:
 
 ```php
-// 1. Register route
+// Just one line of code!
 Router::post('/mcp', function () {
     return di(HyperfMcpServer::class)->handler();
 });
-
-// 2. Register tools (optional)
-$server->registerTool(
-    new Tool('echo', [...], 'Echo a message'),
-    function(array $args): array {
-        return ['response' => $args['message']];
-    }
-);
 ```
 
 **Advanced Options**:
 - 🔐 **AuthenticatorInterface** - Custom authentication
-- 📊 **HttpTransportAuthenticatedEvent** - Dynamic TransportMetadata management
+- 📊 **HttpTransportAuthenticatedEvent** - Dynamic tool/resource registration
 
 👉 [View Complete Hyperf Integration Guide](./docs/en/server/hyperf-integration.md)
 

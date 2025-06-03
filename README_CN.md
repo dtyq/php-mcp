@@ -28,26 +28,18 @@ composer require dtyq/php-mcp
 
 ### Hyperf 框架快速集成
 
-如果您使用 Hyperf 框架，只需两步即可完成集成：
+如果您使用 Hyperf 框架，集成极其简单：
 
 ```php
-// 1. 注册路由
+// 只需一行代码！
 Router::post('/mcp', function () {
     return di(HyperfMcpServer::class)->handler();
 });
-
-// 2. 注册工具（可选）
-$server->registerTool(
-    new Tool('echo', [...], '回显消息'),
-    function(array $args): array {
-        return ['response' => $args['message']];
-    }
-);
 ```
 
 **高级选项**：
 - 🔐 **AuthenticatorInterface** - 自定义认证
-- 📊 **HttpTransportAuthenticatedEvent** - 动态管理 TransportMetadata
+- 📊 **HttpTransportAuthenticatedEvent** - 动态工具/资源注册
 
 👉 [查看完整 Hyperf 集成指南](./docs/cn/server/hyperf-integration.md)
 
