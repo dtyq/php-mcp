@@ -9,6 +9,9 @@ namespace Dtyq\PhpMcp\Server\Framework\Hyperf;
 
 class ConfigProvider
 {
+    /**
+     * @return array<string, array<string, mixed>>
+     */
     public function __invoke(): array
     {
         return [
