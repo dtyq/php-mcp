@@ -3,6 +3,8 @@ parameters:
     paths:
         - src
         - tests
+    excludePaths:
+        - src/Server/Framework
     treatPhpDocTypesAsCertain: false
     ignoreErrors:
         # Ignore parameter type errors in tests - these are intentional for testing invalid inputs

@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Server\Framework\Hyperf;
 
+use Dtyq\PhpMcp\Server\Transports\Http\SessionManagerInterface;
+
 class ConfigProvider
 {
     /**
@@ -18,6 +20,7 @@ class ConfigProvider
             'publish' => [
             ],
             'dependencies' => [
+                SessionManagerInterface::class => RedisSessionManager::class,
             ],
         ];
     }

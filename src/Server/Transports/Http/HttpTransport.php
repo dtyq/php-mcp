@@ -23,8 +23,16 @@ class HttpTransport extends AbstractTransport
     {
         parent::__construct($application, $transportMetadata);
 
-        // Use provided session manager or default to file-based implementation
-        $this->sessionManager = $sessionManager ?? new FileSessionManager();
+        if (is_null($sessionManager)) {
+            if ($application->has(SessionManagerInterface::class)) {
+                $sessionManager = $application->get(SessionManagerInterface::class);
+            } else {
+                // Default to file-based session manager if none provided
+                $sessionManager = new FileSessionManager();
+            }
+        }
+
+        $this->sessionManager = $sessionManager;
     }
 
     public function handleRequest(RequestInterface $request): ResponseInterface
