@@ -27,6 +27,6 @@ class HyperfMcpServer
         $app = new Application($container);
         $mcpServer = new McpServer('HyperfMcpServer', '1.0.0', $app);
 
-        return $mcpServer->http(request: $request, sessionManager: $sessionManager, authenticator: $authenticator);
+        return $mcpServer->http($request, $sessionManager, $authenticator);
     }
 }
