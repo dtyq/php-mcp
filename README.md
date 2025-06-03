@@ -15,7 +15,7 @@ A complete PHP implementation of the **Model Context Protocol (MCP)**, providing
 - 🚀 **Latest MCP Protocol** - Supports MCP 2025-03-26 specification
 - 🔧 **Complete Implementation** - Tools, resources, and prompts support
 - 🔌 **Multiple Transports** - STDIO ✅, HTTP ✅, Streamable HTTP 🚧
-- 🌐 **Framework Compatible** - Works with any PSR-compliant framework
+- 🌐 **Framework Compatible** - Works with any PSR-compliant framework, built-in Hyperf integration
 - 📚 **Well Documented** - Comprehensive guides in English and Chinese
 
 ## 🚀 Quick Start
@@ -25,6 +25,31 @@ A complete PHP implementation of the **Model Context Protocol (MCP)**, providing
 ```bash
 composer require dtyq/php-mcp
 ```
+
+### Hyperf Framework Quick Integration
+
+If you're using Hyperf framework, integration is just two steps away:
+
+```php
+// 1. Register route
+Router::post('/mcp', function () {
+    return di(HyperfMcpServer::class)->handler();
+});
+
+// 2. Register tools (optional)
+$server->registerTool(
+    new Tool('echo', [...], 'Echo a message'),
+    function(array $args): array {
+        return ['response' => $args['message']];
+    }
+);
+```
+
+**Advanced Options**:
+- 🔐 **AuthenticatorInterface** - Custom authentication
+- 📊 **HttpTransportAuthenticatedEvent** - Dynamic TransportMetadata management
+
+👉 [View Complete Hyperf Integration Guide](./docs/en/server/hyperf-integration.md)
 
 ### Basic Server Example
 

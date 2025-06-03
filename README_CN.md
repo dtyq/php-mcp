@@ -15,7 +15,7 @@
 - 🚀 **最新 MCP 协议** - 支持 2025-03-26 版本的 MCP 协议
 - 🔧 **完整实现** - 支持工具、资源和提示
 - 🔌 **多种传输协议** - STDIO ✅、HTTP ✅、流式 HTTP 🚧
-- 🌐 **框架兼容** - 兼容任何符合 PSR 标准的框架
+- 🌐 **框架兼容** - 兼容任何符合 PSR 标准的框架，内置 Hyperf 集成
 - 📚 **文档完善** - 提供中英文完整指南
 
 ## 🚀 快速开始
@@ -25,6 +25,31 @@
 ```bash
 composer require dtyq/php-mcp
 ```
+
+### Hyperf 框架快速集成
+
+如果您使用 Hyperf 框架，只需两步即可完成集成：
+
+```php
+// 1. 注册路由
+Router::post('/mcp', function () {
+    return di(HyperfMcpServer::class)->handler();
+});
+
+// 2. 注册工具（可选）
+$server->registerTool(
+    new Tool('echo', [...], '回显消息'),
+    function(array $args): array {
+        return ['response' => $args['message']];
+    }
+);
+```
+
+**高级选项**：
+- 🔐 **AuthenticatorInterface** - 自定义认证
+- 📊 **HttpTransportAuthenticatedEvent** - 动态管理 TransportMetadata
+
+👉 [查看完整 Hyperf 集成指南](./docs/cn/server/hyperf-integration.md)
 
 ### 基础服务器示例
 
