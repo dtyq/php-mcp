@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Server\Framework\Hyperf;
 
+use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\McpCollector;
 use Dtyq\PhpMcp\Server\McpServer;
 use Dtyq\PhpMcp\Server\Transports\Http\SessionManagerInterface;
 use Dtyq\PhpMcp\Shared\Auth\AuthenticatorInterface;
@@ -17,7 +18,7 @@ use Psr\Http\Message\ResponseInterface;
 
 class HyperfMcpServer
 {
-    public function handler(): ResponseInterface
+    public function handler(string $group = ''): ResponseInterface
     {
         $container = ApplicationContext::getContainer();
         $request = $container->get(RequestInterface::class);
@@ -27,6 +28,16 @@ class HyperfMcpServer
         $app = new Application($container);
         $mcpServer = new McpServer('HyperfMcpServer', '1.0.0', $app);
 
+        $this->addAnnotationTools($mcpServer, $group);
+
         return $mcpServer->http($request, $sessionManager, $authenticator);
+    }
+
+    protected function addAnnotationTools(McpServer $mcpServer, string $group = ''): void
+    {
+        $registeredTools = McpCollector::getTools($group);
+        foreach ($registeredTools as $registeredTool) {
+            $mcpServer->registerTool($registeredTool);
+        }
     }
 }

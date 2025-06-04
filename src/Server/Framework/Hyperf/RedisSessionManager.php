@@ -11,7 +11,6 @@ use Dtyq\PhpMcp\Server\Transports\Http\SessionManagerInterface;
 use Dtyq\PhpMcp\Shared\Kernel\Packer\PackerInterface;
 use Hyperf\Redis\RedisFactory;
 use Hyperf\Redis\RedisProxy;
-use Psr\Container\ContainerInterface;
 
 /**
  * Redis-based session manager implementation.
@@ -39,11 +38,11 @@ class RedisSessionManager implements SessionManagerInterface
     private PackerInterface $packer;
 
     public function __construct(
-        ContainerInterface $container,
+        PackerInterface $packer,
         RedisFactory $redisFactory,
         ?int $sessionTtl = null
     ) {
-        $this->packer = $container->get(PackerInterface::class);
+        $this->packer = $packer;
         $this->redisProxy = $redisFactory->get('default');
         if ($sessionTtl !== null) {
             $this->sessionTtl = $sessionTtl;
