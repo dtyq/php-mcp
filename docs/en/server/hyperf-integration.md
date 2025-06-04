@@ -26,6 +26,328 @@ Router::post('/mcp', function () {
 
 > **Note**: ConfigProvider is auto-loaded by Hyperf, no need to manually register it in `config/config.php`.
 
+## 📝 Annotation-Based Registration
+
+The easiest way to register MCP tools, prompts, and resources is using annotations. This approach automatically generates schemas from method signatures and handles registration.
+
+### Available Annotations
+
+#### `#[McpTool]` - Register Tools
+
+Use the `#[McpTool]` annotation to register methods as MCP tools:
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace App\Service;
+
+use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpTool;
+
+class CalculatorService
+{
+    #[McpTool]
+    public function calculate(string $operation, int $a, int $b): array
+    {
+        $result = match ($operation) {
+            'add' => $a + $b,
+            'subtract' => $a - $b,
+            'multiply' => $a * $b,
+            'divide' => $a / $b,
+            default => null,
+        };
+
+        return [
+            'operation' => $operation,
+            'operands' => [$a, $b],
+            'result' => $result,
+        ];
+    }
+
+    #[McpTool(
+        name: 'advanced_calc',
+        description: 'Advanced mathematical calculations',
+        group: 'math'
+    )]
+    public function advancedCalculate(string $formula, array $variables = []): float
+    {
+        // Complex calculation logic
+        return 42.0;
+    }
+}
+```
+
+**Annotation Parameters:**
+- `name`: Tool name (defaults to method name)
+- `description`: Tool description
+- `inputSchema`: Custom input schema (auto-generated if empty)
+- `group`: Tool group for organization
+- `enabled`: Whether the tool is enabled (default: true)
+
+#### `#[McpPrompt]` - Register Prompts
+
+Use the `#[McpPrompt]` annotation to register methods as prompt templates:
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace App\Service;
+
+use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpPrompt;
+use Dtyq\PhpMcp\Types\Prompts\GetPromptResult;
+use Dtyq\PhpMcp\Types\Prompts\PromptMessage;
+use Dtyq\PhpMcp\Types\Content\TextContent;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+
+class PromptService
+{
+    #[McpPrompt]
+    public function greeting(string $name, string $language = 'english'): GetPromptResult
+    {
+        $greetings = [
+            'english' => "Hello, {$name}! Welcome to the Streamable HTTP MCP server!",
+            'spanish' => "¡Hola, {$name}! ¡Bienvenido al servidor MCP Streamable HTTP!",
+            'french' => "Bonjour, {$name}! Bienvenue sur le serveur MCP Streamable HTTP!",
+            'chinese' => "你好，{$name}！欢迎使用 Streamable HTTP MCP 服务器！",
+        ];
+
+        $message = new PromptMessage(
+            ProtocolConstants::ROLE_USER,
+            new TextContent($greetings[$language] ?? $greetings['english'])
+        );
+
+        return new GetPromptResult('Greeting prompt', [$message]);
+    }
+
+    #[McpPrompt(
+        name: 'code_review',
+        description: 'Generate code review prompts',
+        group: 'development'
+    )]
+    public function codeReview(string $code, string $language = 'php'): GetPromptResult
+    {
+        $prompt = "Please review the following {$language} code:\n\n```{$language}\n{$code}\n```\n\nProvide feedback on:\n- Code quality\n- Best practices\n- Potential improvements";
+        
+        $message = new PromptMessage(
+            ProtocolConstants::ROLE_USER,
+            new TextContent($prompt)
+        );
+
+        return new GetPromptResult('Code review prompt', [$message]);
+    }
+}
+```
+
+**Annotation Parameters:**
+- `name`: Prompt name (defaults to method name)
+- `description`: Prompt description
+- `arguments`: Custom arguments schema (auto-generated if empty)
+- `group`: Prompt group for organization
+- `enabled`: Whether the prompt is enabled (default: true)
+
+#### `#[McpResource]` - Register Resources
+
+Use the `#[McpResource]` annotation to register methods as resource providers:
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace App\Service;
+
+use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpResource;
+use Dtyq\PhpMcp\Types\Resources\TextResourceContents;
+
+class SystemService
+{
+    #[McpResource]
+    public function systemInfo(): TextResourceContents
+    {
+        $info = [
+            'php_version' => PHP_VERSION,
+            'os' => PHP_OS,
+            'memory_usage' => memory_get_usage(true),
+            'timestamp' => date('c'),
+            'pid' => getmypid(),
+        ];
+
+        return new TextResourceContents(
+            'mcp://system/info',
+            json_encode($info, JSON_PRETTY_PRINT),
+            'application/json'
+        );
+    }
+
+    #[McpResource(
+        name: 'server_config',
+        uri: 'mcp://system/config',
+        description: 'Server configuration data',
+        mimeType: 'application/json'
+    )]
+    public function serverConfig(): TextResourceContents
+    {
+        $config = [
+            'environment' => env('APP_ENV', 'production'),
+            'debug' => env('APP_DEBUG', false),
+            'timezone' => date_default_timezone_get(),
+        ];
+
+        return new TextResourceContents(
+            'mcp://system/config',
+            json_encode($config, JSON_PRETTY_PRINT),
+            'application/json'
+        );
+    }
+}
+```
+
+**Annotation Parameters:**
+- `name`: Resource name (defaults to method name)
+- `uri`: Resource URI (auto-generated if empty)
+- `description`: Resource description
+- `mimeType`: Resource MIME type
+- `size`: Resource size in bytes
+- `group`: Resource group for organization
+- `enabled`: Whether the resource is enabled (default: true)
+- `isTemplate`: Whether the resource is a template
+- `uriTemplate`: URI template parameters
+
+### Schema Auto-Generation
+
+The annotation system automatically generates JSON schemas from method signatures:
+
+```php
+#[McpTool]
+public function processUser(
+    string $userId,           // Required string parameter
+    int $age = 18,           // Optional integer with default value
+    bool $active = true,     // Optional boolean with default value
+    array $tags = []         // Optional array with default empty array
+): array {
+    // Implementation
+}
+```
+
+This generates the following schema:
+```json
+{
+    "type": "object",
+    "properties": {
+        "userId": {
+            "type": "string",
+            "description": "Parameter: userId"
+        },
+        "age": {
+            "type": "integer",
+            "description": "Parameter: age",
+            "default": 18
+        },
+        "active": {
+            "type": "boolean",
+            "description": "Parameter: active",
+            "default": true
+        },
+        "tags": {
+            "type": "array",
+            "description": "Parameter: tags",
+            "items": {"type": "string"},
+            "default": []
+        }
+    },
+    "required": ["userId"]
+}
+```
+
+**Supported Types:**
+- `string` → `"type": "string"`
+- `int`, `integer` → `"type": "integer"`
+- `float`, `double` → `"type": "number"`
+- `bool`, `boolean` → `"type": "boolean"`
+- `array` → `"type": "array"`
+
+> **Note**: Complex types (classes, interfaces, union types) are not supported. Only basic PHP types are allowed for automatic schema generation.
+
+### Group-Based Registration
+
+You can organize your annotations using groups and load specific groups:
+
+```php
+// Register only math-related tools
+Router::post('/mcp/math', function () {
+    return di(HyperfMcpServer::class)->handler('math');
+});
+
+// Register development tools
+Router::post('/mcp/dev', function () {
+    return di(HyperfMcpServer::class)->handler('development');
+});
+
+// Register all tools (default group)
+Router::post('/mcp', function () {
+    return di(HyperfMcpServer::class)->handler();
+});
+```
+
+### Complete Annotation Example
+
+Here's a complete service class using all three annotation types:
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace App\Service;
+
+use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpTool;
+use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpPrompt;
+use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpResource;
+use Dtyq\PhpMcp\Types\Prompts\GetPromptResult;
+use Dtyq\PhpMcp\Types\Prompts\PromptMessage;
+use Dtyq\PhpMcp\Types\Content\TextContent;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Resources\TextResourceContents;
+
+class McpDemoService
+{
+    #[McpTool(description: 'Echo back a message')]
+    public function echo(string $message): array
+    {
+        return [
+            'echo' => $message,
+            'timestamp' => time(),
+        ];
+    }
+
+    #[McpPrompt(description: 'Generate a welcome message')]
+    public function welcome(string $username): GetPromptResult
+    {
+        $message = new PromptMessage(
+            ProtocolConstants::ROLE_USER,
+            new TextContent("Welcome {$username} to our MCP server!")
+        );
+
+        return new GetPromptResult('Welcome message', [$message]);
+    }
+
+    #[McpResource(description: 'Current server status')]
+    public function status(): TextResourceContents
+    {
+        $status = [
+            'status' => 'healthy',
+            'uptime' => time() - $_SERVER['REQUEST_TIME'],
+            'memory' => round(memory_get_usage() / 1024 / 1024, 2) . ' MB',
+        ];
+
+        return new TextResourceContents(
+            'mcp://server/status',
+            json_encode($status, JSON_PRETTY_PRINT),
+            'application/json'
+        );
+    }
+}
+```
+
 ## 🔧 Advanced Configuration
 
 ### Custom Authentication

@@ -26,6 +26,328 @@ Router::post('/mcp', function () {
 
 > **注意**: ConfigProvider 会由 Hyperf 自动加载，无需手动注册到 `config/config.php`。
 
+## 📝 基于注解的注册
+
+注册 MCP 工具、提示和资源的最简单方法是使用注解。这种方法会自动从方法签名生成 schema 并处理注册。
+
+### 可用注解
+
+#### `#[McpTool]` - 注册工具
+
+使用 `#[McpTool]` 注解将方法注册为 MCP 工具：
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace App\Service;
+
+use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpTool;
+
+class CalculatorService
+{
+    #[McpTool]
+    public function calculate(string $operation, int $a, int $b): array
+    {
+        $result = match ($operation) {
+            'add' => $a + $b,
+            'subtract' => $a - $b,
+            'multiply' => $a * $b,
+            'divide' => $a / $b,
+            default => null,
+        };
+
+        return [
+            'operation' => $operation,
+            'operands' => [$a, $b],
+            'result' => $result,
+        ];
+    }
+
+    #[McpTool(
+        name: 'advanced_calc',
+        description: '高级数学计算',
+        group: 'math'
+    )]
+    public function advancedCalculate(string $formula, array $variables = []): float
+    {
+        // 复杂计算逻辑
+        return 42.0;
+    }
+}
+```
+
+**注解参数：**
+- `name`: 工具名称（默认为方法名）
+- `description`: 工具描述
+- `inputSchema`: 自定义输入 schema（为空时自动生成）
+- `group`: 工具分组，用于组织
+- `enabled`: 是否启用工具（默认：true）
+
+#### `#[McpPrompt]` - 注册提示
+
+使用 `#[McpPrompt]` 注解将方法注册为提示模板：
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace App\Service;
+
+use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpPrompt;
+use Dtyq\PhpMcp\Types\Prompts\GetPromptResult;
+use Dtyq\PhpMcp\Types\Prompts\PromptMessage;
+use Dtyq\PhpMcp\Types\Content\TextContent;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+
+class PromptService
+{
+    #[McpPrompt]
+    public function greeting(string $name, string $language = 'chinese'): GetPromptResult
+    {
+        $greetings = [
+            'english' => "Hello, {$name}! Welcome to the Streamable HTTP MCP server!",
+            'spanish' => "¡Hola, {$name}! ¡Bienvenido al servidor MCP Streamable HTTP!",
+            'french' => "Bonjour, {$name}! Bienvenue sur le serveur MCP Streamable HTTP!",
+            'chinese' => "你好，{$name}！欢迎使用 Streamable HTTP MCP 服务器！",
+        ];
+
+        $message = new PromptMessage(
+            ProtocolConstants::ROLE_USER,
+            new TextContent($greetings[$language] ?? $greetings['chinese'])
+        );
+
+        return new GetPromptResult('问候提示', [$message]);
+    }
+
+    #[McpPrompt(
+        name: 'code_review',
+        description: '生成代码审查提示',
+        group: 'development'
+    )]
+    public function codeReview(string $code, string $language = 'php'): GetPromptResult
+    {
+        $prompt = "请审查以下 {$language} 代码：\n\n```{$language}\n{$code}\n```\n\n请提供以下方面的反馈：\n- 代码质量\n- 最佳实践\n- 潜在改进";
+        
+        $message = new PromptMessage(
+            ProtocolConstants::ROLE_USER,
+            new TextContent($prompt)
+        );
+
+        return new GetPromptResult('代码审查提示', [$message]);
+    }
+}
+```
+
+**注解参数：**
+- `name`: 提示名称（默认为方法名）
+- `description`: 提示描述
+- `arguments`: 自定义参数 schema（为空时自动生成）
+- `group`: 提示分组，用于组织
+- `enabled`: 是否启用提示（默认：true）
+
+#### `#[McpResource]` - 注册资源
+
+使用 `#[McpResource]` 注解将方法注册为资源提供者：
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace App\Service;
+
+use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpResource;
+use Dtyq\PhpMcp\Types\Resources\TextResourceContents;
+
+class SystemService
+{
+    #[McpResource]
+    public function systemInfo(): TextResourceContents
+    {
+        $info = [
+            'php_version' => PHP_VERSION,
+            'os' => PHP_OS,
+            'memory_usage' => memory_get_usage(true),
+            'timestamp' => date('c'),
+            'pid' => getmypid(),
+        ];
+
+        return new TextResourceContents(
+            'mcp://system/info',
+            json_encode($info, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            'application/json'
+        );
+    }
+
+    #[McpResource(
+        name: 'server_config',
+        uri: 'mcp://system/config',
+        description: '服务器配置数据',
+        mimeType: 'application/json'
+    )]
+    public function serverConfig(): TextResourceContents
+    {
+        $config = [
+            'environment' => env('APP_ENV', 'production'),
+            'debug' => env('APP_DEBUG', false),
+            'timezone' => date_default_timezone_get(),
+        ];
+
+        return new TextResourceContents(
+            'mcp://system/config',
+            json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            'application/json'
+        );
+    }
+}
+```
+
+**注解参数：**
+- `name`: 资源名称（默认为方法名）
+- `uri`: 资源 URI（为空时自动生成）
+- `description`: 资源描述
+- `mimeType`: 资源 MIME 类型
+- `size`: 资源大小（字节）
+- `group`: 资源分组，用于组织
+- `enabled`: 是否启用资源（默认：true）
+- `isTemplate`: 是否为模板资源
+- `uriTemplate`: URI 模板参数
+
+### Schema 自动生成
+
+注解系统会自动从方法签名生成 JSON schema：
+
+```php
+#[McpTool]
+public function processUser(
+    string $userId,           // 必需的字符串参数
+    int $age = 18,           // 可选的整数参数，有默认值
+    bool $active = true,     // 可选的布尔参数，有默认值
+    array $tags = []         // 可选的数组参数，默认为空数组
+): array {
+    // 实现代码
+}
+```
+
+这会生成以下 schema：
+```json
+{
+    "type": "object",
+    "properties": {
+        "userId": {
+            "type": "string",
+            "description": "Parameter: userId"
+        },
+        "age": {
+            "type": "integer",
+            "description": "Parameter: age",
+            "default": 18
+        },
+        "active": {
+            "type": "boolean",
+            "description": "Parameter: active",
+            "default": true
+        },
+        "tags": {
+            "type": "array",
+            "description": "Parameter: tags",
+            "items": {"type": "string"},
+            "default": []
+        }
+    },
+    "required": ["userId"]
+}
+```
+
+**支持的类型：**
+- `string` → `"type": "string"`
+- `int`, `integer` → `"type": "integer"`
+- `float`, `double` → `"type": "number"`
+- `bool`, `boolean` → `"type": "boolean"`
+- `array` → `"type": "array"`
+
+> **注意**: 不支持复杂类型（类、接口、联合类型）。自动 schema 生成只允许基本 PHP 类型。
+
+### 基于分组的注册
+
+您可以使用分组来组织注解并加载特定分组：
+
+```php
+// 只注册数学相关工具
+Router::post('/mcp/math', function () {
+    return di(HyperfMcpServer::class)->handler('math');
+});
+
+// 注册开发工具
+Router::post('/mcp/dev', function () {
+    return di(HyperfMcpServer::class)->handler('development');
+});
+
+// 注册所有工具（默认分组）
+Router::post('/mcp', function () {
+    return di(HyperfMcpServer::class)->handler();
+});
+```
+
+### 完整注解示例
+
+这是一个使用所有三种注解类型的完整服务类：
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace App\Service;
+
+use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpTool;
+use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpPrompt;
+use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpResource;
+use Dtyq\PhpMcp\Types\Prompts\GetPromptResult;
+use Dtyq\PhpMcp\Types\Prompts\PromptMessage;
+use Dtyq\PhpMcp\Types\Content\TextContent;
+use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Resources\TextResourceContents;
+
+class McpDemoService
+{
+    #[McpTool(description: '回显消息')]
+    public function echo(string $message): array
+    {
+        return [
+            'echo' => $message,
+            'timestamp' => time(),
+        ];
+    }
+
+    #[McpPrompt(description: '生成欢迎消息')]
+    public function welcome(string $username): GetPromptResult
+    {
+        $message = new PromptMessage(
+            ProtocolConstants::ROLE_USER,
+            new TextContent("欢迎 {$username} 来到我们的 MCP 服务器！")
+        );
+
+        return new GetPromptResult('欢迎消息', [$message]);
+    }
+
+    #[McpResource(description: '当前服务器状态')]
+    public function status(): TextResourceContents
+    {
+        $status = [
+            'status' => 'healthy',
+            'uptime' => time() - $_SERVER['REQUEST_TIME'],
+            'memory' => round(memory_get_usage() / 1024 / 1024, 2) . ' MB',
+        ];
+
+        return new TextResourceContents(
+            'mcp://server/status',
+            json_encode($status, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            'application/json'
+        );
+    }
+}
+```
+
 ## 🔧 高级配置
 
 ### 自定义认证
