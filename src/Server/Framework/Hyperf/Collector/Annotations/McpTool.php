@@ -8,16 +8,15 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations;
 
 use Attribute;
-use Dtyq\PhpMcp\Shared\Exceptions\ToolError;
-use Dtyq\PhpMcp\Shared\Utilities\ToolUtils;
-use Hyperf\Di\Annotation\AbstractAnnotation;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Shared\Utilities\SchemaUtils;
 
 /**
  * @Annotation
  * @Target({"METHOD"})
  */
 #[Attribute(Attribute::TARGET_METHOD)]
-class McpTool extends AbstractAnnotation
+class McpTool extends McpAnnotation
 {
     protected string $name = '';
 
@@ -41,7 +40,7 @@ class McpTool extends AbstractAnnotation
         bool $enabled = true,
     ) {
         if ($name !== '' && ! preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
-            throw new ToolError('Tool name must be alphanumeric and underscores.');
+            throw new ValidationError('Tool name must be alphanumeric and underscores.');
         }
         $this->name = $name;
         $this->description = $description;
@@ -50,19 +49,11 @@ class McpTool extends AbstractAnnotation
         $this->enabled = $enabled;
     }
 
-    public function collectMethod(string $className, ?string $target): void
-    {
-        if ($this->name === '') {
-            $this->name = $target;
-        }
-        if (empty($this->inputSchema)) {
-            $this->inputSchema = ToolUtils::generateInputSchema($className, $target);
-        }
-        parent::collectMethod($className, $target);
-    }
-
     public function getName(): string
     {
+        if ($this->name === '') {
+            $this->name = $this->method;
+        }
         return $this->name;
     }
 
@@ -76,6 +67,9 @@ class McpTool extends AbstractAnnotation
      */
     public function getInputSchema(): array
     {
+        if (empty($this->inputSchema)) {
+            $this->inputSchema = SchemaUtils::generateInputSchemaByClassMethod($this->class, $this->method);
+        }
         return $this->inputSchema;
     }
 

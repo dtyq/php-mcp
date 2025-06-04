@@ -15,7 +15,7 @@ use ReflectionNamedType;
 use ReflectionParameter;
 use ReflectionUnionType;
 
-class ToolUtils
+class SchemaUtils
 {
     /**
      * Generate input schema from method reflection.
@@ -25,7 +25,7 @@ class ToolUtils
      * @return array<string, mixed> The generated JSON Schema
      * @throws ValidationError When class or method doesn't exist, or contains unsupported types
      */
-    public static function generateInputSchema(string $class, string $method): array
+    public static function generateInputSchemaByClassMethod(string $class, string $method): array
     {
         // Validate inputs
         if (empty(trim($class))) {

@@ -18,6 +18,7 @@ use Dtyq\PhpMcp\Types\Prompts\PromptArgument;
 use Dtyq\PhpMcp\Types\Prompts\PromptMessage;
 use Exception;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 /**
  * Unit tests for RegisteredPrompt class.
@@ -115,8 +116,8 @@ class RegisteredPromptTest extends TestCase
 
     public function testExecuteWithInvalidReturnType(): void
     {
-        $invalidCallable = function (array $args): string {
-            return 'Invalid return type';
+        $invalidCallable = function (array $args): stdClass {
+            return new stdClass(); // Return an object that cannot be converted
         };
 
         $registeredPrompt = new RegisteredPrompt($this->samplePrompt, $invalidCallable);

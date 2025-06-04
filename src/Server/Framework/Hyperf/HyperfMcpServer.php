@@ -29,6 +29,8 @@ class HyperfMcpServer
         $mcpServer = new McpServer('HyperfMcpServer', '1.0.0', $app);
 
         $this->addAnnotationTools($mcpServer, $group);
+        $this->addAnnotationPrompts($mcpServer, $group);
+        $this->addAnnotationResources($mcpServer, $group);
 
         return $mcpServer->http($request, $sessionManager, $authenticator);
     }
@@ -38,6 +40,22 @@ class HyperfMcpServer
         $registeredTools = McpCollector::getTools($group);
         foreach ($registeredTools as $registeredTool) {
             $mcpServer->registerTool($registeredTool);
+        }
+    }
+
+    protected function addAnnotationPrompts(McpServer $mcpServer, string $group = ''): void
+    {
+        $registeredPrompts = McpCollector::getPrompts($group);
+        foreach ($registeredPrompts as $registeredPrompt) {
+            $mcpServer->registerPrompt($registeredPrompt);
+        }
+    }
+
+    protected function addAnnotationResources(McpServer $mcpServer, string $group = ''): void
+    {
+        $registeredResources = McpCollector::getResources($group);
+        foreach ($registeredResources as $registeredResource) {
+            $mcpServer->registerResource($registeredResource);
         }
     }
 }

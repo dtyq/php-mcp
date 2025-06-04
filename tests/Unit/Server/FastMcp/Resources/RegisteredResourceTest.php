@@ -16,6 +16,7 @@ use Dtyq\PhpMcp\Types\Resources\Resource;
 use Dtyq\PhpMcp\Types\Resources\TextResourceContents;
 use Exception;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 /**
  * Unit tests for RegisteredResource class.
@@ -79,8 +80,8 @@ class RegisteredResourceTest extends TestCase
 
     public function testGetContentWithInvalidReturnType(): void
     {
-        $invalidCallable = function (string $uri): string {
-            return 'Invalid return type';
+        $invalidCallable = function (string $uri): stdClass {
+            return new stdClass(); // Return an object that cannot be converted
         };
 
         $registeredResource = new RegisteredResource($this->sampleResource, $invalidCallable);

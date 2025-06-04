@@ -12,6 +12,7 @@ use Dtyq\PhpMcp\Shared\Exceptions\ResourceError;
 use Dtyq\PhpMcp\Types\Content\Annotations;
 use Dtyq\PhpMcp\Types\Resources\Resource;
 use Dtyq\PhpMcp\Types\Resources\ResourceContents;
+use Dtyq\PhpMcp\Types\Resources\TextResourceContents;
 use Exception;
 
 /**
@@ -40,6 +41,13 @@ class RegisteredResource
         try {
             // Execute the callable
             $result = call_user_func($this->callable, $this->resource->getUri());
+
+            if (is_array($result)) {
+                $result = json_encode($result, JSON_UNESCAPED_UNICODE);
+            }
+            if (is_string($result)) {
+                $result = new TextResourceContents($this->resource->getUri(), $result);
+            }
 
             // Ensure result is ResourceContents
             if (! $result instanceof ResourceContents) {

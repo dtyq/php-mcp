@@ -9,17 +9,17 @@ namespace Dtyq\PhpMcp\Tests\Unit\Shared\Utilities;
 
 use DateTime;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
-use Dtyq\PhpMcp\Shared\Utilities\ToolUtils;
+use Dtyq\PhpMcp\Shared\Utilities\SchemaUtils;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @internal
  */
-class ToolUtilsTest extends TestCase
+class SchemaUtilsTest extends TestCase
 {
     public function testGenerateInputSchemaWithBasicTypes(): void
     {
-        $schema = ToolUtils::generateInputSchema(TestClass::class, 'methodWithBasicTypes');
+        $schema = SchemaUtils::generateInputSchemaByClassMethod(TestClass::class, 'methodWithBasicTypes');
 
         $expected = [
             'type' => 'object',
@@ -54,7 +54,7 @@ class ToolUtilsTest extends TestCase
 
     public function testGenerateInputSchemaWithOptionalParameters(): void
     {
-        $schema = ToolUtils::generateInputSchema(TestClass::class, 'methodWithOptionalParams');
+        $schema = SchemaUtils::generateInputSchemaByClassMethod(TestClass::class, 'methodWithOptionalParams');
 
         $expected = [
             'type' => 'object',
@@ -81,7 +81,7 @@ class ToolUtilsTest extends TestCase
 
     public function testGenerateInputSchemaWithNoTypeHint(): void
     {
-        $schema = ToolUtils::generateInputSchema(TestClass::class, 'methodWithNoTypeHint');
+        $schema = SchemaUtils::generateInputSchemaByClassMethod(TestClass::class, 'methodWithNoTypeHint');
 
         $expected = [
             'type' => 'object',
@@ -99,7 +99,7 @@ class ToolUtilsTest extends TestCase
 
     public function testGenerateInputSchemaWithNoParameters(): void
     {
-        $schema = ToolUtils::generateInputSchema(TestClass::class, 'methodWithNoParams');
+        $schema = SchemaUtils::generateInputSchemaByClassMethod(TestClass::class, 'methodWithNoParams');
 
         $expected = [
             'type' => 'object',
@@ -114,7 +114,7 @@ class ToolUtilsTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage("Invalid value for field 'class': Class 'NonExistentClass' does not exist");
 
-        ToolUtils::generateInputSchema('NonExistentClass', 'someMethod');
+        SchemaUtils::generateInputSchemaByClassMethod('NonExistentClass', 'someMethod');
     }
 
     public function testGenerateInputSchemaThrowsExceptionForNonExistentMethod(): void
@@ -122,7 +122,7 @@ class ToolUtilsTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage("Invalid value for field 'method': Method 'nonExistentMethod' does not exist in class");
 
-        ToolUtils::generateInputSchema(TestClass::class, 'nonExistentMethod');
+        SchemaUtils::generateInputSchemaByClassMethod(TestClass::class, 'nonExistentMethod');
     }
 
     public function testGenerateInputSchemaThrowsExceptionForEmptyClass(): void
@@ -130,7 +130,7 @@ class ToolUtilsTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage("Field 'class' cannot be empty");
 
-        ToolUtils::generateInputSchema('', 'someMethod');
+        SchemaUtils::generateInputSchemaByClassMethod('', 'someMethod');
     }
 
     public function testGenerateInputSchemaThrowsExceptionForEmptyMethod(): void
@@ -138,7 +138,7 @@ class ToolUtilsTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage("Field 'method' cannot be empty");
 
-        ToolUtils::generateInputSchema(TestClass::class, '');
+        SchemaUtils::generateInputSchemaByClassMethod(TestClass::class, '');
     }
 
     public function testGenerateInputSchemaThrowsExceptionForCustomClass(): void
@@ -146,12 +146,12 @@ class ToolUtilsTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage("has unsupported type 'DateTime'. Only basic types");
 
-        ToolUtils::generateInputSchema(TestClass::class, 'methodWithCustomClass');
+        SchemaUtils::generateInputSchemaByClassMethod(TestClass::class, 'methodWithCustomClass');
     }
 
     public function testGenerateInputSchemaWithDefaultValues(): void
     {
-        $schema = ToolUtils::generateInputSchema(TestClass::class, 'methodWithDefaultValues');
+        $schema = SchemaUtils::generateInputSchemaByClassMethod(TestClass::class, 'methodWithDefaultValues');
 
         $expected = [
             'type' => 'object',

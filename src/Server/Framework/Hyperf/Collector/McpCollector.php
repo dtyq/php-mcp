@@ -7,8 +7,14 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Server\Framework\Hyperf\Collector;
 
+use Dtyq\PhpMcp\Server\FastMcp\Prompts\RegisteredPrompt;
+use Dtyq\PhpMcp\Server\FastMcp\Resources\RegisteredResource;
 use Dtyq\PhpMcp\Server\FastMcp\Tools\RegisteredTool;
+use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpPrompt;
+use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpResource;
 use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpTool;
+use Dtyq\PhpMcp\Types\Prompts\Prompt;
+use Dtyq\PhpMcp\Types\Resources\Resource;
 use Dtyq\PhpMcp\Types\Tools\Tool;
 use Hyperf\Context\ApplicationContext;
 use Hyperf\Di\Annotation\AnnotationCollector;
@@ -24,12 +30,40 @@ class McpCollector
     protected static array $tools = [];
 
     /**
+     * @var array<string, array<string, RegisteredPrompt>>
+     */
+    protected static array $prompts = [];
+
+    /**
+     * @return array<string, array<string, RegisteredResource>>
+     */
+    protected static array $resources = [];
+
+    /**
      * @return array<string, RegisteredTool>
      */
     public static function getTools(string $group = ''): array
     {
         self::collect();
         return self::$tools[$group] ?? [];
+    }
+
+    /**
+     * @return array<string, RegisteredPrompt>
+     */
+    public static function getPrompts(string $group = ''): array
+    {
+        self::collect();
+        return self::$prompts[$group] ?? [];
+    }
+
+    /**
+     * @return array<string, RegisteredResource>
+     */
+    public static function getResources(string $group = ''): array
+    {
+        self::collect();
+        return self::$resources[$group] ?? [];
     }
 
     public static function collect(): void
@@ -39,6 +73,8 @@ class McpCollector
         }
 
         self::collectTools();
+        self::collectPrompts();
+        self::collectResources();
 
         self::$collect = true;
     }
@@ -46,7 +82,6 @@ class McpCollector
     protected static function collectTools(): void
     {
         $mcpToolAnnotations = AnnotationCollector::getMethodsByAnnotation(McpTool::class);
-        var_dump($mcpToolAnnotations);
         foreach ($mcpToolAnnotations as $data) {
             $class = $data['class'] ?? '';
             $method = $data['method'] ?? '';
@@ -76,6 +111,77 @@ class McpCollector
                 }
             );
             self::$tools[$mcpTool->getGroup()][$mcpTool->getName()] = $registeredTool;
+        }
+    }
+
+    protected static function collectPrompts(): void
+    {
+        $mcpPromptAnnotations = AnnotationCollector::getMethodsByAnnotation(McpPrompt::class);
+        foreach ($mcpPromptAnnotations as $data) {
+            $class = $data['class'] ?? '';
+            $method = $data['method'] ?? '';
+            /** @var McpPrompt $mcpPrompt */
+            $mcpPrompt = $data['annotation'] ?? null;
+            if (empty($class) || empty($method) || empty($mcpPrompt)) {
+                continue;
+            }
+            if (! $mcpPrompt->isEnabled()) {
+                continue;
+            }
+            $prompt = new Prompt(
+                $mcpPrompt->getName(),
+                $mcpPrompt->getDescription(),
+                $mcpPrompt->getArguments(),
+            );
+            $registeredPrompt = new RegisteredPrompt(
+                $prompt,
+                function (array $arguments) use ($class, $method) {
+                    $container = ApplicationContext::getContainer();
+                    if (method_exists($container, 'make')) {
+                        $instance = $container->make($class);
+                    }
+                    if (! isset($instance) || ! method_exists($instance, $method)) {
+                        throw new RuntimeException("Method {$method} does not exist in class {$class}");
+                    }
+                    return $instance->{$method}(...$arguments);
+                }
+            );
+            self::$prompts[$mcpPrompt->getGroup()][$mcpPrompt->getName()] = $registeredPrompt;
+        }
+    }
+
+    protected static function collectResources(): void
+    {
+        $mcpResourceAnnotations = AnnotationCollector::getMethodsByAnnotation(McpResource::class);
+        foreach ($mcpResourceAnnotations as $data) {
+            $class = $data['class'] ?? '';
+            $method = $data['method'] ?? '';
+            /** @var McpResource $mcpResource */
+            $mcpResource = $data['annotation'] ?? null;
+            if (empty($class) || empty($method) || empty($mcpResource)) {
+                continue;
+            }
+            if (! $mcpResource->isEnabled()) {
+                continue;
+            }
+            $resource = new RegisteredResource(
+                new Resource(
+                    $mcpResource->getUri(),
+                    $mcpResource->getName(),
+                    $mcpResource->getDescription()
+                ),
+                function () use ($class, $method) {
+                    $container = ApplicationContext::getContainer();
+                    if (method_exists($container, 'make')) {
+                        $instance = $container->make($class);
+                    }
+                    if (! isset($instance) || ! method_exists($instance, $method)) {
+                        throw new RuntimeException("Method {$method} does not exist in class {$class}");
+                    }
+                    return $instance->{$method}();
+                }
+            );
+            self::$resources[$mcpResource->getGroup()][$mcpResource->getName()] = $resource;
         }
     }
 }
