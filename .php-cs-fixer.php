@@ -98,6 +98,7 @@ return (new Config())
             ->exclude('public')
             ->exclude('runtime')
             ->exclude('vendor')
+            ->exclude('src/Server/Framework')
             ->in(__DIR__)
     )
     ->setUsingCache(false);
