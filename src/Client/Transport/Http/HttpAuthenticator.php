@@ -61,8 +61,6 @@ class HttpAuthenticator
             return $headers;
         }
 
-        $this->logger->debug('Adding authentication headers', ['type' => $authConfig['type'] ?? 'unknown']);
-
         switch ($authConfig['type'] ?? '') {
             case 'bearer':
                 return $this->addBearerAuth($headers, $authConfig);
@@ -110,7 +108,6 @@ class HttpAuthenticator
         }
 
         $this->cacheTtl = $ttl;
-        $this->logger->debug('Updated cache TTL', ['ttl' => $ttl]);
     }
 
     /**
@@ -146,8 +143,6 @@ class HttpAuthenticator
         }
 
         $headers['Authorization'] = 'Bearer ' . $authConfig['token'];
-        $this->logger->debug('Added Bearer authentication header');
-
         return $headers;
     }
 
@@ -170,9 +165,6 @@ class HttpAuthenticator
 
         $credentials = base64_encode($authConfig['username'] . ':' . $authConfig['password']);
         $headers['Authorization'] = 'Basic ' . $credentials;
-
-        $this->logger->debug('Added Basic authentication header', ['username' => $authConfig['username']]);
-
         return $headers;
     }
 
@@ -195,7 +187,6 @@ class HttpAuthenticator
             $cachedToken = $this->authCache['access_token'] ?? null;
             if ($cachedToken) {
                 $headers['Authorization'] = 'Bearer ' . $cachedToken;
-                $this->logger->debug('Using cached OAuth2 token');
                 return $headers;
             }
         }
@@ -204,7 +195,6 @@ class HttpAuthenticator
         $token = $this->getOAuth2Token($authConfig);
         if ($token) {
             $headers['Authorization'] = 'Bearer ' . $token;
-            $this->logger->debug('Added OAuth2 authentication header');
             return $headers;
         }
 
@@ -230,8 +220,6 @@ class HttpAuthenticator
             }
             $headers[$key] = $value;
         }
-
-        $this->logger->debug('Added custom authentication headers', ['count' => count($authConfig['headers'])]);
 
         return $headers;
     }
@@ -289,8 +277,6 @@ class HttpAuthenticator
         ];
 
         $this->cacheExpiresAt = time() + $expiresIn;
-
-        $this->logger->debug('Cached authentication token', ['expires_in' => $expiresIn]);
     }
 
     /**
@@ -319,6 +305,5 @@ class HttpAuthenticator
     {
         $this->authCache = null;
         $this->cacheExpiresAt = 0;
-        $this->logger->debug('Cleared authentication cache');
     }
 }

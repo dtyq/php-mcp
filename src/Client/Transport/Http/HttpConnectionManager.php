@@ -103,13 +103,6 @@ class HttpConnectionManager
      */
     public function executeRequest(string $method, string $url, array $headers, ?array $data = null): array
     {
-        $this->logger->debug('Executing HTTP request', [
-            'method' => $method,
-            'url' => $url,
-            'headers_count' => count($headers),
-            'has_data' => $data !== null,
-        ]);
-
         $curlOptions = $this->buildCurlOptions($method, $url, $headers, $data);
 
         $ch = curl_init();
@@ -224,10 +217,6 @@ class HttpConnectionManager
 
         $decoded = json_decode($body, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->logger->debug('Response body is not valid JSON', [
-                'json_error' => json_last_error_msg(),
-                'body_preview' => substr($body, 0, 200),
-            ]);
             return null;
         }
 
@@ -341,12 +330,6 @@ class HttpConnectionManager
                 throw $this->createHttpError($response['status_code'], $response['body']);
             }
 
-            $this->logger->debug('HTTP DELETE request successful', [
-                'method' => $method,
-                'url' => $url,
-                'status_code' => $response['status_code'],
-            ]);
-
             return $response;
         }
 
@@ -375,13 +358,6 @@ class HttpConnectionManager
 
                     throw $this->createHttpError($response['status_code'], $response['body']);
                 }
-
-                $this->logger->debug('HTTP request successful', [
-                    'method' => $method,
-                    'url' => $url,
-                    'status_code' => $response['status_code'],
-                    'attempt' => $attempt + 1,
-                ]);
 
                 return $response;
             } catch (TransportError $e) {

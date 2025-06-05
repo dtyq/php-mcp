@@ -62,7 +62,6 @@ class SseStreamHandler
     public function setEventCallback(callable $callback): void
     {
         $this->eventCallback = $callback;
-        $this->logger->debug('Event callback set');
     }
 
     /**
@@ -259,7 +258,6 @@ class SseStreamHandler
         }
 
         $this->connectionTimeout = $seconds;
-        $this->logger->debug('Connection timeout updated', ['timeout' => $seconds]);
     }
 
     /**
@@ -274,7 +272,6 @@ class SseStreamHandler
         }
 
         $this->readTimeoutUs = $microseconds;
-        $this->logger->debug('Read timeout updated', ['timeout_us' => $microseconds]);
     }
 
     /**
@@ -287,20 +284,11 @@ class SseStreamHandler
         $timeout = $this->config->getSseTimeout();
         $startTime = microtime(true);
 
-        $this->logger->debug('Waiting for endpoint event', ['timeout' => $timeout]);
-
         while ($this->connected && (microtime(true) - $startTime) < $timeout) {
             $event = $this->readSseEvent();
 
             if ($event && $event['event'] === 'endpoint') {
-                $this->logger->debug('Endpoint event received', $event);
                 return $event;
-            }
-
-            if ($event) {
-                $this->logger->debug('Non-endpoint event received while waiting', [
-                    'event_type' => $event['event'],
-                ]);
             }
 
             // Small delay to prevent busy waiting
@@ -371,7 +359,6 @@ class SseStreamHandler
                     break;
                 default:
                     // Ignore unknown fields
-                    $this->logger->debug('Unknown SSE field', ['field' => $field, 'value' => $value]);
                     break;
             }
         }
@@ -462,11 +449,6 @@ class SseStreamHandler
      */
     protected function createSseConnection(string $url, array $headers)
     {
-        $this->logger->debug('Creating SSE connection', [
-            'url' => $url,
-            'headers' => array_keys($headers),
-        ]);
-
         // Build headers for stream context
         $headerLines = [];
         foreach ($headers as $key => $value) {
@@ -521,7 +503,6 @@ class SseStreamHandler
 
         // Check if the stream is still valid/readable
         if (! is_resource($this->stream) || feof($this->stream)) {
-            $this->logger->debug('Stream is no longer valid or at EOF');
             return false;
         }
 

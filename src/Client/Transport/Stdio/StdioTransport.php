@@ -128,15 +128,6 @@ class StdioTransport implements TransportInterface
         $this->ensureConnected();
 
         try {
-            // Log outgoing message at debug level
-            $this->logger->debug('Sending message to MCP server', [
-                'direction' => 'outgoing',
-                'message_length' => strlen($message),
-                'message' => $message,
-                'process_id' => $this->getProcessId(),
-                'timestamp' => microtime(true),
-            ]);
-
             // Validate message format if enabled
             if ($this->config->shouldValidateMessages()) {
                 $this->validateOutgoingMessage($message);
@@ -147,12 +138,6 @@ class StdioTransport implements TransportInterface
                 throw new TransportError('Stream handler not available');
             }
             $this->streamHandler->writeLine($message);
-
-            $this->logger->debug('Message sent successfully', [
-                'direction' => 'outgoing',
-                'message_id' => $this->extractMessageId($message),
-                'process_id' => $this->getProcessId(),
-            ]);
         } catch (Exception $e) {
             $this->logger->error('Failed to send message', [
                 'direction' => 'outgoing',
@@ -169,13 +154,6 @@ class StdioTransport implements TransportInterface
         $this->ensureConnected();
 
         try {
-            $this->logger->debug('Waiting for message from MCP server', [
-                'direction' => 'incoming',
-                'timeout' => $timeout,
-                'process_id' => $this->getProcessId(),
-                'timestamp' => microtime(true),
-            ]);
-
             // Convert timeout to float for stream handler
             $timeoutFloat = $timeout !== null ? (float) $timeout : null;
 
@@ -186,23 +164,8 @@ class StdioTransport implements TransportInterface
             $message = $this->streamHandler->readLine($timeoutFloat);
 
             if ($message === null) {
-                $this->logger->debug('No message received (timeout or EOF)', [
-                    'direction' => 'incoming',
-                    'timeout' => $timeout,
-                    'process_id' => $this->getProcessId(),
-                ]);
                 return null; // Timeout or EOF
             }
-
-            // Log incoming message at debug level
-            $this->logger->debug('Received message from MCP server', [
-                'direction' => 'incoming',
-                'message_length' => strlen($message),
-                'message' => $message,
-                'message_id' => $this->extractMessageId($message),
-                'process_id' => $this->getProcessId(),
-                'timestamp' => microtime(true),
-            ]);
 
             // Validate and parse message if enabled
             if ($this->config->shouldValidateMessages()) {

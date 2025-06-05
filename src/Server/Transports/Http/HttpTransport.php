@@ -124,11 +124,7 @@ class HttpTransport extends AbstractTransport
                 $headers['Mcp-Session-Id'] = $sessionId;
             }
 
-            $this->logger->info('Handling request', [
-                'method' => $method,
-                'sessionId' => $sessionId,
-                'isInitialize' => $isInitializeRequest,
-            ]);
+
 
             $responseBody = $this->handleMessage($body);
 

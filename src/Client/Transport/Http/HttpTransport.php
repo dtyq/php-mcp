@@ -15,7 +15,6 @@ use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
 use Dtyq\PhpMcp\Shared\Message\JsonRpcMessage;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Exception;
-use Throwable;
 
 /**
  * HTTP transport implementation for MCP client.
@@ -130,12 +129,7 @@ class HttpTransport implements TransportInterface
 
             // Connect based on protocol version
             if ($this->protocolVersion === '2025-03-26') {
-                try {
-                    $this->connectStreamableHttp();
-                } catch (Throwable $throwable) {
-                    $this->logger->error('Failed to connect to HTTP transport');
-                    $this->connectLegacyHttpSse();
-                }
+                $this->connectStreamableHttp();
             } else {
                 $this->connectLegacyHttpSse();
             }
@@ -163,16 +157,6 @@ class HttpTransport implements TransportInterface
         $this->ensureConnected();
 
         try {
-            // Log outgoing message at debug level
-            $this->logger->debug('Sending message to MCP server', [
-                'direction' => 'outgoing',
-                'message_length' => strlen($message),
-                'message' => $message,
-                'protocol_version' => $this->protocolVersion,
-                'session_id' => $this->sessionId,
-                'timestamp' => microtime(true),
-            ]);
-
             // Parse message for handling
             $jsonRpcMessage = JsonRpcMessage::fromJson($message);
 
@@ -184,12 +168,6 @@ class HttpTransport implements TransportInterface
             }
 
             ++$this->stats['messages_sent'];
-
-            $this->logger->debug('Message sent successfully', [
-                'direction' => 'outgoing',
-                'message_id' => $this->extractMessageId($message),
-                'protocol_version' => $this->protocolVersion,
-            ]);
         } catch (Exception $e) {
             $this->logger->error('Failed to send message', [
                 'direction' => 'outgoing',
@@ -206,36 +184,17 @@ class HttpTransport implements TransportInterface
         $this->ensureConnected();
 
         try {
-            $this->logger->debug('Waiting for message from MCP server', [
-                'direction' => 'incoming',
-                'timeout' => $timeout,
-                'protocol_version' => $this->protocolVersion,
-                'session_id' => $this->sessionId,
-                'timestamp' => microtime(true),
-            ]);
-
             // For new protocol, check stored synchronous responses first
             if ($this->protocolVersion === '2025-03-26') {
                 foreach ($this->syncResponses as $messageId => $responseData) {
                     unset($this->syncResponses[$messageId]);
                     $message = json_encode($responseData);
                     ++$this->stats['messages_received'];
-
-                    $this->logger->debug('Retrieved stored synchronous response', [
-                        'direction' => 'incoming',
-                        'message_id' => $messageId,
-                        'message_length' => strlen($message),
-                        'message' => $message,
-                        'protocol_version' => $this->protocolVersion,
-                        'timestamp' => microtime(true),
-                    ]);
-
                     return $message;
                 }
 
                 // If no stored responses and SSE is not connected, try to establish it
                 if ($this->sseHandler === null || ! $this->sseHandler->isConnected()) {
-                    $this->logger->debug('No stored responses and SSE not connected - establishing SSE for server push messages');
                     if ($this->sseHandler === null) {
                         throw new TransportError('SSE handler not available');
                     }
@@ -250,26 +209,11 @@ class HttpTransport implements TransportInterface
 
             $jsonRpcMessage = $this->sseHandler->receiveMessage();
             if ($jsonRpcMessage === null) {
-                $this->logger->debug('No message received (timeout or EOF)', [
-                    'direction' => 'incoming',
-                    'timeout' => $timeout,
-                    'protocol_version' => $this->protocolVersion,
-                ]);
                 return null;
             }
 
             $message = $jsonRpcMessage->toJson();
             ++$this->stats['messages_received'];
-
-            // Log incoming message at debug level
-            $this->logger->debug('Received message from MCP server', [
-                'direction' => 'incoming',
-                'message_length' => strlen($message),
-                'message' => $message,
-                'protocol_version' => $this->protocolVersion,
-                'timestamp' => microtime(true),
-            ]);
-
             return $message;
         } catch (Exception $e) {
             $this->logger->error('Failed to receive message', [
@@ -437,8 +381,6 @@ class HttpTransport implements TransportInterface
             // Set up event callback for SSE handler
             $this->sseHandler->setEventCallback([$this, 'handleSseEvent']);
         }
-
-        $this->logger->debug('HTTP transport components initialized');
     }
 
     /**
@@ -478,13 +420,8 @@ class HttpTransport implements TransportInterface
     {
         $configuredVersion = $this->config->getProtocolVersion();
         if ($configuredVersion !== 'auto') {
-            $this->logger->debug('Using configured protocol version', [
-                'version' => $configuredVersion,
-            ]);
             return $configuredVersion;
         }
-
-        $this->logger->debug('Auto-detecting protocol version');
 
         // Use a single HTTP request without retries for protocol detection
         try {
@@ -504,9 +441,7 @@ class HttpTransport implements TransportInterface
             // For other error codes, try legacy protocol
             $this->logger->info('Server returned status ' . $response['status_code'] . ', falling back to legacy protocol');
         } catch (Exception $e) {
-            $this->logger->debug('Protocol detection request failed', [
-                'error' => $e->getMessage(),
-            ]);
+            // Protocol detection failed, continue to fallback
         }
 
         // Fallback to legacy protocol
@@ -610,8 +545,6 @@ class HttpTransport implements TransportInterface
      */
     protected function connectStreamableHttp(): void
     {
-        $this->logger->debug('Connecting using new protocol (2025-03-26)');
-
         // Try resumption if enabled and we have a last event ID
         if ($this->lastEventId && $this->config->isResumptionEnabled()) {
             $this->attemptResumption();
@@ -636,11 +569,6 @@ class HttpTransport implements TransportInterface
         // Mark as connected - SSE will be established on demand when needed
         $this->connected = true;
         $this->connectedAt = microtime(true);
-
-        $this->logger->debug('New protocol connection established', [
-            'session_id' => $this->sessionId,
-        ]);
-
         $this->protocolVersion = ProtocolConstants::PROTOCOL_VERSION_20250326;
     }
 
@@ -689,8 +617,6 @@ class HttpTransport implements TransportInterface
      */
     protected function connectLegacyHttpSse(): void
     {
-        $this->logger->debug('Connecting using legacy protocol (2024-11-05)');
-
         // Establish SSE connection and get endpoint information
         if ($this->sseHandler === null) {
             throw new TransportError('SSE handler not initialized');
@@ -699,11 +625,6 @@ class HttpTransport implements TransportInterface
 
         // Convert relative URL to absolute URL if needed
         $this->legacyPostEndpoint = $this->resolveUrl($endpointInfo['post_endpoint']);
-
-        $this->logger->debug('Legacy protocol connection established', [
-            'post_endpoint' => $this->legacyPostEndpoint,
-        ]);
-
         $this->protocolVersion = ProtocolConstants::PROTOCOL_VERSION_20241105;
     }
 
@@ -951,8 +872,6 @@ class HttpTransport implements TransportInterface
                 $this->config->getBaseUrl(),
                 $headers
             );
-
-            $this->logger->debug('Session termination request sent');
         } catch (Exception $e) {
             $this->logger->warning('Failed to send session termination request', [
                 'error' => $e->getMessage(),
@@ -1008,42 +927,26 @@ class HttpTransport implements TransportInterface
      */
     protected function extractSessionId(array $response): ?string
     {
-        $this->logger->debug('Extracting session ID from response', [
-            'has_headers' => isset($response['headers']),
-            'headers' => $response['headers'] ?? [],
-            'has_data' => isset($response['data']),
-            'response_keys' => array_keys($response),
-        ]);
-
         // Check if session ID is in response headers
         if (isset($response['headers']['mcp-session-id'])) {
-            $sessionId = $response['headers']['mcp-session-id'];
-            $this->logger->debug('Found session ID in headers', ['session_id' => $sessionId]);
-            return $sessionId;
+            return $response['headers']['mcp-session-id'];
         }
 
         // Check response data for session ID
         if (isset($response['sessionId'])) {
-            $sessionId = (string) $response['sessionId'];
-            $this->logger->debug('Found session ID in root response', ['session_id' => $sessionId]);
-            return $sessionId;
+            return (string) $response['sessionId'];
         }
 
         // Check JSON-RPC result for session ID
         if (isset($response['data']['result']['sessionId'])) {
-            $sessionId = (string) $response['data']['result']['sessionId'];
-            $this->logger->debug('Found session ID in JSON-RPC result', ['session_id' => $sessionId]);
-            return $sessionId;
+            return (string) $response['data']['result']['sessionId'];
         }
 
         // Some servers might return it in the root of the JSON response
         if (isset($response['data']['sessionId'])) {
-            $sessionId = (string) $response['data']['sessionId'];
-            $this->logger->debug('Found session ID in data root', ['session_id' => $sessionId]);
-            return $sessionId;
+            return (string) $response['data']['sessionId'];
         }
 
-        $this->logger->debug('No session ID found in initialize response');
         return null;
     }
 
@@ -1069,7 +972,5 @@ class HttpTransport implements TransportInterface
         $this->sessionId = null;
         $this->legacyPostEndpoint = null;
         $this->protocolVersion = '';
-
-        $this->logger->debug('HTTP transport cleanup completed');
     }
 }

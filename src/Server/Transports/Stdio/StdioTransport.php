@@ -105,10 +105,7 @@ class StdioTransport extends AbstractTransport
             // Send through stream handler
             $this->streamHandler->writeLine($message);
 
-            $this->logger->debug('Message sent via stdio', [
-                'message_length' => strlen($message),
-                'message' => $message,
-            ]);
+
         } catch (Exception $e) {
             $this->logger->error('Failed to send message via stdio', [
                 'error' => $e->getMessage(),
@@ -161,7 +158,7 @@ class StdioTransport extends AbstractTransport
             // Enable signal handling
             pcntl_async_signals(true);
 
-            $this->logger->debug('Signal handlers registered');
+
         } else {
             $this->logger->warning('PCNTL extension not available, signal handling disabled');
         }
@@ -291,8 +288,6 @@ class StdioTransport extends AbstractTransport
      */
     private function processStdinLoop(): void
     {
-        $this->logger->debug('Starting stdin processing loop');
-
         while (! $this->shouldStop) {
             try {
                 // Check for EOF before attempting to read
@@ -314,11 +309,6 @@ class StdioTransport extends AbstractTransport
                     // Skip empty lines
                     continue;
                 }
-
-                $this->logger->debug('Received message from stdin', [
-                    'message_length' => strlen($line),
-                    'message' => $line,
-                ]);
 
                 // Process the message
                 $response = $this->handleMessage($line);
@@ -359,8 +349,6 @@ class StdioTransport extends AbstractTransport
                 $this->streamHandler->writeError('Unexpected error: ' . $e->getMessage());
             }
         }
-
-        $this->logger->debug('Stdin processing loop ended');
     }
 
     /**
