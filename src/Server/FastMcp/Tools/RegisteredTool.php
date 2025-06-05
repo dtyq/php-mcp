@@ -12,6 +12,7 @@ use Dtyq\PhpMcp\Shared\Exceptions\ToolError;
 use Dtyq\PhpMcp\Types\Tools\Tool;
 use Dtyq\PhpMcp\Types\Tools\ToolAnnotations;
 use Exception;
+use Opis\Closure\SerializableClosure;
 
 /**
  * Registered tool definition and execution class.
@@ -23,10 +24,13 @@ class RegisteredTool
     /** @var Tool Tool metadata */
     private Tool $tool;
 
-    /** @var Closure The function to execute */
-    private Closure $callable;
+    /** @var Closure|SerializableClosure The function to execute */
+    private $callable;
 
-    public function __construct(Tool $tool, Closure $callable)
+    /**
+     * @param Closure|SerializableClosure $callable
+     */
+    public function __construct(Tool $tool, $callable)
     {
         $this->tool = $tool;
         $this->callable = $callable;

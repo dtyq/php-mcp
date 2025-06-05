@@ -16,6 +16,7 @@ use Dtyq\PhpMcp\Types\Prompts\Prompt;
 use Dtyq\PhpMcp\Types\Prompts\PromptArgument;
 use Dtyq\PhpMcp\Types\Prompts\PromptMessage;
 use Exception;
+use Opis\Closure\SerializableClosure;
 
 /**
  * Registered prompt definition and execution class.
@@ -27,10 +28,13 @@ class RegisteredPrompt
     /** @var Prompt Prompt metadata */
     private Prompt $prompt;
 
-    /** @var Closure The function to execute */
-    private Closure $callable;
+    /** @var Closure|SerializableClosure The function to execute */
+    private $callable;
 
-    public function __construct(Prompt $prompt, Closure $callable)
+    /**
+     * @param Closure|SerializableClosure $callable
+     */
+    public function __construct(Prompt $prompt, $callable)
     {
         $this->prompt = $prompt;
         $this->callable = $callable;

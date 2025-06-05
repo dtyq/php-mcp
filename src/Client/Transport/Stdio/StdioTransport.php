@@ -408,25 +408,6 @@ class StdioTransport implements TransportInterface
     }
 
     /**
-     * Extract message ID from a JSON-RPC message for logging purposes.
-     *
-     * @param string $message The message to extract ID from
-     * @return null|string Message ID or null if not found
-     */
-    private function extractMessageId(string $message): ?string
-    {
-        try {
-            $data = json_decode($message, true);
-            if (is_array($data) && isset($data['id'])) {
-                return (string) $data['id'];
-            }
-            return null;
-        } catch (Exception $e) {
-            return null;
-        }
-    }
-
-    /**
      * Cleanup all resources and reset state.
      */
     private function cleanup(): void

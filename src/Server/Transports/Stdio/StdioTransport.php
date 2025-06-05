@@ -104,8 +104,6 @@ class StdioTransport extends AbstractTransport
 
             // Send through stream handler
             $this->streamHandler->writeLine($message);
-
-
         } catch (Exception $e) {
             $this->logger->error('Failed to send message via stdio', [
                 'error' => $e->getMessage(),
@@ -157,8 +155,6 @@ class StdioTransport extends AbstractTransport
 
             // Enable signal handling
             pcntl_async_signals(true);
-
-
         } else {
             $this->logger->warning('PCNTL extension not available, signal handling disabled');
         }

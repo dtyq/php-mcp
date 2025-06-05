@@ -124,8 +124,6 @@ class HttpTransport extends AbstractTransport
                 $headers['Mcp-Session-Id'] = $sessionId;
             }
 
-
-
             $responseBody = $this->handleMessage($body);
 
             return new Response(200, $headers, $responseBody);

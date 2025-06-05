@@ -14,6 +14,7 @@ use Dtyq\PhpMcp\Types\Resources\Resource;
 use Dtyq\PhpMcp\Types\Resources\ResourceContents;
 use Dtyq\PhpMcp\Types\Resources\TextResourceContents;
 use Exception;
+use Opis\Closure\SerializableClosure;
 
 /**
  * Registered resource definition and access class.
@@ -24,10 +25,13 @@ class RegisteredResource
 {
     private Resource $resource;
 
-    /** @var Closure The function to execute for resource access */
-    private Closure $callable;
+    /** @var Closure|SerializableClosure The function to execute for resource access */
+    private $callable;
 
-    public function __construct(Resource $resource, Closure $callable)
+    /**
+     * @param Closure|SerializableClosure $callable
+     */
+    public function __construct(Resource $resource, $callable)
     {
         $this->resource = $resource;
         $this->callable = $callable;

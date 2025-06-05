@@ -13,6 +13,7 @@ use Dtyq\PhpMcp\Types\Resources\Resource;
 use Dtyq\PhpMcp\Types\Resources\ResourceContents;
 use Dtyq\PhpMcp\Types\Resources\ResourceTemplate;
 use Exception;
+use Opis\Closure\SerializableClosure;
 
 /**
  * Registered resource template definition and access class.
@@ -24,10 +25,13 @@ class RegisteredResourceTemplate
     /** @var ResourceTemplate Template metadata */
     private ResourceTemplate $template;
 
-    /** @var Closure The function to execute for resource generation */
-    private Closure $callable;
+    /** @var Closure|SerializableClosure The function to execute for resource generation */
+    private $callable;
 
-    public function __construct(ResourceTemplate $template, Closure $callable)
+    /**
+     * @param Closure|SerializableClosure $callable
+     */
+    public function __construct(ResourceTemplate $template, $callable)
     {
         $this->template = $template;
         $this->callable = $callable;
@@ -100,8 +104,10 @@ class RegisteredResourceTemplate
 
     /**
      * Get the callable function.
+     *
+     * @return Closure|SerializableClosure
      */
-    public function getCallable(): Closure
+    public function getCallable()
     {
         return $this->callable;
     }
