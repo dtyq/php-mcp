@@ -28,6 +28,28 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
 
+/**
+ * Simple session ID generator for testing.
+ */
+function generateSessionId(): string
+{
+    return 'mcp_session_' . uniqid() . '_' . bin2hex(random_bytes(8));
+}
+
+/**
+ * Extract session ID from request headers.
+ */
+function getSessionIdFromHeaders(array $headers): ?string
+{
+    // Check for Mcp-Session-Id header (case-insensitive)
+    foreach ($headers as $name => $value) {
+        if (strtolower($name) === 'mcp-session-id') {
+            return is_array($value) ? $value[0] : $value;
+        }
+    }
+    return null;
+}
+
 // Set timezone to Shanghai
 date_default_timezone_set('Asia/Shanghai');
 
@@ -46,18 +68,76 @@ if ($path !== '/mcp') {
     exit;
 }
 
+// Handle DELETE requests for session termination
+if ($method === 'DELETE') {
+    $sessionId = getSessionIdFromHeaders($headers);
+    if (! $sessionId) {
+        http_response_code(400);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'error' => [
+                'code' => -32002,
+                'message' => 'Missing Mcp-Session-Id header for session termination.',
+            ],
+        ]);
+        exit;
+    }
+
+    // Log session termination
+    error_log("Session terminated: {$sessionId}");
+
+    // Return success response for session termination
+    http_response_code(200);
+    header('Content-Type: application/json');
+    header("Mcp-Session-Id: {$sessionId}");
+    echo json_encode([
+        'success' => true,
+        'message' => 'Session terminated successfully',
+        'session_id' => $sessionId,
+    ]);
+    exit;
+}
+
 if ($method !== 'POST') {
     http_response_code(405);
     header('Content-Type: application/json');
+    header('Allow: POST, DELETE');
     echo json_encode([
         'jsonrpc' => '2.0',
         'error' => [
             'code' => -32601,
-            'message' => 'Method not allowed - use POST for JSON-RPC',
+            'message' => 'Method not allowed - use POST for JSON-RPC or DELETE for session termination',
         ],
         'id' => null,
     ]);
     exit;
+}
+
+// Parse request body to determine if this is an initialize request
+$requestData = json_decode($body, true);
+$isInitialize = isset($requestData['method']) && $requestData['method'] === 'initialize';
+
+// Simple session handling for testing
+$sessionId = null;
+if ($isInitialize) {
+    // For initialize request, generate new session ID
+    $sessionId = generateSessionId();
+} else {
+    // For other requests, just check if session header exists
+    $sessionId = getSessionIdFromHeaders($headers);
+    if (! $sessionId) {
+        http_response_code(401);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'jsonrpc' => '2.0',
+            'error' => [
+                'code' => -32002,
+                'message' => 'Missing Mcp-Session-Id header. Please include session ID.',
+            ],
+            'id' => $requestData['id'] ?? null,
+        ]);
+        exit;
+    }
 }
 
 // Create MCP server instance for processing
@@ -69,18 +149,24 @@ $mcpServer = new McpServer('streamable-http-test-server', '1.0.0', $app);
 $mcpServer
     ->registerTool(createEchoTool())
     ->registerTool(createCalculatorTool())
-    ->registerTool(createStreamableInfoTool())
+    ->registerTool(createStreamableInfoTool($sessionId))
     ->registerPrompt(createGreetingPrompt())
     ->registerResource(createSystemInfoResource())
     ->registerTemplate(createStreamableLogTemplate());
 
 $response = $mcpServer->http($request);
 http_response_code($response->getStatusCode());
+
+// Add Mcp-Session-Id header to response
+header("Mcp-Session-Id: {$sessionId}");
+
+// Add other headers from response
 foreach ($response->getHeaders() as $name => $values) {
     foreach ($values as $value) {
         header("{$name}: {$value}");
     }
 }
+
 echo $response->getBody()->getContents();
 
 /**
@@ -207,7 +293,7 @@ function createCalculatorTool(): RegisteredTool
     });
 }
 
-function createStreamableInfoTool(): RegisteredTool
+function createStreamableInfoTool(string $sessionId): RegisteredTool
 {
     $tool = new Tool(
         'streamable_info',
@@ -219,7 +305,7 @@ function createStreamableInfoTool(): RegisteredTool
         'Get Streamable HTTP server information and capabilities'
     );
 
-    return new RegisteredTool($tool, function (array $args): array {
+    return new RegisteredTool($tool, function (array $args) use ($sessionId): array {
         return [
             'transport' => 'streamable-http',
             'protocol_version' => '2025-03-26',
@@ -228,16 +314,22 @@ function createStreamableInfoTool(): RegisteredTool
                 'version' => '1.0.0',
                 'php_version' => PHP_VERSION,
             ],
+            'session_info' => [
+                'current_session_id' => $sessionId,
+                'session_created_at' => date('c'),
+                'note' => 'This is a test server with simplified session handling',
+            ],
             'capabilities' => [
                 'direct_request_response' => true,
                 'sse_notifications' => true,
-                'session_optional' => true,
-                'stateless_mode' => true,
+                'session_header_validation' => true,
+                'simplified_testing' => true,
             ],
             'features' => [
                 'no_complex_broadcasting' => true,
-                'simplified_session_management' => true,
+                'header_based_session_check' => true,
                 'direct_message_routing' => true,
+                'test_mode_enabled' => true,
             ],
             'runtime_info' => [
                 'start_time' => date('c'),

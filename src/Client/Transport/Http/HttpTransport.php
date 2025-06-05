@@ -66,6 +66,9 @@ class HttpTransport implements TransportInterface
     /** @var null|string Last received event ID for resumption */
     private ?string $lastEventId = null;
 
+    /** @var array<string, array<string, mixed>> Stored synchronous responses for new protocol */
+    private array $syncResponses = [];
+
     /** @var array<string, mixed> Connection statistics */
     private array $stats = [
         'protocol_version' => '',
@@ -211,6 +214,35 @@ class HttpTransport implements TransportInterface
                 'timestamp' => microtime(true),
             ]);
 
+            // For new protocol, check stored synchronous responses first
+            if ($this->protocolVersion === '2025-03-26') {
+                foreach ($this->syncResponses as $messageId => $responseData) {
+                    unset($this->syncResponses[$messageId]);
+                    $message = json_encode($responseData);
+                    ++$this->stats['messages_received'];
+
+                    $this->logger->debug('Retrieved stored synchronous response', [
+                        'direction' => 'incoming',
+                        'message_id' => $messageId,
+                        'message_length' => strlen($message),
+                        'message' => $message,
+                        'protocol_version' => $this->protocolVersion,
+                        'timestamp' => microtime(true),
+                    ]);
+
+                    return $message;
+                }
+
+                // If no stored responses and SSE is not connected, try to establish it
+                if ($this->sseHandler === null || ! $this->sseHandler->isConnected()) {
+                    $this->logger->debug('No stored responses and SSE not connected - establishing SSE for server push messages');
+                    if ($this->sseHandler === null) {
+                        throw new TransportError('SSE handler not available');
+                    }
+                    $this->sseHandler->connectNew($this->config->getBaseUrl(), $this->sessionId);
+                }
+            }
+
             // Receive message from SSE stream
             if ($this->sseHandler === null) {
                 throw new TransportError('SSE handler not available');
@@ -238,11 +270,6 @@ class HttpTransport implements TransportInterface
                 'timestamp' => microtime(true),
             ]);
 
-            // Validate message format if enabled (placeholder - no validation method in HttpConfig)
-            // if ($this->config->shouldValidateMessages()) {
-            //     $this->validateIncomingMessage($message);
-            // }
-
             return $message;
         } catch (Exception $e) {
             $this->logger->error('Failed to receive message', [
@@ -256,6 +283,12 @@ class HttpTransport implements TransportInterface
 
     public function isConnected(): bool
     {
+        // For new protocol, we don't require SSE to be always connected
+        if ($this->protocolVersion === '2025-03-26') {
+            return $this->connected && $this->sessionId !== null;
+        }
+
+        // For legacy protocol, SSE must be connected
         return $this->connected
                && $this->sseHandler !== null
                && $this->sseHandler->isConnected();
@@ -453,15 +486,25 @@ class HttpTransport implements TransportInterface
 
         $this->logger->debug('Auto-detecting protocol version');
 
-        // Try new protocol first
+        // Use a single HTTP request without retries for protocol detection
         try {
-            $response = $this->tryInitializeRequest('2025-03-26');
-            if ($response['success']) {
+            $response = $this->performProtocolDetectionRequest();
+
+            if ($response['status_code'] === 200) {
                 $this->logger->info('Detected new protocol (2025-03-26)');
                 return '2025-03-26';
             }
+
+            // Check for 405 Method Not Allowed - indicates legacy protocol
+            if ($response['status_code'] === 405) {
+                $this->logger->info('Server returned 405 for POST, detected legacy protocol (2024-11-05)');
+                return '2024-11-05';
+            }
+
+            // For other error codes, try legacy protocol
+            $this->logger->info('Server returned status ' . $response['status_code'] . ', falling back to legacy protocol');
         } catch (Exception $e) {
-            $this->logger->debug('New protocol detection failed', [
+            $this->logger->debug('Protocol detection request failed', [
                 'error' => $e->getMessage(),
             ]);
         }
@@ -469,6 +512,52 @@ class HttpTransport implements TransportInterface
         // Fallback to legacy protocol
         $this->logger->info('Using legacy protocol (2024-11-05)');
         return '2024-11-05';
+    }
+
+    /**
+     * Perform a single HTTP request for protocol detection without retries.
+     *
+     * @return array<string, mixed> Response data
+     * @throws TransportError If request execution fails
+     */
+    protected function performProtocolDetectionRequest(): array
+    {
+        if ($this->connectionManager === null) {
+            throw new TransportError('Connection manager not initialized');
+        }
+
+        $headers = [
+            'Content-Type' => 'application/json',
+            'Accept' => 'text/event-stream, application/json',
+            'User-Agent' => $this->config->getUserAgent(),
+        ];
+
+        // Add authentication headers
+        if ($this->authenticator) {
+            $headers = $this->authenticator->addAuthHeaders($headers);
+        }
+
+        $initMessage = [
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'method' => 'initialize',
+            'params' => [
+                'protocolVersion' => '2025-03-26',
+                'capabilities' => [],
+                'clientInfo' => [
+                    'name' => 'php-mcp-client',
+                    'version' => '1.0.0',
+                ],
+            ],
+        ];
+
+        // Use the connection manager's executeRequest method directly to bypass retry logic
+        return $this->connectionManager->executeRequest(
+            'POST',
+            $this->config->getBaseUrl(),
+            $headers,
+            $initMessage
+        );
     }
 
     /**
@@ -531,17 +620,22 @@ class HttpTransport implements TransportInterface
 
         // Send initialize request
         $initResponse = $this->sendInitializeRequest('2025-03-26');
-        $this->sessionId = $initResponse['sessionId'] ?? null;
+
+        // Extract session ID from response headers or MCP-Session-Id header
+        $this->sessionId = $this->extractSessionId($initResponse);
         $this->stats['session_id'] = $this->sessionId;
+
+        // Validate that we got a session ID
+        if (! $this->sessionId) {
+            throw new TransportError('Server did not return a session ID in initialize response');
+        }
 
         // Send initialized notification
         $this->sendInitializedNotification();
 
-        // Establish SSE connection
-        if ($this->sseHandler === null) {
-            throw new TransportError('SSE handler not initialized');
-        }
-        $this->sseHandler->connectNew($this->config->getBaseUrl(), $this->sessionId);
+        // Mark as connected - SSE will be established on demand when needed
+        $this->connected = true;
+        $this->connectedAt = microtime(true);
 
         $this->logger->debug('New protocol connection established', [
             'session_id' => $this->sessionId,
@@ -665,7 +759,7 @@ class HttpTransport implements TransportInterface
 
         $headers = [
             'Content-Type' => 'application/json',
-            'Accept' => 'application/json',
+            'Accept' => 'text/event-stream, application/json',
         ];
 
         $headers = $this->authenticator->addAuthHeaders($headers);
@@ -694,7 +788,8 @@ class HttpTransport implements TransportInterface
             throw new TransportError('Initialize request failed');
         }
 
-        return $response['data'];
+        // Return the complete response so headers can be accessed
+        return $response;
     }
 
     /**
@@ -761,22 +856,50 @@ class HttpTransport implements TransportInterface
         $headers = [
             'Content-Type' => 'application/json',
             'Mcp-Session-Id' => $this->sessionId ?? '',
+            'Accept' => 'application/json', // For new protocol, we expect JSON responses for sync messages
         ];
-
-        // Set Accept header based on configuration
-        if ($this->config->isJsonResponseMode()) {
-            $headers['Accept'] = 'application/json';
-        } else {
-            $headers['Accept'] = 'text/event-stream, application/json';
-        }
 
         $headers = $this->authenticator->addAuthHeaders($headers);
 
-        $this->connectionManager->sendPostRequest(
+        // For requests with ID (synchronous), store the response for retrieval
+        $messageArray = $message->toArray();
+        $hasId = isset($messageArray['id']);
+
+        $response = $this->connectionManager->sendPostRequest(
             $this->config->getBaseUrl(),
             $headers,
-            $message->toArray()
+            $messageArray
         );
+
+        // For synchronous requests, store the response
+        if ($hasId && isset($response['data'])) {
+            $this->storeSyncResponse($messageArray['id'], $response['data']);
+        }
+    }
+
+    /**
+     * Store synchronous response for later retrieval.
+     *
+     * @param mixed $messageId Message ID
+     * @param array<string, mixed> $responseData Response data
+     */
+    protected function storeSyncResponse($messageId, array $responseData): void
+    {
+        if (! isset($this->syncResponses)) {
+            $this->syncResponses = [];
+        }
+        $this->syncResponses[(string) $messageId] = $responseData;
+    }
+
+    /**
+     * Retrieve stored synchronous response.
+     *
+     * @param string $messageId Message ID
+     * @return null|array<string, mixed> Response data or null if not found
+     */
+    protected function getSyncResponse(string $messageId): ?array
+    {
+        return $this->syncResponses[$messageId] ?? null;
     }
 
     /**
@@ -848,6 +971,15 @@ class HttpTransport implements TransportInterface
             throw new TransportError('Transport is not connected');
         }
 
+        // For new protocol, we don't require SSE to be always connected
+        if ($this->protocolVersion === '2025-03-26') {
+            if ($this->sessionId === null) {
+                throw new TransportError('Session ID is not available');
+            }
+            return;
+        }
+
+        // For legacy protocol, SSE must be connected
         if ($this->sseHandler === null || ! $this->sseHandler->isConnected()) {
             throw new TransportError('SSE connection is not available');
         }
@@ -865,6 +997,53 @@ class HttpTransport implements TransportInterface
         if (json_last_error() === JSON_ERROR_NONE && isset($decoded['id'])) {
             return (string) $decoded['id'];
         }
+        return null;
+    }
+
+    /**
+     * Extract session ID from HTTP response.
+     *
+     * @param array<string, mixed> $response HTTP response data
+     * @return null|string Session ID or null if not found
+     */
+    protected function extractSessionId(array $response): ?string
+    {
+        $this->logger->debug('Extracting session ID from response', [
+            'has_headers' => isset($response['headers']),
+            'headers' => $response['headers'] ?? [],
+            'has_data' => isset($response['data']),
+            'response_keys' => array_keys($response),
+        ]);
+
+        // Check if session ID is in response headers
+        if (isset($response['headers']['mcp-session-id'])) {
+            $sessionId = $response['headers']['mcp-session-id'];
+            $this->logger->debug('Found session ID in headers', ['session_id' => $sessionId]);
+            return $sessionId;
+        }
+
+        // Check response data for session ID
+        if (isset($response['sessionId'])) {
+            $sessionId = (string) $response['sessionId'];
+            $this->logger->debug('Found session ID in root response', ['session_id' => $sessionId]);
+            return $sessionId;
+        }
+
+        // Check JSON-RPC result for session ID
+        if (isset($response['data']['result']['sessionId'])) {
+            $sessionId = (string) $response['data']['result']['sessionId'];
+            $this->logger->debug('Found session ID in JSON-RPC result', ['session_id' => $sessionId]);
+            return $sessionId;
+        }
+
+        // Some servers might return it in the root of the JSON response
+        if (isset($response['data']['sessionId'])) {
+            $sessionId = (string) $response['data']['sessionId'];
+            $this->logger->debug('Found session ID in data root', ['session_id' => $sessionId]);
+            return $sessionId;
+        }
+
+        $this->logger->debug('No session ID found in initialize response');
         return null;
     }
 

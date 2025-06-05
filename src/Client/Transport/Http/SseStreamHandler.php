@@ -86,6 +86,7 @@ class SseStreamHandler
             'Connection' => 'keep-alive',
         ];
 
+        // Add session ID header if available (required for new protocol)
         if ($sessionId) {
             $headers['Mcp-Session-Id'] = $sessionId;
         }
@@ -93,7 +94,9 @@ class SseStreamHandler
         $this->stream = $this->createSseConnection($baseUrl, $headers);
         $this->connected = true;
 
-        $this->logger->info('New protocol SSE connection established');
+        $this->logger->info('New protocol SSE connection established', [
+            'session_id' => $sessionId,
+        ]);
     }
 
     /**

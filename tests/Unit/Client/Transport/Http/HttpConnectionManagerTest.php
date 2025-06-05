@@ -309,7 +309,7 @@ class HttpConnectionManagerTest extends TestCase
              * @param null|array<string, mixed> $data
              * @return array<string, mixed>
              */
-            protected function executeRequest(string $method, string $url, array $headers, ?array $data = null): array
+            public function executeRequest(string $method, string $url, array $headers, ?array $data = null): array
             {
                 ++$this->attempts;
 
@@ -372,7 +372,7 @@ class HttpConnectionManagerTest extends TestCase
              * @param null|array<string, mixed> $data
              * @return array<string, mixed>
              */
-            protected function executeRequest(string $method, string $url, array $headers, ?array $data = null): array
+            public function executeRequest(string $method, string $url, array $headers, ?array $data = null): array
             {
                 return [
                     'success' => false,

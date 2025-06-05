@@ -124,7 +124,8 @@ class SchemaUtils
             return self::generateSchemaFromNamedType($type, $parameter, $class, $method);
         }
 
-        if ($type instanceof ReflectionUnionType) {
+        // Check for union types (PHP 8.0+) using class name to maintain PHP 7.4 compatibility
+        if (class_exists('ReflectionUnionType') && $type instanceof ReflectionUnionType) {
             throw ValidationError::invalidFieldValue(
                 'parameter_type',
                 "Parameter '{$paramName}' in {$class}::{$method}() has union type which is not allowed. Only basic types (string, int, float, bool, array) are supported"

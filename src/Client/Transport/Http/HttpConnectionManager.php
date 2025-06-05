@@ -92,6 +92,69 @@ class HttpConnectionManager
     }
 
     /**
+     * Execute a single HTTP request.
+     *
+     * @param string $method HTTP method
+     * @param string $url Target URL
+     * @param array<string, string> $headers HTTP headers
+     * @param null|array<string, mixed> $data Request body data
+     * @return array<string, mixed> Response data
+     * @throws TransportError If request execution fails
+     */
+    public function executeRequest(string $method, string $url, array $headers, ?array $data = null): array
+    {
+        $this->logger->debug('Executing HTTP request', [
+            'method' => $method,
+            'url' => $url,
+            'headers_count' => count($headers),
+            'has_data' => $data !== null,
+        ]);
+
+        $curlOptions = $this->buildCurlOptions($method, $url, $headers, $data);
+
+        $ch = curl_init();
+        if ($ch === false) {
+            throw new TransportError('Failed to initialize cURL');
+        }
+
+        curl_setopt_array($ch, $curlOptions);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        $info = curl_getinfo($ch);
+
+        curl_close($ch);
+
+        if ($response === false) {
+            throw new TransportError('cURL execution failed: ' . $error);
+        }
+
+        if (! is_string($response)) {
+            throw new TransportError('Invalid response type received');
+        }
+
+        // Parse response headers if available
+        $responseHeaders = [];
+        if (isset($info['header_size']) && $info['header_size'] > 0) {
+            $headerString = substr($response, 0, $info['header_size']);
+            $responseHeaders = $this->parseResponseHeaders($headerString);
+            $body = substr($response, $info['header_size']);
+        } else {
+            $body = $response;
+        }
+
+        return [
+            'success' => $httpCode >= 200 && $httpCode < 300,
+            'status_code' => $httpCode,
+            'headers' => $responseHeaders,
+            'body' => $body,
+            'data' => $this->parseResponseBody($body),
+            'info' => $info,
+        ];
+    }
+
+    /**
      * Build CURL options for a request.
      *
      * @param string $method HTTP method
@@ -105,6 +168,7 @@ class HttpConnectionManager
         $curlOptions = [
             CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HEADER => true,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS => 3,
             CURLOPT_TIMEOUT => (int) $this->config->getTimeout(),
@@ -171,6 +235,34 @@ class HttpConnectionManager
     }
 
     /**
+     * Parse HTTP response headers from header string.
+     *
+     * @param string $headerString Raw header string
+     * @return array<string, string> Parsed headers
+     */
+    protected function parseResponseHeaders(string $headerString): array
+    {
+        $headers = [];
+        $lines = explode("\r\n", $headerString);
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line) || strpos($line, 'HTTP/') === 0) {
+                continue;
+            }
+
+            $colonPos = strpos($line, ':');
+            if ($colonPos !== false) {
+                $name = trim(substr($line, 0, $colonPos));
+                $value = trim(substr($line, $colonPos + 1));
+                $headers[strtolower($name)] = $value;
+            }
+        }
+
+        return $headers;
+    }
+
+    /**
      * Determine if an HTTP status code should trigger a retry.
      *
      * @param int $statusCode HTTP status code
@@ -230,58 +322,6 @@ class HttpConnectionManager
     }
 
     /**
-     * Execute a single HTTP request.
-     *
-     * @param string $method HTTP method
-     * @param string $url Target URL
-     * @param array<string, string> $headers HTTP headers
-     * @param null|array<string, mixed> $data Request body data
-     * @return array<string, mixed> Response data
-     * @throws TransportError If request execution fails
-     */
-    protected function executeRequest(string $method, string $url, array $headers, ?array $data = null): array
-    {
-        $this->logger->debug('Executing HTTP request', [
-            'method' => $method,
-            'url' => $url,
-            'headers_count' => count($headers),
-            'has_data' => $data !== null,
-        ]);
-
-        $curlOptions = $this->buildCurlOptions($method, $url, $headers, $data);
-
-        $ch = curl_init();
-        if ($ch === false) {
-            throw new TransportError('Failed to initialize cURL');
-        }
-
-        curl_setopt_array($ch, $curlOptions);
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        $info = curl_getinfo($ch);
-
-        curl_close($ch);
-
-        if ($response === false) {
-            throw new TransportError('cURL execution failed: ' . $error);
-        }
-
-        if (! is_string($response)) {
-            throw new TransportError('Invalid response type received');
-        }
-
-        return [
-            'success' => $httpCode >= 200 && $httpCode < 300,
-            'status_code' => $httpCode,
-            'body' => $response,
-            'data' => $this->parseResponseBody($response),
-            'info' => $info,
-        ];
-    }
-
-    /**
      * Send an HTTP request with retry logic.
      *
      * @param string $method HTTP method
@@ -293,6 +333,23 @@ class HttpConnectionManager
      */
     private function sendRequest(string $method, string $url, array $headers, ?array $data = null): array
     {
+        // For DELETE requests, don't use retry logic - fail immediately
+        if (strtoupper($method) === 'DELETE') {
+            $response = $this->executeRequest($method, $url, $headers, $data);
+
+            if ($response['status_code'] >= 400) {
+                throw $this->createHttpError($response['status_code'], $response['body']);
+            }
+
+            $this->logger->debug('HTTP DELETE request successful', [
+                'method' => $method,
+                'url' => $url,
+                'status_code' => $response['status_code'],
+            ]);
+
+            return $response;
+        }
+
         $maxRetries = $this->config->getMaxRetries();
         $retryDelay = $this->config->getRetryDelay();
 

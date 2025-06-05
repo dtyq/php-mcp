@@ -58,18 +58,28 @@ class HttpTransport extends AbstractTransport
     {
         $method = strtoupper($request->getMethod());
 
-        if ($method !== 'POST') {
-            return new Response(405, [
-                'Content-Type' => 'application/json',
-                'Access-Control-Allow-Origin' => '*',
-                'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS',
-                'Access-Control-Allow-Headers' => 'Content-Type, Accept, Mcp-Session-Id',
-            ], json_encode(['error' => 'Method Not Allowed'], JSON_UNESCAPED_UNICODE));
-        }
-
         try {
             // Get session ID from header
             $sessionId = $this->getSessionIdFromRequest($request);
+
+            if ($method === 'DELETE' && $sessionId) {
+                // Handle session termination
+                $this->terminateSession($sessionId);
+                return new Response(204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS, DELETE',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Accept, Mcp-Session-Id',
+                ]);
+            }
+
+            if ($method !== 'POST') {
+                return new Response(405, [
+                    'Content-Type' => 'application/json',
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Accept, Mcp-Session-Id',
+                ], json_encode(['error' => 'Method Not Allowed'], JSON_UNESCAPED_UNICODE));
+            }
 
             // Parse the request body to check if it's an initialization request
             $body = $request->getBody()->getContents();
