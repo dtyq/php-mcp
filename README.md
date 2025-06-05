@@ -32,14 +32,38 @@ If you're using Hyperf framework, integration is extremely simple:
 
 ```php
 // Just one line of code!
-Router::post('/mcp', function () {
-    return di(HyperfMcpServer::class)->handler();
+Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp', function () {
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler();
 });
+```
+
+**Annotation-Based Registration**:
+```php
+class CalculatorService
+{
+    #[McpTool(description: 'Mathematical calculations')]
+    public function calculate(string $operation, int $a, int $b): array
+    {
+        return ['result' => match($operation) {
+            'add' => $a + $b,
+            'multiply' => $a * $b,
+            default => 0
+        }];
+    }
+    
+    #[McpResource(description: 'System information')]
+    public function systemInfo(): TextResourceContents
+    {
+        return new TextResourceContents('mcp://system/info', 
+            json_encode(['php' => PHP_VERSION]), 'application/json');
+    }
+}
 ```
 
 **Advanced Options**:
 - 🔐 **AuthenticatorInterface** - Custom authentication
 - 📊 **HttpTransportAuthenticatedEvent** - Dynamic tool/resource registration
+- 📝 **Annotation System** - Auto-register tools, resources and prompts
 
 👉 [View Complete Hyperf Integration Guide](./docs/en/server/hyperf-integration.md)
 

@@ -32,14 +32,38 @@ composer require dtyq/php-mcp
 
 ```php
 // 只需一行代码！
-Router::post('/mcp', function () {
-    return di(HyperfMcpServer::class)->handler();
+Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp', function () {
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler();
 });
+```
+
+**基于注解的注册**：
+```php
+class CalculatorService
+{
+    #[McpTool(description: '数学计算')]
+    public function calculate(string $operation, int $a, int $b): array
+    {
+        return ['result' => match($operation) {
+            'add' => $a + $b,
+            'multiply' => $a * $b,
+            default => 0
+        }];
+    }
+    
+    #[McpResource(description: '系统信息')]
+    public function systemInfo(): TextResourceContents
+    {
+        return new TextResourceContents('mcp://system/info', 
+            json_encode(['php' => PHP_VERSION]), 'application/json');
+    }
+}
 ```
 
 **高级选项**：
 - 🔐 **AuthenticatorInterface** - 自定义认证
 - 📊 **HttpTransportAuthenticatedEvent** - 动态工具/资源注册
+- 📝 **注解系统** - 自动注册工具、资源和提示
 
 👉 [查看完整 Hyperf 集成指南](./docs/cn/server/hyperf-integration.md)
 

@@ -19,8 +19,8 @@ Add MCP route in your route file (e.g., `config/routes.php`):
 use Hyperf\HttpServer\Router\Router;
 use Dtyq\PhpMcp\Server\Framework\Hyperf\HyperfMcpServer;
 
-Router::post('/mcp', function () {
-    return di(HyperfMcpServer::class)->handler();
+Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp', function () {
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler();
 });
 ```
 
@@ -174,7 +174,7 @@ class SystemService
 
         return new TextResourceContents(
             'mcp://system/info',
-            json_encode($info, JSON_PRETTY_PRINT),
+            json_encode($info, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
             'application/json'
         );
     }
@@ -195,7 +195,7 @@ class SystemService
 
         return new TextResourceContents(
             'mcp://system/config',
-            json_encode($config, JSON_PRETTY_PRINT),
+            json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
             'application/json'
         );
     }
@@ -274,18 +274,18 @@ You can organize your annotations using groups and load specific groups:
 
 ```php
 // Register only math-related tools
-Router::post('/mcp/math', function () {
-    return di(HyperfMcpServer::class)->handler('math');
+Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp/math', function () {
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler('math');
 });
 
 // Register development tools
-Router::post('/mcp/dev', function () {
-    return di(HyperfMcpServer::class)->handler('development');
+Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp/dev', function () {
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler('development');
 });
 
 // Register all tools (default group)
-Router::post('/mcp', function () {
-    return di(HyperfMcpServer::class)->handler();
+Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp', function () {
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler();
 });
 ```
 
@@ -341,7 +341,7 @@ class McpDemoService
 
         return new TextResourceContents(
             'mcp://server/status',
-            json_encode($status, JSON_PRETTY_PRINT),
+            json_encode($status, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
             'application/json'
         );
     }
@@ -622,8 +622,8 @@ use Hyperf\HttpServer\Router\Router;
 use Dtyq\PhpMcp\Server\Framework\Hyperf\HyperfMcpServer;
 
 // MCP server endpoint - just one line of code!
-Router::post('/mcp', function () {
-    return di(HyperfMcpServer::class)->handler();
+Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp', function () {
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler();
 });
 ```
 
