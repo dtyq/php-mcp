@@ -12,48 +12,72 @@ use Dtyq\PhpMcp\Server\McpServer;
 use Dtyq\PhpMcp\Server\Transports\Http\SessionManagerInterface;
 use Dtyq\PhpMcp\Shared\Auth\AuthenticatorInterface;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
-use Hyperf\Context\ApplicationContext;
 use Hyperf\HttpServer\Contract\RequestInterface;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 
 class HyperfMcpServer
 {
-    public function handler(string $group = ''): ResponseInterface
+    /**
+     * @var array<string, McpServer>
+     */
+    protected array $servers = [];
+
+    protected ContainerInterface $container;
+
+    protected AuthenticatorInterface $authenticator;
+
+    protected SessionManagerInterface $sessionManager;
+
+    public function __construct(ContainerInterface $container)
     {
-        $container = ApplicationContext::getContainer();
-        $request = $container->get(RequestInterface::class);
-
-        $authenticator = $container->get(AuthenticatorInterface::class);
-        $sessionManager = $container->get(SessionManagerInterface::class);
-        $app = new Application($container);
-        $mcpServer = new McpServer('HyperfMcpServer', '1.0.0', $app);
-
-        $this->addAnnotationTools($mcpServer, $group);
-        $this->addAnnotationPrompts($mcpServer, $group);
-        $this->addAnnotationResources($mcpServer, $group);
-
-        return $mcpServer->http($request, $sessionManager, $authenticator);
+        $this->container = $container;
+        $this->authenticator = $container->get(AuthenticatorInterface::class);
+        $this->sessionManager = $container->get(SessionManagerInterface::class);
     }
 
-    protected function addAnnotationTools(McpServer $mcpServer, string $group = ''): void
+    public function handle(string $server, string $version = '1.0.0'): ResponseInterface
     {
-        $registeredTools = McpCollector::getTools($group);
+        $mcpServer = $this->servers[$server] ?? null;
+        if (! $mcpServer) {
+            $mcpServer = $this->createMcpServer($server, $version);
+            $this->servers[$server] = $mcpServer;
+        }
+        $request = $this->container->get(RequestInterface::class);
+        return $mcpServer->http($request, $this->sessionManager, $this->authenticator);
+    }
+
+    protected function createMcpServer(string $server, string $version = '1.0.0'): McpServer
+    {
+        $app = new Application($this->container);
+        $mcpServer = new McpServer($server, $version, $app);
+
+        $this->addAnnotationTools($mcpServer, $server);
+        $this->addAnnotationPrompts($mcpServer, $server);
+        $this->addAnnotationResources($mcpServer, $server);
+
+        return $mcpServer;
+    }
+
+    protected function addAnnotationTools(McpServer $mcpServer, string $server = ''): void
+    {
+        $registeredTools = McpCollector::getTools($server);
         foreach ($registeredTools as $registeredTool) {
             $mcpServer->registerTool($registeredTool);
         }
     }
 
-    protected function addAnnotationPrompts(McpServer $mcpServer, string $group = ''): void
+    protected function addAnnotationPrompts(McpServer $mcpServer, string $server = ''): void
     {
-        $registeredPrompts = McpCollector::getPrompts($group);
+        $registeredPrompts = McpCollector::getPrompts($server);
         foreach ($registeredPrompts as $registeredPrompt) {
             $mcpServer->registerPrompt($registeredPrompt);
         }
     }
 
-    protected function addAnnotationResources(McpServer $mcpServer, string $group = ''): void
+    protected function addAnnotationResources(McpServer $mcpServer, string $server = ''): void
     {
-        $registeredResources = McpCollector::getResources($group);
+        $registeredResources = McpCollector::getResources($server);
         foreach ($registeredResources as $registeredResource) {
             $mcpServer->registerResource($registeredResource);
         }

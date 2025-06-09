@@ -9,7 +9,8 @@ namespace Dtyq\PhpMcp\Tests\Unit\Shared\Exceptions;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ErrorCodes;
 use Dtyq\PhpMcp\Shared\Exceptions\ErrorData;
-use JsonException;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -115,11 +116,11 @@ class ErrorDataTest extends TestCase
         $errorData = new ErrorData($code, $message, $data);
         $json = $errorData->toJson();
 
-        $expected = json_encode([
+        $expected = JsonUtils::encode([
             'code' => $code,
             'message' => $message,
             'data' => $data,
-        ], JSON_THROW_ON_ERROR);
+        ]);
 
         $this->assertSame($expected, $json);
     }
@@ -142,7 +143,7 @@ class ErrorDataTest extends TestCase
 
     public function testFromJsonWithInvalidJson(): void
     {
-        $this->expectException(JsonException::class);
+        $this->expectException(ValidationError::class);
         ErrorData::fromJson('invalid json');
     }
 

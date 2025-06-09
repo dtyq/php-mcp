@@ -25,7 +25,7 @@ class NullAuthenticatorTest extends TestCase
 
     public function testAuthenticateReturnsAnonymousAuthInfo(): void
     {
-        $authInfo = $this->authenticator->authenticate();
+        $authInfo = $this->authenticator->authenticate('test-server', '2024-11-05');
 
         $this->assertInstanceOf(AuthInfo::class, $authInfo);
         $this->assertSame('anonymous', $authInfo->getSubject());
@@ -36,7 +36,7 @@ class NullAuthenticatorTest extends TestCase
 
     public function testAuthenticateReturnsUniversalAccess(): void
     {
-        $authInfo = $this->authenticator->authenticate();
+        $authInfo = $this->authenticator->authenticate('test-server', '2024-11-05');
 
         // Test universal scope access
         $this->assertTrue($authInfo->hasScope('read'));
@@ -47,8 +47,8 @@ class NullAuthenticatorTest extends TestCase
 
     public function testAuthenticateReturnsConsistentResults(): void
     {
-        $authInfo1 = $this->authenticator->authenticate();
-        $authInfo2 = $this->authenticator->authenticate();
+        $authInfo1 = $this->authenticator->authenticate('test-server', '2024-11-05');
+        $authInfo2 = $this->authenticator->authenticate('test-server', '2024-11-05');
 
         // Should return equivalent but not necessarily same instances
         $this->assertSame($authInfo1->getSubject(), $authInfo2->getSubject());
@@ -59,14 +59,14 @@ class NullAuthenticatorTest extends TestCase
 
     public function testAuthenticateNeverExpires(): void
     {
-        $authInfo = $this->authenticator->authenticate();
+        $authInfo = $this->authenticator->authenticate('test-server', '2024-11-05');
 
         $this->assertFalse($authInfo->isExpired());
     }
 
     public function testAuthenticateSupportsAllScopeOperations(): void
     {
-        $authInfo = $this->authenticator->authenticate();
+        $authInfo = $this->authenticator->authenticate('test-server', '2024-11-05');
 
         // Test hasAllScopes with various scope combinations
         $this->assertTrue($authInfo->hasAllScopes(['read']));

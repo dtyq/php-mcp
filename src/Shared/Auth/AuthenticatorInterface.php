@@ -31,5 +31,5 @@ interface AuthenticatorInterface
      * @return AuthInfo Authentication information
      * @throws AuthenticationError If no credentials found or authentication fails
      */
-    public function authenticate(): AuthInfo;
+    public function authenticate(string $server, string $version): AuthInfo;
 }

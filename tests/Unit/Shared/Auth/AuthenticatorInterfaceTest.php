@@ -22,7 +22,7 @@ class AuthenticatorInterfaceTest extends TestCase
         $authenticator = $this->createMockAuthenticator();
 
         // Test that authenticate method exists and returns AuthInfo
-        $authInfo = $authenticator->authenticate();
+        $authInfo = $authenticator->authenticate('test-server', '2024-11-05');
         $this->assertInstanceOf(AuthInfo::class, $authInfo);
     }
 
@@ -31,13 +31,13 @@ class AuthenticatorInterfaceTest extends TestCase
         $authenticator = $this->createFailingAuthenticator();
 
         $this->expectException(AuthenticationError::class);
-        $authenticator->authenticate();
+        $authenticator->authenticate('test-server', '2024-11-05');
     }
 
     private function createMockAuthenticator(): AuthenticatorInterface
     {
         return new class implements AuthenticatorInterface {
-            public function authenticate(): AuthInfo
+            public function authenticate(string $server, string $version): AuthInfo
             {
                 return AuthInfo::create('test-user', ['read'], ['type' => 'test']);
             }
@@ -47,7 +47,7 @@ class AuthenticatorInterfaceTest extends TestCase
     private function createFailingAuthenticator(): AuthenticatorInterface
     {
         return new class implements AuthenticatorInterface {
-            public function authenticate(): AuthInfo
+            public function authenticate(string $server, string $version): AuthInfo
             {
                 throw new AuthenticationError('Authentication failed for testing');
             }

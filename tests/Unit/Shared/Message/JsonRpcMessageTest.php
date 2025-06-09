@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Tests\Unit\Shared\Message;
 
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Message\JsonRpcMessage;
 use JsonException;
 use PHPUnit\Framework\TestCase;
@@ -204,7 +205,7 @@ class JsonRpcMessageTest extends TestCase
 
     public function testFromJsonInvalid(): void
     {
-        $this->expectException(JsonException::class);
+        $this->expectException(ValidationError::class);
 
         JsonRpcMessage::fromJson('invalid json');
     }

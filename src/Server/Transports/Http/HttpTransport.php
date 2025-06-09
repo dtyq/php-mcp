@@ -13,6 +13,7 @@ use Dtyq\PhpMcp\Server\Transports\Http\Event\HttpTransportAuthenticatedEvent;
 use Dtyq\PhpMcp\Shared\Auth\AuthenticatorInterface;
 use Dtyq\PhpMcp\Shared\Auth\NullAuthenticator;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
+use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
@@ -54,7 +55,7 @@ class HttpTransport extends AbstractTransport
         $this->authenticator = $authenticator;
     }
 
-    public function handleRequest(RequestInterface $request): ResponseInterface
+    public function handleRequest(RequestInterface $request, string $server, string $version): ResponseInterface
     {
         $method = strtoupper($request->getMethod());
 
@@ -78,12 +79,12 @@ class HttpTransport extends AbstractTransport
                     'Access-Control-Allow-Origin' => '*',
                     'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS',
                     'Access-Control-Allow-Headers' => 'Content-Type, Accept, Mcp-Session-Id',
-                ], json_encode(['error' => 'Method Not Allowed'], JSON_UNESCAPED_UNICODE));
+                ], JsonUtils::encode(['error' => 'Method Not Allowed'], JSON_UNESCAPED_UNICODE));
             }
 
             // Parse the request body to check if it's an initialization request
             $body = $request->getBody()->getContents();
-            $jsonData = json_decode($body, true);
+            $jsonData = JsonUtils::decode($body, true);
 
             $headers = [
                 'Content-Type' => 'application/json',
@@ -100,14 +101,14 @@ class HttpTransport extends AbstractTransport
                 if (! $sessionId || ! $this->sessionManager->isValidSession($sessionId)) {
                     return new Response(400, [
                         'Content-Type' => 'application/json',
-                    ], json_encode([
+                    ], JsonUtils::encode([
                         'jsonrpc' => '2.0',
                         'error' => [
                             'code' => -32600,
                             'message' => 'Invalid or missing Mcp-Session-Id header',
                         ],
                         'id' => $jsonData['id'] ?? null,
-                    ], JSON_UNESCAPED_UNICODE));
+                    ]));
                 }
                 $this->sessionManager->updateSessionActivity($sessionId);
 
@@ -116,8 +117,8 @@ class HttpTransport extends AbstractTransport
                     $this->transportMetadata = $historyTransportMetadata;
                 }
             } else {
-                $authInfo = $this->authenticator->authenticate();
-                $this->app->getEventDispatcher()->dispatch(new HttpTransportAuthenticatedEvent($authInfo, $this->transportMetadata));
+                $authInfo = $this->authenticator->authenticate($server, $version);
+                $this->app->getEventDispatcher()->dispatch(new HttpTransportAuthenticatedEvent($server, $version, $authInfo, $this->transportMetadata));
 
                 $sessionId = $this->sessionManager->createSession();
                 $this->sessionManager->setSessionMetadata($sessionId, ['transport_metadata' => $this->transportMetadata]);
@@ -130,7 +131,7 @@ class HttpTransport extends AbstractTransport
         } catch (Throwable $exception) {
             return new Response(500, [
                 'Content-Type' => 'application/json',
-            ], json_encode(['error' => 'Error: ' . $exception->getMessage()], JSON_UNESCAPED_UNICODE));
+            ], JsonUtils::encode(['error' => 'Error: ' . $exception->getMessage()]));
         }
     }
 

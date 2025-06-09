@@ -131,7 +131,7 @@ class McpServer
             $sessionManager,
             $authenticator
         );
-        return $transport->handleRequest($request);
+        return $transport->handleRequest($request, $this->name, $this->version);
     }
 
     /**

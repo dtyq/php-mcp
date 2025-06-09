@@ -42,28 +42,28 @@ class McpCollector
     /**
      * @return array<string, RegisteredTool>
      */
-    public static function getTools(string $group = ''): array
+    public static function getTools(string $server = ''): array
     {
         self::collect();
-        return self::$tools[$group] ?? [];
+        return self::$tools[$server] ?? [];
     }
 
     /**
      * @return array<string, RegisteredPrompt>
      */
-    public static function getPrompts(string $group = ''): array
+    public static function getPrompts(string $server = ''): array
     {
         self::collect();
-        return self::$prompts[$group] ?? [];
+        return self::$prompts[$server] ?? [];
     }
 
     /**
      * @return array<string, RegisteredResource>
      */
-    public static function getResources(string $group = ''): array
+    public static function getResources(string $server = ''): array
     {
         self::collect();
-        return self::$resources[$group] ?? [];
+        return self::$resources[$server] ?? [];
     }
 
     public static function collect(): void

@@ -16,7 +16,7 @@ use Dtyq\PhpMcp\Types\Auth\AuthInfo;
  */
 final class NullAuthenticator implements AuthenticatorInterface
 {
-    public function authenticate(): AuthInfo
+    public function authenticate(string $server, string $version): AuthInfo
     {
         // Return "any" user - allows access to everything
         return AuthInfo::anonymous();

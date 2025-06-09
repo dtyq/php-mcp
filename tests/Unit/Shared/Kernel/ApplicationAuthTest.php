@@ -99,7 +99,7 @@ class ApplicationAuthTest extends TestCase
     private function createCustomAuthenticator(): AuthenticatorInterface
     {
         return new class implements AuthenticatorInterface {
-            public function authenticate(): AuthInfo
+            public function authenticate(string $server, string $version): AuthInfo
             {
                 return AuthInfo::create('custom-user', ['read', 'write'], ['type' => 'custom']);
             }
@@ -109,7 +109,7 @@ class ApplicationAuthTest extends TestCase
     private function createAnotherCustomAuthenticator(): AuthenticatorInterface
     {
         return new class implements AuthenticatorInterface {
-            public function authenticate(): AuthInfo
+            public function authenticate(string $server, string $version): AuthInfo
             {
                 return AuthInfo::create('another-user', ['admin'], ['type' => 'another']);
             }
