@@ -19,7 +19,7 @@ use Psr\Http\Message\ResponseInterface;
 class HyperfMcpServer
 {
     /**
-     * @var array<string, McpServer>
+     * @var array<string, <string, McpServer>>
      */
     protected array $servers = [];
 
@@ -38,10 +38,10 @@ class HyperfMcpServer
 
     public function handle(string $server, string $version = '1.0.0'): ResponseInterface
     {
-        $mcpServer = $this->servers[$server] ?? null;
-        if (! $mcpServer) {
+        $mcpServer = $this->servers[$server][$version] ?? null;
+        if (! $mcpServer instanceof McpServer) {
             $mcpServer = $this->createMcpServer($server, $version);
-            $this->servers[$server] = $mcpServer;
+            $this->servers[$server][$version] = $mcpServer;
         }
         $request = $this->container->get(RequestInterface::class);
         return $mcpServer->http($request, $this->sessionManager, $this->authenticator);
