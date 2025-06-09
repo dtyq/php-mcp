@@ -10,6 +10,8 @@ namespace Dtyq\PhpMcp\Client\Transport\Http;
 use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
+use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
+use Exception;
 
 /**
  * HTTP connection manager for MCP transport.
@@ -175,7 +177,7 @@ class HttpConnectionManager
 
         // Add request body for POST/PUT/PATCH requests
         if ($data !== null && in_array($method, ['POST', 'PUT', 'PATCH'], true)) {
-            $curlOptions[CURLOPT_POSTFIELDS] = json_encode($data);
+            $curlOptions[CURLOPT_POSTFIELDS] = JsonUtils::encode($data);
         }
 
         // Merge custom headers from config
@@ -215,12 +217,11 @@ class HttpConnectionManager
             return null;
         }
 
-        $decoded = json_decode($body, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        try {
+            return JsonUtils::decode($body, true);
+        } catch (Exception $e) {
             return null;
         }
-
-        return $decoded;
     }
 
     /**

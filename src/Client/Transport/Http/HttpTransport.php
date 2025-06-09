@@ -13,6 +13,7 @@ use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
 use Dtyq\PhpMcp\Shared\Message\JsonRpcMessage;
+use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Exception;
 
@@ -188,7 +189,7 @@ class HttpTransport implements TransportInterface
             if ($this->protocolVersion === '2025-03-26') {
                 foreach ($this->syncResponses as $messageId => $responseData) {
                     unset($this->syncResponses[$messageId]);
-                    $message = json_encode($responseData);
+                    $message = JsonUtils::encode($responseData);
                     ++$this->stats['messages_received'];
                     return $message;
                 }
@@ -912,9 +913,13 @@ class HttpTransport implements TransportInterface
      */
     protected function extractMessageId(string $message): ?string
     {
-        $decoded = json_decode($message, true);
-        if (json_last_error() === JSON_ERROR_NONE && isset($decoded['id'])) {
-            return (string) $decoded['id'];
+        try {
+            $decoded = JsonUtils::decode($message, true);
+            if (isset($decoded['id'])) {
+                return (string) $decoded['id'];
+            }
+        } catch (Exception $e) {
+            // Ignore decode errors
         }
         return null;
     }

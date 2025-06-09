@@ -128,7 +128,7 @@ class ClientSession extends AbstractSession implements SessionInterface
         $response = $this->sendRequestAndWaitForResponse($request, $timeout ? (float) $timeout : null);
 
         if (isset($response->getResult()['error'])) {
-            throw new ProtocolError('Request failed: ' . json_encode($response->getResult()['error']));
+            throw new ProtocolError('Request failed: ' . JsonUtils::encode($response->getResult()['error']));
         }
 
         return $response->getResult();

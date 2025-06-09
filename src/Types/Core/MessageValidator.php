@@ -8,6 +8,8 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Core;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
+use Exception;
 
 /**
  * Universal message validator for MCP JSON-RPC messages.
@@ -38,11 +40,12 @@ final class MessageValidator
         }
 
         // 3. JSON parsing validation
-        $decoded = json_decode($message, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw ValidationError::invalidJsonFormat(json_last_error_msg(), [
+        try {
+            $decoded = JsonUtils::decode($message, true);
+        } catch (Exception $e) {
+            throw ValidationError::invalidJsonFormat($e->getMessage(), [
                 'message' => $message,
-                'json_error_code' => json_last_error(),
+                'json_error' => $e->getMessage(),
             ]);
         }
 
@@ -220,11 +223,12 @@ final class MessageValidator
     {
         $info = ['type' => 'unknown', 'isBatch' => false];
 
-        $decoded = json_decode($message, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw ValidationError::invalidJsonFormat(json_last_error_msg(), [
+        try {
+            $decoded = JsonUtils::decode($message, true);
+        } catch (Exception $e) {
+            throw ValidationError::invalidJsonFormat($e->getMessage(), [
                 'message' => $message,
-                'json_error_code' => json_last_error(),
+                'json_error' => $e->getMessage(),
             ]);
         }
 

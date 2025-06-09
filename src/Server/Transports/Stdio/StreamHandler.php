@@ -8,6 +8,8 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Server\Transports\Stdio;
 
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
+use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
+use Exception;
 
 /**
  * Handles stdin/stdout stream operations for stdio transport.
@@ -170,12 +172,12 @@ class StreamHandler
             return false;
         }
 
-        $decoded = json_decode($message, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        try {
+            JsonUtils::decode($message, true);
+            return true;
+        } catch (Exception $e) {
             return false;
         }
-
-        return true;
     }
 
     /**

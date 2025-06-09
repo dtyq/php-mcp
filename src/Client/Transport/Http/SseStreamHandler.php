@@ -11,6 +11,7 @@ use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
 use Dtyq\PhpMcp\Shared\Message\JsonRpcMessage;
+use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 use Exception;
 
 /**
@@ -381,13 +382,16 @@ class SseStreamHandler
         $eventData = $event['data'];
 
         // First try to parse as JSON (new format)
-        $data = json_decode($eventData, true);
-
-        if ($data && isset($data['uri'])) {
-            // JSON format with uri field
-            return [
-                'post_endpoint' => $data['uri'],
-            ];
+        try {
+            $data = JsonUtils::decode($eventData, true);
+            if ($data && isset($data['uri'])) {
+                // JSON format with uri field
+                return [
+                    'post_endpoint' => $data['uri'],
+                ];
+            }
+        } catch (Exception $e) {
+            // Not JSON, continue to legacy format handling
         }
 
         // If not JSON or no uri field, treat as direct URL string (legacy format)
@@ -404,7 +408,7 @@ class SseStreamHandler
         }
 
         // If we get here, the data format is invalid
-        throw new TransportError('Invalid endpoint event data format. Expected JSON with "uri" field or direct URL string. Got: ' . json_encode($eventData));
+        throw new TransportError('Invalid endpoint event data format. Expected JSON with "uri" field or direct URL string. Got: ' . JsonUtils::encode($eventData));
     }
 
     /**
@@ -419,10 +423,11 @@ class SseStreamHandler
             return null;
         }
 
-        $decoded = json_decode($data, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        try {
+            $decoded = JsonUtils::decode($data, true);
+        } catch (Exception $e) {
             $this->logger->warning('Failed to parse JSON-RPC message', [
-                'error' => json_last_error_msg(),
+                'error' => $e->getMessage(),
                 'data_preview' => substr($data, 0, 100),
             ]);
             return null;

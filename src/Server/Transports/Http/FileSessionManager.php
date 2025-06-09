@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Server\Transports\Http;
 
 use Dtyq\PhpMcp\Shared\Kernel\Packer\PackerInterface;
+use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 
 /**
  * File-based session manager implementation.
@@ -193,7 +194,7 @@ class FileSessionManager implements SessionManagerInterface
             return [];
         }
 
-        $sessions = json_decode($content, true);
+        $sessions = JsonUtils::decode($content, true);
         return is_array($sessions) ? $sessions : [];
     }
 
@@ -204,7 +205,7 @@ class FileSessionManager implements SessionManagerInterface
      */
     private function saveSessions(array $sessions): void
     {
-        $content = json_encode($sessions, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $content = JsonUtils::encode($sessions, JsonUtils::PRETTY_PRINT_FLAGS);
         file_put_contents($this->sessionFile, $content, LOCK_EX);
     }
 

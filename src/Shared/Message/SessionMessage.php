@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Shared\Message;
 
+use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
+
 /**
  * A message with specific metadata for transport-specific features.
  *
@@ -104,7 +106,7 @@ class SessionMessage
      */
     public function toJson(): string
     {
-        return json_encode($this->toArray(), JSON_THROW_ON_ERROR);
+        return JsonUtils::encode($this->toArray());
     }
 
     /**
@@ -114,7 +116,7 @@ class SessionMessage
      */
     public static function fromJson(string $json): SessionMessage
     {
-        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        $data = JsonUtils::decode($json, true);
         return self::fromArray($data);
     }
 }

@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Server\Transports\Core\Handlers;
 
 use Dtyq\PhpMcp\Server\Transports\Core\TransportMetadata;
+use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 use Dtyq\PhpMcp\Types\Content\TextContent;
 use Dtyq\PhpMcp\Types\Core\RequestInterface;
 use Dtyq\PhpMcp\Types\Core\ResultInterface;
@@ -35,7 +36,7 @@ class CallToolMessageHandler extends AbstractMessageHandler
         $result = $metadata->getToolManager()->execute($name, $arguments);
 
         // Use CallToolResult for type safety
-        $textContent = new TextContent(is_string($result) ? $result : json_encode($result));
+        $textContent = new TextContent(is_string($result) ? $result : JsonUtils::encode($result));
         return new CallToolResult([$textContent], false);
     }
 }

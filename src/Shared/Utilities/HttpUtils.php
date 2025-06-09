@@ -108,7 +108,7 @@ class HttpUtils
         float $timeout = self::DEFAULT_TIMEOUT
     ): array {
         $headers = array_merge(self::HEADERS_JSON, $additionalHeaders);
-        $content = $data !== null ? json_encode($data, JSON_THROW_ON_ERROR) : '';
+        $content = $data !== null ? JsonUtils::encode($data) : '';
 
         return self::createHttpContext($method, $headers, $content, $timeout);
     }
@@ -166,7 +166,7 @@ class HttpUtils
         float $timeout = self::DEFAULT_TIMEOUT
     ): array {
         $headers = array_merge(self::HEADERS_STREAMABLE_HTTP, $additionalHeaders);
-        $content = $data !== null ? json_encode($data, JSON_THROW_ON_ERROR) : '';
+        $content = $data !== null ? JsonUtils::encode($data) : '';
 
         return self::createHttpContext($method, $headers, $content, $timeout);
     }

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Shared\Message;
 
+use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 use JsonException;
 use stdClass;
 
@@ -323,7 +324,7 @@ class JsonRpcMessage
      */
     public function toJson(): string
     {
-        return json_encode($this->toArray(), JSON_THROW_ON_ERROR);
+        return JsonUtils::encode($this->toArray());
     }
 
     /**
@@ -334,7 +335,7 @@ class JsonRpcMessage
      */
     public static function fromJson(string $json): JsonRpcMessage
     {
-        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        $data = JsonUtils::decode($json, true);
         return self::fromArray($data);
     }
 
