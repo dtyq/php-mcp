@@ -26,7 +26,9 @@ class McpPrompt extends McpAnnotation
     /** @var array<string, mixed> */
     protected array $arguments = [];
 
-    protected string $group = '';
+    protected string $server = '';
+
+    protected string $version = '';
 
     protected bool $enabled = true;
 
@@ -37,8 +39,9 @@ class McpPrompt extends McpAnnotation
         string $name = '',
         string $description = '',
         array $arguments = [],
-        string $group = '',
-        bool $enabled = true,
+        string $server = '',
+        string $version = '',
+        bool $enabled = true
     ) {
         if ($name !== '' && ! preg_match('/^[a-zA-Z0-9_-]+$/', $name)) {
             throw new ValidationError('Prompt name must be alphanumeric, underscores, and hyphens.');
@@ -46,7 +49,8 @@ class McpPrompt extends McpAnnotation
         $this->name = $name;
         $this->description = $description;
         $this->arguments = $arguments;
-        $this->group = $group;
+        $this->server = $server;
+        $this->version = $version;
         $this->enabled = $enabled;
     }
 
@@ -75,9 +79,14 @@ class McpPrompt extends McpAnnotation
         return $this->arguments;
     }
 
-    public function getGroup(): string
+    public function getServer(): string
     {
-        return $this->group;
+        return $this->server;
+    }
+
+    public function getVersion(): string
+    {
+        return $this->version;
     }
 
     public function isEnabled(): bool

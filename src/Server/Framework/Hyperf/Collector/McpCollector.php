@@ -30,9 +30,19 @@ class McpCollector
     protected static array $tools = [];
 
     /**
+     * @var array<string, RegisteredTool>
+     */
+    protected static array $globalTools = [];
+
+    /**
      * @var array<string, array<string, RegisteredPrompt>>
      */
     protected static array $prompts = [];
+
+    /**
+     * @var array<string, RegisteredPrompt>
+     */
+    protected static array $globalPrompts = [];
 
     /**
      * @return array<string, array<string, RegisteredResource>>
@@ -40,30 +50,41 @@ class McpCollector
     protected static array $resources = [];
 
     /**
+     * @var array<string, RegisteredResource>
+     */
+    protected static array $globalResources = [];
+
+    /**
+     * @param mixed $version
      * @return array<string, RegisteredTool>
      */
-    public static function getTools(string $server = ''): array
+    public static function getTools(string $server = '', $version = ''): array
     {
         self::collect();
-        return self::$tools[$server] ?? [];
+        $current = self::$tools[self::createGroup($server, $version)] ?? [];
+        return array_merge(self::$globalTools, $current);
     }
 
     /**
+     * @param mixed $version
      * @return array<string, RegisteredPrompt>
      */
-    public static function getPrompts(string $server = ''): array
+    public static function getPrompts(string $server = '', $version = ''): array
     {
         self::collect();
-        return self::$prompts[$server] ?? [];
+        $current = self::$prompts[self::createGroup($server, $version)] ?? [];
+        return array_merge(self::$globalPrompts, $current);
     }
 
     /**
+     * @param mixed $version
      * @return array<string, RegisteredResource>
      */
-    public static function getResources(string $server = ''): array
+    public static function getResources(string $server = '', $version = ''): array
     {
         self::collect();
-        return self::$resources[$server] ?? [];
+        $current = self::$resources[self::createGroup($server, $version)] ?? [];
+        return array_merge(self::$globalResources, $current);
     }
 
     public static function collect(): void
@@ -110,7 +131,11 @@ class McpCollector
                     return $instance->{$method}(...$arguments);
                 }
             );
-            self::$tools[$mcpTool->getGroup()][$mcpTool->getName()] = $registeredTool;
+            if ($mcpTool->getServer()) {
+                self::$tools[self::createGroup($mcpTool->getServer(), $mcpTool->getVersion())][$mcpTool->getName()] = $registeredTool;
+            } else {
+                self::$globalTools[$mcpTool->getName()] = $registeredTool;
+            }
         }
     }
 
@@ -146,7 +171,11 @@ class McpCollector
                     return $instance->{$method}(...$arguments);
                 }
             );
-            self::$prompts[$mcpPrompt->getGroup()][$mcpPrompt->getName()] = $registeredPrompt;
+            if ($mcpPrompt->getServer()) {
+                self::$prompts[self::createGroup($mcpPrompt->getServer(), $mcpPrompt->getVersion())][$mcpPrompt->getName()] = $registeredPrompt;
+            } else {
+                self::$globalPrompts[$mcpPrompt->getName()] = $registeredPrompt;
+            }
         }
     }
 
@@ -181,7 +210,16 @@ class McpCollector
                     return $instance->{$method}();
                 }
             );
-            self::$resources[$mcpResource->getGroup()][$mcpResource->getName()] = $resource;
+            if ($mcpResource->getServer()) {
+                self::$resources[self::createGroup($mcpResource->getServer(), $mcpResource->getVersion())][$mcpResource->getName()] = $resource;
+            } else {
+                self::$globalResources[$mcpResource->getUri()] = $resource;
+            }
         }
+    }
+
+    private static function createGroup(string $server, string $version): string
+    {
+        return md5($server . $version);
     }
 }

@@ -25,7 +25,9 @@ class McpTool extends McpAnnotation
     /** @var array<string, mixed> */
     protected array $inputSchema = [];
 
-    protected string $group = '';
+    protected string $server = '';
+
+    protected string $version = '';
 
     protected bool $enabled = true;
 
@@ -36,8 +38,9 @@ class McpTool extends McpAnnotation
         string $name = '',
         string $description = '',
         array $inputSchema = [],
-        string $group = '',
-        bool $enabled = true,
+        string $server = '',
+        string $version = '',
+        bool $enabled = true
     ) {
         if ($name !== '' && ! preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
             throw new ValidationError('Tool name must be alphanumeric and underscores.');
@@ -45,7 +48,8 @@ class McpTool extends McpAnnotation
         $this->name = $name;
         $this->description = $description;
         $this->inputSchema = $inputSchema;
-        $this->group = $group;
+        $this->server = $server;
+        $this->version = $version;
         $this->enabled = $enabled;
     }
 
@@ -73,9 +77,14 @@ class McpTool extends McpAnnotation
         return $this->inputSchema;
     }
 
-    public function getGroup(): string
+    public function getServer(): string
     {
-        return $this->group;
+        return $this->server;
+    }
+
+    public function getVersion(): string
+    {
+        return $this->version;
     }
 
     public function isEnabled(): bool

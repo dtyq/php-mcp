@@ -28,7 +28,9 @@ class McpResource extends McpAnnotation
 
     protected ?int $size = null;
 
-    protected string $group = '';
+    protected string $server = '';
+
+    protected string $version = '';
 
     protected bool $enabled = true;
 
@@ -43,10 +45,11 @@ class McpResource extends McpAnnotation
         string $description = '',
         ?string $mimeType = null,
         ?int $size = null,
-        string $group = '',
+        string $server = '',
+        string $version = '',
         bool $enabled = true,
         bool $isTemplate = false,
-        array $uriTemplate = [],
+        array $uriTemplate = []
     ) {
         if ($name !== '' && ! preg_match('/^[a-zA-Z0-9_-]+$/', $name)) {
             throw new ToolError('Resource name must be alphanumeric, underscores, and hyphens.');
@@ -61,7 +64,8 @@ class McpResource extends McpAnnotation
         $this->description = $description;
         $this->mimeType = $mimeType;
         $this->size = $size;
-        $this->group = $group;
+        $this->server = $server;
+        $this->version = $version;
         $this->enabled = $enabled;
         $this->isTemplate = $isTemplate;
         $this->uriTemplate = $uriTemplate;
@@ -98,9 +102,14 @@ class McpResource extends McpAnnotation
         return $this->size;
     }
 
-    public function getGroup(): string
+    public function getServer(): string
     {
-        return $this->group;
+        return $this->server;
+    }
+
+    public function getVersion(): string
+    {
+        return $this->version;
     }
 
     public function isEnabled(): bool

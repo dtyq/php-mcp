@@ -52,32 +52,32 @@ class HyperfMcpServer
         $app = new Application($this->container);
         $mcpServer = new McpServer($server, $version, $app);
 
-        $this->addAnnotationTools($mcpServer, $server);
-        $this->addAnnotationPrompts($mcpServer, $server);
-        $this->addAnnotationResources($mcpServer, $server);
+        $this->addAnnotationTools($mcpServer, $server, $version);
+        $this->addAnnotationPrompts($mcpServer, $server, $version);
+        $this->addAnnotationResources($mcpServer, $server, $version);
 
         return $mcpServer;
     }
 
-    protected function addAnnotationTools(McpServer $mcpServer, string $server = ''): void
+    protected function addAnnotationTools(McpServer $mcpServer, string $server, string $version = '1.0.0'): void
     {
-        $registeredTools = McpCollector::getTools($server);
+        $registeredTools = McpCollector::getTools($server, $version);
         foreach ($registeredTools as $registeredTool) {
             $mcpServer->registerTool($registeredTool);
         }
     }
 
-    protected function addAnnotationPrompts(McpServer $mcpServer, string $server = ''): void
+    protected function addAnnotationPrompts(McpServer $mcpServer, string $server, string $version = '1.0.0'): void
     {
-        $registeredPrompts = McpCollector::getPrompts($server);
+        $registeredPrompts = McpCollector::getPrompts($server, $version);
         foreach ($registeredPrompts as $registeredPrompt) {
             $mcpServer->registerPrompt($registeredPrompt);
         }
     }
 
-    protected function addAnnotationResources(McpServer $mcpServer, string $server = ''): void
+    protected function addAnnotationResources(McpServer $mcpServer, string $server, string $version = '1.0.0'): void
     {
-        $registeredResources = McpCollector::getResources($server);
+        $registeredResources = McpCollector::getResources($server, $version);
         foreach ($registeredResources as $registeredResource) {
             $mcpServer->registerResource($registeredResource);
         }
