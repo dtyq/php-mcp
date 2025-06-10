@@ -12,6 +12,8 @@ use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
 use Dtyq\PhpMcp\Shared\Message\JsonRpcMessage;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
+use Dtyq\PhpMcp\Shared\Utilities\SSE\SSEClient;
+use Dtyq\PhpMcp\Shared\Utilities\SSE\SSEEvent;
 use Exception;
 
 /**
@@ -27,8 +29,8 @@ class SseStreamHandler
 
     private LoggerProxy $logger;
 
-    /** @var null|resource SSE stream resource */
-    private $stream;
+    /** @var null|SSEClient SSE client instance */
+    private ?SSEClient $sseClient = null;
 
     private bool $connected = false;
 
@@ -70,7 +72,6 @@ class SseStreamHandler
      *
      * @param string $baseUrl Server base URL
      * @param null|string $sessionId Session ID for the connection
-     * @throws TransportError If connection fails
      */
     public function connectNew(string $baseUrl, ?string $sessionId = null): void
     {
@@ -80,18 +81,15 @@ class SseStreamHandler
         ]);
 
         $this->isLegacyMode = false;
-        $headers = [
-            'Accept' => 'text/event-stream',
-            'Cache-Control' => 'no-cache',
-            'Connection' => 'keep-alive',
-        ];
+        $headers = [];
 
         // Add session ID header if available (required for new protocol)
         if ($sessionId) {
             $headers['Mcp-Session-Id'] = $sessionId;
         }
 
-        $this->stream = $this->createSseConnection($baseUrl, $headers);
+        $this->createSEEClient($baseUrl, $headers);
+
         $this->connected = true;
 
         $this->logger->info('New protocol SSE connection established', [
@@ -104,7 +102,6 @@ class SseStreamHandler
      *
      * @param string $baseUrl Server base URL
      * @param array<string, string> $headers Additional headers including Last-Event-ID
-     * @throws TransportError If connection fails
      */
     public function connectWithResumption(string $baseUrl, array $headers): void
     {
@@ -115,12 +112,8 @@ class SseStreamHandler
 
         $this->isLegacyMode = false;
 
-        // Ensure required headers for resumption
-        $headers['Accept'] = 'text/event-stream';
-        $headers['Cache-Control'] = 'no-cache';
-        $headers['Connection'] = 'keep-alive';
+        $this->createSEEClient($baseUrl, $headers);
 
-        $this->stream = $this->createSseConnection($baseUrl, $headers);
         $this->connected = true;
 
         $this->logger->info('SSE connection with resumption established');
@@ -138,13 +131,10 @@ class SseStreamHandler
         $this->logger->info('Connecting to legacy protocol SSE', ['base_url' => $baseUrl]);
 
         $this->isLegacyMode = true;
-        $headers = [
-            'Accept' => 'text/event-stream',
-            'Cache-Control' => 'no-cache',
-            'Connection' => 'keep-alive',
-        ];
+        $headers = [];
 
-        $this->stream = $this->createSseConnection($baseUrl, $headers);
+        $this->createSEEClient($baseUrl, $headers);
+
         $this->connected = true;
 
         // Wait for endpoint event in legacy mode
@@ -167,30 +157,36 @@ class SseStreamHandler
      */
     public function receiveMessage(): ?JsonRpcMessage
     {
-        if (! $this->connected) {
+        if (! $this->connected || ! $this->sseClient) {
             return null;
         }
 
-        $event = $this->readSseEvent();
-        if (! $event) {
-            return null;
+        try {
+            foreach ($this->sseClient->getEvents() as $event) {
+                // Skip endpoint events in legacy mode (they're for setup only)
+                if ($this->isLegacyMode && $event->event === 'endpoint') {
+                    continue;
+                }
+
+                // Parse the JSON-RPC message
+                $message = $this->parseJsonRpcMessage($event->data);
+
+                // Invoke event callback if set
+                if ($this->eventCallback && $message) {
+                    $eventId = $event->id !== '' ? $event->id : null;
+                    call_user_func($this->eventCallback, $message, $eventId);
+                }
+
+                return $message;
+            }
+        } catch (Exception $e) {
+            $this->logger->error('Error receiving SSE events', [
+                'error' => $e->getMessage(),
+            ]);
+            $this->connected = false;
         }
 
-        // Skip endpoint events in legacy mode (they're for setup only)
-        if ($this->isLegacyMode && $event['event'] === 'endpoint') {
-            return null;
-        }
-
-        // Parse the JSON-RPC message
-        $message = $this->parseJsonRpcMessage($event['data']);
-
-        // Invoke event callback if set
-        if ($this->eventCallback && $message) {
-            $eventId = $event['id'] ?? null;
-            call_user_func($this->eventCallback, $message, $eventId);
-        }
-
-        return $message;
+        return null;
     }
 
     /**
@@ -198,11 +194,7 @@ class SseStreamHandler
      */
     public function disconnect(): void
     {
-        if ($this->stream) {
-            fclose($this->stream);
-            $this->stream = null;
-        }
-
+        $this->sseClient = null;
         $this->connected = false;
         $this->isLegacyMode = false;
         $this->eventCallback = null;
@@ -243,7 +235,7 @@ class SseStreamHandler
             'has_callback' => $this->eventCallback !== null,
             'connection_timeout' => $this->connectionTimeout,
             'read_timeout_us' => $this->readTimeoutUs,
-            'stream_valid' => is_resource($this->stream),
+            'has_sse_client' => $this->sseClient !== null,
         ];
     }
 
@@ -278,22 +270,32 @@ class SseStreamHandler
     /**
      * Wait for endpoint event in legacy protocol.
      *
-     * @return null|array<string, mixed> Endpoint event or null if timeout
+     * @return null|SSEEvent Endpoint event or null if timeout
      */
-    protected function waitForEndpointEvent(): ?array
+    protected function waitForEndpointEvent(): ?SSEEvent
     {
+        if (! $this->sseClient) {
+            return null;
+        }
+
         $timeout = $this->config->getSseTimeout();
         $startTime = microtime(true);
 
-        while ($this->connected && (microtime(true) - $startTime) < $timeout) {
-            $event = $this->readSseEvent();
+        try {
+            foreach ($this->sseClient->getEvents() as $event) {
+                if ($event->event === 'endpoint') {
+                    return $event;
+                }
 
-            if ($event && $event['event'] === 'endpoint') {
-                return $event;
+                // Check timeout
+                if ((microtime(true) - $startTime) >= $timeout) {
+                    break;
+                }
             }
-
-            // Small delay to prevent busy waiting
-            usleep(10000); // 10ms
+        } catch (Exception $e) {
+            $this->logger->error('Error while waiting for endpoint event', [
+                'error' => $e->getMessage(),
+            ]);
         }
 
         $this->logger->error('Timeout waiting for endpoint event', [
@@ -305,81 +307,15 @@ class SseStreamHandler
     }
 
     /**
-     * Read a single SSE event from the stream.
-     *
-     * @return null|array<string, mixed> Event data or null if no event available
-     */
-    protected function readSseEvent(): ?array
-    {
-        if (! $this->stream || ! $this->connected) {
-            return null;
-        }
-
-        $event = [
-            'event' => 'message',
-            'data' => '',
-            'id' => null,
-            'retry' => null,
-        ];
-
-        $dataLines = [];
-
-        while (($line = $this->readStreamLine()) !== false) {
-            $line = rtrim($line, "\r\n");
-
-            // Empty line indicates end of event
-            if ($line === '') {
-                if (! empty($dataLines)) {
-                    $event['data'] = implode("\n", $dataLines);
-                    return $event;
-                }
-                continue;
-            }
-
-            // Parse SSE field
-            if (strpos($line, ':') === false) {
-                $field = $line;
-                $value = '';
-            } else {
-                [$field, $value] = explode(':', $line, 2);
-                $value = ltrim($value, ' ');
-            }
-
-            switch ($field) {
-                case 'event':
-                    $event['event'] = $value;
-                    break;
-                case 'data':
-                    $dataLines[] = $value;
-                    break;
-                case 'id':
-                    $event['id'] = $value;
-                    break;
-                case 'retry':
-                    $event['retry'] = (int) $value;
-                    break;
-                default:
-                    // Ignore unknown fields
-                    break;
-            }
-        }
-
-        // Connection was closed
-        $this->connected = false;
-        $this->logger->info('SSE connection closed by server');
-        return null;
-    }
-
-    /**
      * Parse endpoint event data.
      *
-     * @param array<string, mixed> $event Endpoint event
+     * @param SSEEvent $event Endpoint event
      * @return array<string, string> Parsed endpoint information
      * @throws TransportError If event data is invalid
      */
-    protected function parseEndpointEvent(array $event): array
+    protected function parseEndpointEvent(SSEEvent $event): array
     {
-        $eventData = $event['data'];
+        $eventData = $event->data;
 
         // First try to parse as JSON (new format)
         try {
@@ -395,7 +331,7 @@ class SseStreamHandler
         }
 
         // If not JSON or no uri field, treat as direct URL string (legacy format)
-        if (is_string($eventData) && ! empty($eventData)) {
+        if (! empty($eventData)) {
             // Remove leading/trailing whitespace
             $endpoint = trim($eventData);
 
@@ -445,86 +381,22 @@ class SseStreamHandler
     }
 
     /**
-     * Create SSE connection to the server.
+     * Create SSE client with proper configuration.
      *
-     * @param string $url Target URL
-     * @param array<string, string> $headers HTTP headers
-     * @return resource Stream resource
-     * @throws TransportError If connection fails
+     * @param string $baseUrl Base URL for SSE connection
+     * @param array<string, string> $headers Additional headers
      */
-    protected function createSseConnection(string $url, array $headers)
+    private function createSEEClient(string $baseUrl, array $headers): void
     {
-        // Build headers for stream context
-        $headerLines = [];
-        foreach ($headers as $key => $value) {
-            $headerLines[] = $key . ': ' . $value;
-        }
-
-        // Add user agent and other config headers
+        // Add config headers
         $configHeaders = $this->config->getHeaders();
-        foreach ($configHeaders as $key => $value) {
-            $headerLines[] = $key . ': ' . $value;
+        $headers = array_merge($headers, $configHeaders);
+
+        // Add user agent if not already present
+        if (! isset($headers['User-Agent'])) {
+            $headers['User-Agent'] = $this->config->getUserAgent();
         }
 
-        if (! in_array('User-Agent: ' . $this->config->getUserAgent(), $headerLines, true)) {
-            $headerLines[] = 'User-Agent: ' . $this->config->getUserAgent();
-        }
-
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'GET',
-                'header' => implode("\r\n", $headerLines),
-                'timeout' => $this->connectionTimeout,
-                'ignore_errors' => true,
-            ],
-            'ssl' => [
-                'verify_peer' => $this->config->getValidateSsl(),
-                'verify_peer_name' => $this->config->getValidateSsl(),
-            ],
-        ]);
-
-        $stream = fopen($url, 'r', false, $context);
-
-        if ($stream === false) {
-            throw new TransportError('Failed to open SSE connection to: ' . $url);
-        }
-
-        // Set stream to non-blocking mode
-        stream_set_blocking($stream, false);
-
-        return $stream;
-    }
-
-    /**
-     * Read a line from the stream with timeout.
-     *
-     * @return false|string Line content or false if no data available
-     */
-    private function readStreamLine()
-    {
-        if (! $this->stream) {
-            return false;
-        }
-
-        // Check if the stream is still valid/readable
-        if (! is_resource($this->stream) || feof($this->stream)) {
-            return false;
-        }
-
-        // Fallback method: use non-blocking fgets with manual timeout
-        $startTime = microtime(true);
-        $timeoutSeconds = $this->readTimeoutUs / 1000000;
-
-        while (microtime(true) - $startTime < $timeoutSeconds) {
-            $line = fgets($this->stream);
-            if ($line !== false) {
-                return $line;
-            }
-
-            // Small delay to prevent busy waiting
-            usleep(1000); // 1ms
-        }
-
-        return '';
+        $this->sseClient = new SSEClient($baseUrl, $this->connectionTimeout, $headers);
     }
 }

@@ -568,8 +568,6 @@ class HttpTransport implements TransportInterface
         $this->sendInitializedNotification();
 
         // Mark as connected - SSE will be established on demand when needed
-        $this->connected = true;
-        $this->connectedAt = microtime(true);
         $this->protocolVersion = ProtocolConstants::PROTOCOL_VERSION_20250326;
     }
 
