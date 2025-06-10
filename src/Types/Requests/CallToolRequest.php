@@ -55,7 +55,7 @@ class CallToolRequest implements RequestInterface
             'name' => $this->name,
         ];
 
-        if ($this->arguments !== null) {
+        if (! empty($this->arguments)) {
             $params['arguments'] = $this->arguments;
         }
 
