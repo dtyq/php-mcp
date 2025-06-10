@@ -9,6 +9,7 @@ namespace Dtyq\PhpMcp\Shared\Exceptions;
 
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 use JsonException;
+use stdClass;
 
 /**
  * Error information for JSON-RPC error responses.
@@ -83,6 +84,9 @@ class ErrorData
 
         if ($this->data !== null) {
             $result['data'] = $this->data;
+            if (is_array($result['data']) && empty($result['data'])) {
+                $result['data'] = new stdClass();
+            }
         }
 
         return $result;

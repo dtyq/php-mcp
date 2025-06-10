@@ -7,11 +7,14 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Client\Core;
 
+use Dtyq\PhpMcp\Shared\Exceptions\McpError;
 use Dtyq\PhpMcp\Shared\Exceptions\ProtocolError;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
+use Dtyq\PhpMcp\Types\Core\JsonRpcError;
 use Dtyq\PhpMcp\Types\Core\JsonRpcRequest;
 use Dtyq\PhpMcp\Types\Core\JsonRpcResponse;
+use Dtyq\PhpMcp\Types\Core\JsonRpcResponseInterface;
 use Dtyq\PhpMcp\Types\Core\RequestInterface;
 use Exception;
 use InvalidArgumentException;
@@ -68,6 +71,7 @@ abstract class AbstractSession implements SessionInterface
      * @return JsonRpcResponse The server response
      * @throws ProtocolError If protocol error occurs
      * @throws TransportError If transport error occurs
+     * @throws McpError If server returns an error response
      */
     protected function sendRequestAndWaitForResponse(
         RequestInterface $request,
@@ -104,6 +108,7 @@ abstract class AbstractSession implements SessionInterface
      * @return JsonRpcResponse The received response
      * @throws ProtocolError If timeout occurs or invalid response received
      * @throws TransportError If transport error occurs
+     * @throws McpError If server returns an error response
      */
     protected function waitForResponse(string $requestId, float $timeout): JsonRpcResponse
     {
@@ -126,11 +131,24 @@ abstract class AbstractSession implements SessionInterface
 
                 // Check if this is the response we're waiting for
                 if ($response->getId() !== null && (string) $response->getId() === $requestId) {
-                    return $response;
+                    // If it's an error response, throw McpError
+                    if ($response->isError() && $response instanceof JsonRpcError) {
+                        throw new McpError($response->getError());
+                    }
+
+                    // Return successful response
+                    if ($response instanceof JsonRpcResponse) {
+                        return $response;
+                    }
+
+                    throw new ProtocolError('Unexpected response type');
                 }
 
                 // Handle unexpected message
                 $this->handleUnexpectedMessage($response);
+            } catch (McpError $e) {
+                // Re-throw McpError as-is
+                throw $e;
             } catch (Exception $e) {
                 throw new ProtocolError('Failed to parse response: ' . $e->getMessage());
             }
@@ -143,16 +161,23 @@ abstract class AbstractSession implements SessionInterface
     }
 
     /**
-     * Parse a raw message into a JsonRpcResponse.
+     * Parse a raw message into a JsonRpcResponseInterface.
      *
      * @param string $message The raw message to parse
-     * @return JsonRpcResponse The parsed response
+     * @return JsonRpcResponseInterface The parsed response (either success or error)
      * @throws ProtocolError If parsing fails
      */
-    protected function parseResponse(string $message): JsonRpcResponse
+    protected function parseResponse(string $message): JsonRpcResponseInterface
     {
         try {
             $data = JsonUtils::decode($message);
+
+            // Check if this is an error response
+            if (isset($data['error'])) {
+                return JsonRpcError::fromArray($data);
+            }
+
+            // Otherwise it should be a successful response
             return JsonRpcResponse::fromArray($data);
         } catch (Exception $e) {
             throw new ProtocolError('Failed to parse JSON-RPC response: ' . $e->getMessage());
@@ -198,9 +223,9 @@ abstract class AbstractSession implements SessionInterface
      * This method can be overridden by concrete implementations to handle
      * server-initiated requests or notifications.
      *
-     * @param JsonRpcResponse $message The unexpected message
+     * @param JsonRpcResponseInterface $message The unexpected message
      */
-    protected function handleUnexpectedMessage(JsonRpcResponse $message): void
+    protected function handleUnexpectedMessage(JsonRpcResponseInterface $message): void
     {
         // Default implementation: log and ignore
         // TODO: Add logging when logger is available

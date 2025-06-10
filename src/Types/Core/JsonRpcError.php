@@ -16,7 +16,7 @@ use InvalidArgumentException;
  * Represents an error response to a JSON-RPC request.
  * Contains error information following the JSON-RPC 2.0 specification.
  */
-class JsonRpcError
+class JsonRpcError implements JsonRpcResponseInterface
 {
     /** @var string JSON-RPC version */
     private string $jsonrpc = '2.0';
@@ -138,6 +138,14 @@ class JsonRpcError
     public function getData()
     {
         return $this->error->getData();
+    }
+
+    /**
+     * Check if this is an error response.
+     */
+    public function isError(): bool
+    {
+        return true;
     }
 
     /**

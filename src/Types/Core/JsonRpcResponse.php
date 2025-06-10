@@ -15,7 +15,7 @@ use InvalidArgumentException;
  * Represents a successful JSON-RPC response message.
  * Contains the result of a successful request execution.
  */
-class JsonRpcResponse
+class JsonRpcResponse implements JsonRpcResponseInterface
 {
     /** @var string JSON-RPC version */
     private string $jsonrpc = '2.0';
@@ -113,6 +113,14 @@ class JsonRpcResponse
     public function setResult(array $result): void
     {
         $this->result = $result;
+    }
+
+    /**
+     * Check if this is an error response.
+     */
+    public function isError(): bool
+    {
+        return false;
     }
 
     /**
