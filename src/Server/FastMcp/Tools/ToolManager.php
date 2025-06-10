@@ -97,8 +97,9 @@ class ToolManager
      * @param array<string, mixed> $arguments
      * @return mixed
      */
-    public function execute(string $name, array $arguments)
+    public function execute(string $name, ?array $arguments)
     {
+        $arguments = $arguments ?? [];
         $registeredTool = $this->get($name);
         if ($registeredTool === null) {
             throw ToolError::unknownTool($name);
