@@ -36,13 +36,18 @@ class HyperfMcpServer
         $this->sessionManager = $container->get(SessionManagerInterface::class);
     }
 
-    public function handle(string $server, string $version = '1.0.0'): ResponseInterface
+    public function handle(string $server, string $version = '1.0.0', bool $dynamics = false): ResponseInterface
     {
-        $mcpServer = $this->servers[$server][$version] ?? null;
-        if (! $mcpServer instanceof McpServer) {
+        if ($dynamics) {
             $mcpServer = $this->createMcpServer($server, $version);
-            $this->servers[$server][$version] = $mcpServer;
+        } else {
+            $mcpServer = $this->servers[$server][$version] ?? null;
+            if (! $mcpServer instanceof McpServer) {
+                $mcpServer = $this->createMcpServer($server, $version);
+                $this->servers[$server][$version] = $mcpServer;
+            }
         }
+
         $request = $this->container->get(RequestInterface::class);
         return $mcpServer->http($request, $this->sessionManager, $this->authenticator);
     }
