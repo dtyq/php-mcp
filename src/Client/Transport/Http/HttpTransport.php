@@ -230,7 +230,7 @@ class HttpTransport implements TransportInterface
     {
         // For new protocol, we don't require SSE to be always connected
         if ($this->protocolVersion === '2025-03-26') {
-            return $this->connected && $this->sessionId !== null;
+            return $this->connected;
         }
 
         // For legacy protocol, SSE must be connected
@@ -559,9 +559,9 @@ class HttpTransport implements TransportInterface
         $this->sessionId = $this->extractSessionId($initResponse);
         $this->stats['session_id'] = $this->sessionId;
 
-        // Validate that we got a session ID
+        // Session ID is optional - if not provided, continue without it
         if (! $this->sessionId) {
-            throw new TransportError('Server did not return a session ID in initialize response');
+            $this->logger->debug('No session ID returned by server, continuing without session management');
         }
 
         // Send initialized notification
@@ -856,7 +856,13 @@ class HttpTransport implements TransportInterface
      */
     protected function sendTerminationRequest(): void
     {
-        if (! $this->sessionId || $this->connectionManager === null || $this->authenticator === null) {
+        if ($this->connectionManager === null || $this->authenticator === null) {
+            return;
+        }
+
+        // Only send termination request if we have a session ID
+        if (! $this->sessionId) {
+            $this->logger->debug('No session ID available, skipping termination request');
             return;
         }
 
@@ -890,10 +896,8 @@ class HttpTransport implements TransportInterface
         }
 
         // For new protocol, we don't require SSE to be always connected
+        // Session ID is optional - if not available, continue without session management
         if ($this->protocolVersion === '2025-03-26') {
-            if ($this->sessionId === null) {
-                throw new TransportError('Session ID is not available');
-            }
             return;
         }
 
