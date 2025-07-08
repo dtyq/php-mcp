@@ -66,10 +66,14 @@ $client = new McpClient('env-demo-client', '1.0.0', $app);
 
 echo "=== PHP MCP Environment Variables Demo ===\n\n";
 
+// Use PHP_BINARY constant for portable PHP executable detection
+$phpPath = PHP_BINARY;
+echo "Using PHP executable: {$phpPath}\n\n";
+
 // Connect to server with custom environment variables
 echo "1. Connecting to MCP server with custom environment variables...\n";
 $session = $client->connect('stdio', [
-    'command' => '/opt/homebrew/opt/php@8.3/bin/php',
+    'command' => $phpPath,
     'args' => [__DIR__ . '/env-stdio-server.php'],
     'env' => [
         // Custom environment variables that will be passed to the server
