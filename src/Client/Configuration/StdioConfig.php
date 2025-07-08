@@ -29,6 +29,7 @@ class StdioConfig implements JsonSerializable
         'inherit_environment' => true,
         'validate_messages' => true,
         'capture_stderr' => true,
+        'env' => [],
     ];
 
     /** @var float Timeout for read operations in seconds */
@@ -52,6 +53,9 @@ class StdioConfig implements JsonSerializable
     /** @var bool Whether to capture stderr output from child process */
     private bool $captureStderr;
 
+    /** @var array<string, string> Custom environment variables */
+    private array $env;
+
     /**
      * @param float $readTimeout Timeout for read operations in seconds
      * @param float $writeTimeout Timeout for write operations in seconds
@@ -60,6 +64,7 @@ class StdioConfig implements JsonSerializable
      * @param bool $inheritEnvironment Whether to inherit environment variables
      * @param bool $validateMessages Whether to validate messages
      * @param bool $captureStderr Whether to capture stderr output
+     * @param array<string, string> $env Custom environment variables
      */
     public function __construct(
         float $readTimeout = self::DEFAULTS['read_timeout'],
@@ -68,7 +73,8 @@ class StdioConfig implements JsonSerializable
         int $bufferSize = self::DEFAULTS['buffer_size'],
         bool $inheritEnvironment = self::DEFAULTS['inherit_environment'],
         bool $validateMessages = self::DEFAULTS['validate_messages'],
-        bool $captureStderr = self::DEFAULTS['capture_stderr']
+        bool $captureStderr = self::DEFAULTS['capture_stderr'],
+        array $env = self::DEFAULTS['env']
     ) {
         $this->setReadTimeout($readTimeout);
         $this->setWriteTimeout($writeTimeout);
@@ -77,6 +83,7 @@ class StdioConfig implements JsonSerializable
         $this->setInheritEnvironment($inheritEnvironment);
         $this->setValidateMessages($validateMessages);
         $this->setCaptureStderr($captureStderr);
+        $this->setEnv($env);
     }
 
     /**
@@ -97,7 +104,8 @@ class StdioConfig implements JsonSerializable
             $config['buffer_size'],
             $config['inherit_environment'],
             $config['validate_messages'],
-            $config['capture_stderr']
+            $config['capture_stderr'],
+            $config['env']
         );
     }
 
@@ -126,6 +134,7 @@ class StdioConfig implements JsonSerializable
             'inherit_environment' => $this->inheritEnvironment,
             'validate_messages' => $this->validateMessages,
             'capture_stderr' => $this->captureStderr,
+            'env' => $this->env,
         ];
     }
 
@@ -163,6 +172,14 @@ class StdioConfig implements JsonSerializable
     public function shouldCaptureStderr(): bool
     {
         return $this->captureStderr;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getEnv(): array
+    {
+        return $this->env;
     }
 
     // Setters with validation
@@ -227,6 +244,14 @@ class StdioConfig implements JsonSerializable
     public function setCaptureStderr(bool $captureStderr): void
     {
         $this->captureStderr = $captureStderr;
+    }
+
+    /**
+     * @param array<string, string> $env
+     */
+    public function setEnv(array $env): void
+    {
+        $this->env = $env;
     }
 
     /**

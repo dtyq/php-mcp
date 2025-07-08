@@ -28,10 +28,13 @@ class StdioConfigTest extends TestCase
         $this->assertTrue($config->shouldInheritEnvironment());
         $this->assertTrue($config->shouldValidateMessages());
         $this->assertTrue($config->shouldCaptureStderr());
+        $this->assertEquals([], $config->getEnv());
     }
 
     public function testConstructorWithCustomValues(): void
     {
+        $env = ['CUSTOM_VAR' => 'custom_value'];
+
         $config = new StdioConfig(
             60.0,    // readTimeout
             45.0,    // writeTimeout
@@ -39,7 +42,8 @@ class StdioConfigTest extends TestCase
             4096,    // bufferSize
             false,   // inheritEnvironment
             false,   // validateMessages
-            false    // captureStderr
+            false,   // captureStderr
+            $env     // env
         );
 
         $this->assertEquals(60.0, $config->getReadTimeout());
@@ -49,10 +53,13 @@ class StdioConfigTest extends TestCase
         $this->assertFalse($config->shouldInheritEnvironment());
         $this->assertFalse($config->shouldValidateMessages());
         $this->assertFalse($config->shouldCaptureStderr());
+        $this->assertEquals($env, $config->getEnv());
     }
 
     public function testFromArray(): void
     {
+        $env = ['FROM_ARRAY_VAR' => 'from_array_value'];
+
         $data = [
             'read_timeout' => 90.0,
             'write_timeout' => 75.0,
@@ -61,6 +68,7 @@ class StdioConfigTest extends TestCase
             'inherit_environment' => false,
             'validate_messages' => false,
             'capture_stderr' => false,
+            'env' => $env,
         ];
 
         $config = StdioConfig::fromArray($data);
@@ -72,6 +80,7 @@ class StdioConfigTest extends TestCase
         $this->assertFalse($config->shouldInheritEnvironment());
         $this->assertFalse($config->shouldValidateMessages());
         $this->assertFalse($config->shouldCaptureStderr());
+        $this->assertEquals($env, $config->getEnv());
     }
 
     public function testFromArrayWithPartialData(): void
@@ -88,10 +97,126 @@ class StdioConfigTest extends TestCase
         $this->assertEquals(10.0, $config->getWriteTimeout()); // Default
         $this->assertFalse($config->shouldValidateMessages());
         $this->assertEquals(5.0, $config->getShutdownTimeout()); // Default
+        $this->assertEquals([], $config->getEnv()); // Default
+    }
+
+    public function testConstructorWithEnvVariables(): void
+    {
+        $env = [
+            'API_KEY' => 'test-key',
+            'DEBUG' => 'true',
+        ];
+
+        $config = new StdioConfig(
+            30.0,    // readTimeout (default)
+            10.0,    // writeTimeout (default)
+            5.0,     // shutdownTimeout (default)
+            8192,    // bufferSize (default)
+            true,    // inheritEnvironment (default)
+            true,    // validateMessages (default)
+            false,   // captureStderr (default)
+            $env     // env
+        );
+
+        $this->assertEquals($env, $config->getEnv());
+    }
+
+    public function testFromArrayWithEnvVariables(): void
+    {
+        $env = [
+            'OPENAPI_MCP_HEADERS' => '{"Authorization": "Bearer token"}',
+            'NODE_ENV' => 'production',
+        ];
+
+        $data = [
+            'read_timeout' => 45.0,
+            'env' => $env,
+        ];
+
+        $config = StdioConfig::fromArray($data);
+
+        $this->assertEquals($env, $config->getEnv());
+        $this->assertEquals(45.0, $config->getReadTimeout());
+    }
+
+    public function testGetEnvDefault(): void
+    {
+        $config = new StdioConfig();
+        $this->assertEquals([], $config->getEnv());
+    }
+
+    public function testSetEnv(): void
+    {
+        $config = new StdioConfig();
+        $env = [
+            'MY_VAR' => 'my_value',
+            'ANOTHER_VAR' => 'another_value',
+        ];
+
+        $config->setEnv($env);
+        $this->assertEquals($env, $config->getEnv());
+    }
+
+    public function testSetEnvEmpty(): void
+    {
+        $config = new StdioConfig();
+        $config->setEnv([]);
+        $this->assertEquals([], $config->getEnv());
+    }
+
+    public function testWithChangesIncludesEnv(): void
+    {
+        $original = new StdioConfig();
+        $newEnv = [
+            'NEW_VAR' => 'new_value',
+            'ANOTHER_VAR' => 'another_value',
+        ];
+
+        $modified = $original->withChanges([
+            'env' => $newEnv,
+            'read_timeout' => 45.0,
+        ]);
+
+        // Original should be unchanged
+        $this->assertEquals([], $original->getEnv());
+        $this->assertEquals(30.0, $original->getReadTimeout());
+
+        // Modified should have changes
+        $this->assertEquals($newEnv, $modified->getEnv());
+        $this->assertEquals(45.0, $modified->getReadTimeout());
+    }
+
+    public function testJsonSerializationWithEnv(): void
+    {
+        $env = [
+            'API_KEY' => 'secret-key',
+            'DEBUG' => 'true',
+        ];
+
+        $config = new StdioConfig(
+            30.0,    // readTimeout (default)
+            10.0,    // writeTimeout (default)
+            5.0,     // shutdownTimeout (default)
+            8192,    // bufferSize (default)
+            true,    // inheritEnvironment (default)
+            true,    // validateMessages (default)
+            false,   // captureStderr (default)
+            $env     // env
+        );
+
+        $json = json_encode($config);
+        $this->assertIsString($json);
+
+        $decoded = json_decode($json, true);
+        $this->assertIsArray($decoded);
+        $this->assertArrayHasKey('env', $decoded);
+        $this->assertEquals($env, $decoded['env']);
     }
 
     public function testToArray(): void
     {
+        $env = ['TEST_VAR' => 'test_value'];
+
         $config = new StdioConfig(
             45.0,    // readTimeout
             35.0,    // writeTimeout
@@ -99,7 +224,8 @@ class StdioConfigTest extends TestCase
             4096,    // bufferSize
             false,   // inheritEnvironment
             false,   // validateMessages
-            true     // captureStderr
+            true,    // captureStderr
+            $env     // env
         );
 
         $expected = [
@@ -110,6 +236,7 @@ class StdioConfigTest extends TestCase
             'inherit_environment' => false,
             'validate_messages' => false,
             'capture_stderr' => true,
+            'env' => $env,
         ];
 
         $this->assertEquals($expected, $config->toArray());
@@ -127,6 +254,8 @@ class StdioConfigTest extends TestCase
         $this->assertArrayHasKey('inherit_environment', $defaults);
         $this->assertArrayHasKey('validate_messages', $defaults);
         $this->assertArrayHasKey('capture_stderr', $defaults);
+        $this->assertArrayHasKey('env', $defaults);
+        $this->assertEquals([], $defaults['env']);
     }
 
     public function testSetReadTimeoutInvalid(): void
@@ -227,6 +356,8 @@ class StdioConfigTest extends TestCase
 
     public function testWithChanges(): void
     {
+        $originalEnv = ['ORIGINAL_VAR' => 'original_value'];
+
         $original = new StdioConfig(
             30.0,    // readTimeout
             10.0,    // writeTimeout
@@ -234,7 +365,8 @@ class StdioConfigTest extends TestCase
             8192,    // bufferSize
             true,    // inheritEnvironment
             true,    // validateMessages
-            true     // captureStderr
+            true,    // captureStderr
+            $originalEnv // env
         );
 
         $changes = [
@@ -249,6 +381,7 @@ class StdioConfigTest extends TestCase
         $this->assertEquals(30.0, $original->getReadTimeout());
         $this->assertTrue($original->shouldValidateMessages());
         $this->assertEquals(8192, $original->getBufferSize());
+        $this->assertEquals($originalEnv, $original->getEnv());
 
         // Modified should have changes
         $this->assertEquals(60.0, $modified->getReadTimeout());
@@ -259,6 +392,7 @@ class StdioConfigTest extends TestCase
         $this->assertEquals(10.0, $modified->getWriteTimeout());
         $this->assertEquals(5.0, $modified->getShutdownTimeout());
         $this->assertTrue($modified->shouldInheritEnvironment());
+        $this->assertEquals($originalEnv, $modified->getEnv());
     }
 
     public function testWithChangesInvalidValue(): void
@@ -274,6 +408,8 @@ class StdioConfigTest extends TestCase
 
     public function testJsonSerialization(): void
     {
+        $env = ['JSON_VAR' => 'json_value'];
+
         $config = new StdioConfig(
             45.0,    // readTimeout
             35.0,    // writeTimeout
@@ -281,7 +417,8 @@ class StdioConfigTest extends TestCase
             4096,    // bufferSize
             false,   // inheritEnvironment
             false,   // validateMessages
-            true     // captureStderr
+            true,    // captureStderr
+            $env     // env
         );
 
         $json = json_encode($config);
@@ -293,5 +430,6 @@ class StdioConfigTest extends TestCase
         $this->assertEquals(35.0, $decoded['write_timeout']);
         $this->assertFalse($decoded['validate_messages']);
         $this->assertTrue($decoded['capture_stderr']);
+        $this->assertEquals($env, $decoded['env']);
     }
 }

@@ -264,11 +264,22 @@ class ProcessManager
      */
     private function buildEnvironment(): ?array
     {
+        $customEnv = $this->config->getEnv();
+
         if (! $this->config->shouldInheritEnvironment()) {
-            return []; // Empty environment
+            // Only use custom environment variables
+            return empty($customEnv) ? [] : $customEnv;
         }
 
-        return null; // Inherit from parent process
+        // Inherit from parent process and merge with custom env
+        if (empty($customEnv)) {
+            return null; // Inherit from parent process
+        }
+
+        // Merge parent environment with custom variables
+        // Custom variables take precedence over parent environment
+        $parentEnv = $_ENV ?: [];
+        return array_merge($parentEnv, $customEnv);
     }
 
     /**
