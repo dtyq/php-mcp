@@ -112,7 +112,14 @@ class HttpTransport extends AbstractTransport
                 }
                 $this->sessionManager->updateSessionActivity($sessionId);
 
-                $historyTransportMetadata = $this->sessionManager->getSessionMetadata($sessionId)['transport_metadata'] ?? null;
+                $sessionMetadata = $this->sessionManager->getSessionMetadata($sessionId);
+                $authInfo = $sessionMetadata['auth_info'] ?? null;
+                if ($authInfo && method_exists($this->authenticator, 'check')) {
+                    // If authenticator supports check method, use it。next version must
+                    $this->authenticator->check($authInfo);
+                }
+
+                $historyTransportMetadata = $sessionMetadata['transport_metadata'] ?? null;
                 if ($historyTransportMetadata instanceof TransportMetadata) {
                     $this->transportMetadata = $historyTransportMetadata;
                 }
@@ -121,7 +128,7 @@ class HttpTransport extends AbstractTransport
                 $this->app->getEventDispatcher()->dispatch(new HttpTransportAuthenticatedEvent($server, $version, $authInfo, $this->transportMetadata));
 
                 $sessionId = $this->sessionManager->createSession();
-                $this->sessionManager->setSessionMetadata($sessionId, ['transport_metadata' => $this->transportMetadata]);
+                $this->sessionManager->setSessionMetadata($sessionId, ['transport_metadata' => $this->transportMetadata, 'auth_info' => $authInfo]);
                 $headers['Mcp-Session-Id'] = $sessionId;
             }
 
