@@ -7,12 +7,12 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Messages;
 
+use Dtyq\PhpMcp\Shared\Exceptions\ProtocolError;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\TextContent;
 use Dtyq\PhpMcp\Types\Messages\MessageInterface;
 use Dtyq\PhpMcp\Types\Messages\SamplingMessage;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -163,8 +163,8 @@ class SamplingMessageTest extends TestCase
      */
     public function testFromArrayWithMissingRole(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Role field is required for SamplingMessage');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Missing required fields: role');
 
         $data = [
             'content' => [
@@ -181,8 +181,8 @@ class SamplingMessageTest extends TestCase
      */
     public function testFromArrayWithNonStringRole(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Role field must be a string');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Invalid message format: Role field must be a string');
 
         $data = [
             'role' => 123,
@@ -200,8 +200,8 @@ class SamplingMessageTest extends TestCase
      */
     public function testFromArrayWithMissingContent(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Content field is required for SamplingMessage');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Missing required fields: content');
 
         $data = [
             'role' => MessageConstants::ROLE_USER,

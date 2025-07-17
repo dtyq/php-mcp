@@ -12,10 +12,10 @@ use Dtyq\PhpMcp\Client\Core\TransportInterface;
 use Dtyq\PhpMcp\Client\Transport\Http\HttpTransport;
 use Dtyq\PhpMcp\Client\Transport\Stdio\StdioTransport;
 use Dtyq\PhpMcp\Client\Transport\TransportFactory;
+use Dtyq\PhpMcp\Shared\Exceptions\SystemException;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Types\Constants\TransportTypes;
-use Exception;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -320,7 +320,7 @@ class TransportFactoryTest extends TestCase
                     case EventDispatcherInterface::class:
                         return $this->eventDispatcher;
                     default:
-                        throw new Exception("Service not found: {$id}");
+                        throw new SystemException("Service not found: {$id}");
                 }
             }
 

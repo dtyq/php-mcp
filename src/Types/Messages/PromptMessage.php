@@ -7,13 +7,14 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Messages;
 
+use Dtyq\PhpMcp\Shared\Exceptions\ProtocolError;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\ContentInterface;
 use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
 use Dtyq\PhpMcp\Types\Content\ImageContent;
 use Dtyq\PhpMcp\Types\Content\TextContent;
 use Dtyq\PhpMcp\Types\Core\BaseTypes;
-use InvalidArgumentException;
 
 /**
  * Prompt message for prompt responses.
@@ -43,19 +44,19 @@ class PromptMessage implements MessageInterface
     public static function fromArray(array $data): self
     {
         if (! isset($data['role'])) {
-            throw new InvalidArgumentException('Role field is required for PromptMessage');
+            throw ProtocolError::missingRequiredFields(['role']);
         }
 
         if (! is_string($data['role'])) {
-            throw new InvalidArgumentException('Role field must be a string');
+            throw ProtocolError::invalidFormat('Role field must be a string');
         }
 
         if (! isset($data['content'])) {
-            throw new InvalidArgumentException('Content field is required for PromptMessage');
+            throw ProtocolError::missingRequiredFields(['content']);
         }
 
         if (! is_array($data['content'])) {
-            throw new InvalidArgumentException('Content field must be an array');
+            throw ProtocolError::invalidFormat('Content field must be an array');
         }
 
         $content = self::createContentFromArray($data['content']);
@@ -112,7 +113,7 @@ class PromptMessage implements MessageInterface
         if (! ($content instanceof TextContent)
             && ! ($content instanceof ImageContent)
             && ! ($content instanceof EmbeddedResource)) {
-            throw new InvalidArgumentException('PromptMessage only supports TextContent, ImageContent, and EmbeddedResource');
+            throw ValidationError::unsupportedContentType(get_class($content), 'PromptMessage');
         }
         $this->content = $content;
     }
@@ -243,7 +244,7 @@ class PromptMessage implements MessageInterface
     private static function createContentFromArray(array $data): ContentInterface
     {
         if (! isset($data['type'])) {
-            throw new InvalidArgumentException('Content type field is required');
+            throw ValidationError::requiredFieldMissing('type', 'content');
         }
 
         switch ($data['type']) {
@@ -254,7 +255,7 @@ class PromptMessage implements MessageInterface
             case MessageConstants::CONTENT_TYPE_RESOURCE:
                 return EmbeddedResource::fromArray($data);
             default:
-                throw new InvalidArgumentException("Unsupported content type for PromptMessage: {$data['type']}");
+                throw ValidationError::unsupportedContentType($data['type'], 'PromptMessage');
         }
     }
 }

@@ -195,7 +195,7 @@ function createFileUploadTool(): RegisteredTool {
         // 验证文件名
         $filename = basename($filename);
         if (empty($filename)) {
-            throw new InvalidArgumentException('无效的文件名');
+                            throw new \Dtyq\PhpMcp\Shared\Exceptions\ValidationError('无效的文件名');
         }
         
         // 如果目录不存在则创建
@@ -207,7 +207,7 @@ function createFileUploadTool(): RegisteredTool {
         // 解码并保存文件
         $decodedContent = base64_decode($content);
         if ($decodedContent === false) {
-            throw new InvalidArgumentException('无效的 base64 内容');
+                                throw new \Dtyq\PhpMcp\Shared\Exceptions\ValidationError('无效的 base64 内容');
         }
         
         $filepath = $uploadDir . '/' . $filename;

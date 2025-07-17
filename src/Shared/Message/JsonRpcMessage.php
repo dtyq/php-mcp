@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Shared\Message;
 
+use Dtyq\PhpMcp\Shared\Exceptions\ProtocolError;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 use JsonException;
 use stdClass;
@@ -300,12 +301,12 @@ class JsonRpcMessage
      * Create JsonRpcMessage from array.
      *
      * @param array<string, mixed> $data Array data
-     * @throws JsonException If the data is invalid
+     * @throws ProtocolError If the data is invalid
      */
     public static function fromArray(array $data): JsonRpcMessage
     {
         if (! isset($data['jsonrpc']) || $data['jsonrpc'] !== self::VERSION) {
-            throw new JsonException('Invalid JSON-RPC version');
+            throw ProtocolError::invalidFormat('Invalid JSON-RPC version');
         }
 
         return new self(

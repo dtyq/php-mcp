@@ -18,7 +18,7 @@ use Dtyq\PhpMcp\Types\Resources\Resource;
 use Dtyq\PhpMcp\Types\Tools\Tool;
 use Hyperf\Context\ApplicationContext;
 use Hyperf\Di\Annotation\AnnotationCollector;
-use RuntimeException;
+use Dtyq\PhpMcp\Shared\Exceptions\SystemException;
 
 class McpCollector
 {
@@ -126,7 +126,7 @@ class McpCollector
                         $instance = $container->make($class);
                     }
                     if (! isset($instance) || ! method_exists($instance, $method)) {
-                        throw new RuntimeException("Method {$method} does not exist in class {$class}");
+                        throw new SystemException("Method {$method} does not exist in class {$class}");
                     }
                     return $instance->{$method}(...$arguments);
                 }
@@ -166,7 +166,7 @@ class McpCollector
                         $instance = $container->make($class);
                     }
                     if (! isset($instance) || ! method_exists($instance, $method)) {
-                        throw new RuntimeException("Method {$method} does not exist in class {$class}");
+                        throw new SystemException("Method {$method} does not exist in class {$class}");
                     }
                     return $instance->{$method}(...$arguments);
                 }
@@ -205,7 +205,7 @@ class McpCollector
                         $instance = $container->make($class);
                     }
                     if (! isset($instance) || ! method_exists($instance, $method)) {
-                        throw new RuntimeException("Method {$method} does not exist in class {$class}");
+                        throw new SystemException("Method {$method} does not exist in class {$class}");
                     }
                     return $instance->{$method}();
                 }

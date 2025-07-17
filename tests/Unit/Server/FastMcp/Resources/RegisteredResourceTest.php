@@ -10,11 +10,11 @@ namespace Dtyq\PhpMcp\Tests\Unit\Server\FastMcp\Resources;
 use Closure;
 use Dtyq\PhpMcp\Server\FastMcp\Resources\RegisteredResource;
 use Dtyq\PhpMcp\Shared\Exceptions\ResourceError;
+use Dtyq\PhpMcp\Shared\Exceptions\SystemException;
 use Dtyq\PhpMcp\Types\Content\Annotations;
 use Dtyq\PhpMcp\Types\Resources\BlobResourceContents;
 use Dtyq\PhpMcp\Types\Resources\Resource;
 use Dtyq\PhpMcp\Types\Resources\TextResourceContents;
-use Exception;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
@@ -67,7 +67,7 @@ class RegisteredResourceTest extends TestCase
     public function testGetContentWithCallableException(): void
     {
         $failingCallable = function (string $uri): void {
-            throw new Exception('File not found');
+            throw new SystemException('File not found');
         };
 
         $registeredResource = new RegisteredResource($this->sampleResource, $failingCallable);

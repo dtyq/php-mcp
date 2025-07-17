@@ -85,7 +85,7 @@ class ClientSession extends AbstractSession implements SessionInterface
         $this->validateSessionState('initialize', false);
 
         if ($this->initialized) {
-            throw new ProtocolError('Session already initialized');
+            throw ProtocolError::invalidState('session', 'current', 'already initialized');
         }
 
         try {
@@ -117,7 +117,7 @@ class ClientSession extends AbstractSession implements SessionInterface
             $this->state->setState(SessionState::STATE_READY);
         } catch (Exception $e) {
             $this->state->setState(SessionState::STATE_ERROR);
-            throw new ProtocolError('Session initialization failed: ' . $e->getMessage());
+            throw ProtocolError::invalidState('initialize', 'error', 'ready', $e->getMessage());
         }
     }
 
@@ -128,7 +128,7 @@ class ClientSession extends AbstractSession implements SessionInterface
         $response = $this->sendRequestAndWaitForResponse($request, $timeout ? (float) $timeout : null);
 
         if (isset($response->getResult()['error'])) {
-            throw new ProtocolError('Request failed: ' . JsonUtils::encode($response->getResult()['error']));
+            throw ProtocolError::invalidFormat('Request failed: ' . JsonUtils::encode($response->getResult()['error']));
         }
 
         return $response->getResult();
@@ -165,7 +165,7 @@ class ClientSession extends AbstractSession implements SessionInterface
 
         // Check if server supports tools capability
         if (! $this->hasServerCapability('tools')) {
-            throw new ProtocolError('Server does not support tools capability');
+            throw ProtocolError::capabilityNotSupported('tools');
         }
 
         $request = new CallToolRequest($name, $arguments);
@@ -219,7 +219,7 @@ class ClientSession extends AbstractSession implements SessionInterface
 
         // Check if server supports prompts capability
         if (! $this->hasServerCapability('prompts')) {
-            throw new ProtocolError('Server does not support prompts capability');
+            throw ProtocolError::capabilityNotSupported('prompts');
         }
 
         $request = new GetPromptRequest($name, $arguments);
@@ -234,7 +234,7 @@ class ClientSession extends AbstractSession implements SessionInterface
 
         // Check if server supports resources capability
         if (! $this->hasServerCapability('resources')) {
-            throw new ProtocolError('Server does not support resources capability');
+            throw ProtocolError::capabilityNotSupported('resources');
         }
 
         $request = new ReadResourceRequest($uri);
@@ -269,7 +269,7 @@ class ClientSession extends AbstractSession implements SessionInterface
     public function getServerCapabilities(): array
     {
         if (! $this->initialized) {
-            throw new ProtocolError('Session not initialized - no server capabilities available');
+            throw ProtocolError::invalidState('session', 'current', 'not initialized - no server capabilities available');
         }
 
         return $this->serverCapabilities;

@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Shared\Utilities\SSE;
 
+use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Generator;
-use InvalidArgumentException;
-use RuntimeException;
 
 /**
  * A simple, synchronous SSE (Server-Sent Events) client in PHP.
@@ -88,8 +88,8 @@ final class SSEClient
      * It will block execution while waiting for new data.
      *
      * @return Generator<SSEEvent>
-     * @throws InvalidArgumentException if the URL is invalid
-     * @throws RuntimeException if the connection fails or the server returns an error
+     * @throws ValidationError if the URL is invalid
+     * @throws TransportError if the connection fails or the server returns an error
      */
     public function getEvents(): Generator
     {
@@ -112,7 +112,7 @@ final class SSEClient
         }
         $urlParts = parse_url($this->url);
         if ($urlParts === false) {
-            throw new InvalidArgumentException("Invalid URL provided: {$this->url}");
+            throw ValidationError::invalidFieldValue('url', "Invalid URL provided: {$this->url}");
         }
 
         $host = $urlParts['host'];
@@ -125,7 +125,7 @@ final class SSEClient
         $this->socket = @fsockopen("{$transport}://{$host}", $port, $errno, $errstr, $this->timeout);
 
         if (! $this->socket) {
-            throw new RuntimeException("Failed to connect to {$host}:{$port}. Error: {$errstr} ({$errno})");
+            throw TransportError::connectionRefused('SSE', "{$host}:{$port}. Error: {$errstr} ({$errno})");
         }
 
         $this->sendRequest($host, $path . $query);
@@ -160,14 +160,14 @@ final class SSEClient
         $request .= "\r\n";
 
         if (fwrite($this->socket, $request) === false) {
-            throw new RuntimeException('Failed to send HTTP request.');
+            throw TransportError::connectionLost('HTTP');
         }
     }
 
     /**
      * Reads and processes the HTTP response headers.
      *
-     * @throws RuntimeException if server returns a non-200 status code
+     * @throws TransportError if server returns a non-200 status code
      */
     private function processHeaders(): void
     {
@@ -181,7 +181,7 @@ final class SSEClient
 
         if (! preg_match('/^HTTP\/\d\.\d\s+200\s+OK/i', $headers)) {
             $this->closeConnection();
-            throw new RuntimeException("Server returned a non-200 status. Full headers:\n{$headers}");
+            throw new TransportError("Server returned a non-200 status. Full headers:\n{$headers}");
         }
 
         // Check for chunked transfer encoding

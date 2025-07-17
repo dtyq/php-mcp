@@ -873,7 +873,7 @@ class UserService
         ];
         
         if (!isset($users[$userId])) {
-            throw new \InvalidArgumentException("用户 {$userId} 不存在");
+                            throw ValidationError::requiredFieldMissing('user', '用户 {$userId} 不存在');
         }
         
         return ['user' => $users[$userId]];

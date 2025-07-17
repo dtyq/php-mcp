@@ -10,13 +10,13 @@ namespace Dtyq\PhpMcp\Tests\Unit\Server\FastMcp\Prompts;
 use Closure;
 use Dtyq\PhpMcp\Server\FastMcp\Prompts\RegisteredPrompt;
 use Dtyq\PhpMcp\Shared\Exceptions\PromptError;
+use Dtyq\PhpMcp\Shared\Exceptions\SystemException;
 use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\TextContent;
 use Dtyq\PhpMcp\Types\Prompts\GetPromptResult;
 use Dtyq\PhpMcp\Types\Prompts\Prompt;
 use Dtyq\PhpMcp\Types\Prompts\PromptArgument;
 use Dtyq\PhpMcp\Types\Prompts\PromptMessage;
-use Exception;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
@@ -103,7 +103,7 @@ class RegisteredPromptTest extends TestCase
     public function testExecuteWithCallableException(): void
     {
         $failingCallable = function (array $args): void {
-            throw new Exception('Callable failed');
+            throw new SystemException('Callable failed');
         };
 
         $registeredPrompt = new RegisteredPrompt($this->samplePrompt, $failingCallable);

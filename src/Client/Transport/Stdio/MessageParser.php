@@ -9,6 +9,7 @@ namespace Dtyq\PhpMcp\Client\Transport\Stdio;
 
 use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
 use Dtyq\PhpMcp\Shared\Exceptions\ProtocolError;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 use Dtyq\PhpMcp\Types\Constants\ProtocolVersions;
 use Exception;
@@ -50,7 +51,7 @@ class MessageParser
         $message = trim($message);
 
         if (empty($message)) {
-            throw new ProtocolError('Empty message received');
+            throw ValidationError::emptyField('message');
         }
 
         try {
@@ -58,7 +59,7 @@ class MessageParser
             $data = JsonUtils::decode($message);
 
             if (! is_array($data)) {
-                throw new ProtocolError('Message must be a JSON object');
+                throw ValidationError::invalidFieldType('message', 'JSON object', gettype($data));
             }
 
             // Validate if enabled
@@ -70,7 +71,7 @@ class MessageParser
             return $data;
         } catch (Exception $e) {
             $this->recordParseError($e->getMessage(), $message);
-            throw new ProtocolError('Failed to parse message: ' . $e->getMessage());
+            throw ProtocolError::invalidFormat('Failed to parse message: ' . $e->getMessage());
         }
     }
 

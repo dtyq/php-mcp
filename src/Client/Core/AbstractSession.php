@@ -17,7 +17,6 @@ use Dtyq\PhpMcp\Types\Core\JsonRpcResponse;
 use Dtyq\PhpMcp\Types\Core\JsonRpcResponseInterface;
 use Dtyq\PhpMcp\Types\Core\RequestInterface;
 use Exception;
-use InvalidArgumentException;
 
 /**
  * Abstract base class for MCP client session implementations.
@@ -202,7 +201,7 @@ abstract class AbstractSession implements SessionInterface
     protected function setDefaultTimeout(float $timeout): void
     {
         if ($timeout <= 0) {
-            throw new InvalidArgumentException('Timeout must be greater than 0');
+            throw new ProtocolError('Timeout must be greater than 0');
         }
         $this->defaultTimeout = $timeout;
     }

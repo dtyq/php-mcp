@@ -63,7 +63,7 @@ final class MessageValidator
     public static function validateUtf8(string $message): void
     {
         if (! mb_check_encoding($message, 'UTF-8')) {
-            throw new ValidationError('Message contains invalid UTF-8 encoding', [
+            throw ValidationError::invalidFieldValue('message', 'contains invalid UTF-8 encoding', [
                 'message_length' => strlen($message),
                 'first_bytes' => substr($message, 0, 100),
             ]);
@@ -82,8 +82,9 @@ final class MessageValidator
     public static function validateStdioFormat(string $message): void
     {
         if (str_contains($message, "\n") || str_contains($message, "\r")) {
-            throw new ValidationError(
-                'Message contains embedded newlines, which violates MCP stdio transport specification',
+            throw ValidationError::invalidFieldValue(
+                'message',
+                'contains embedded newlines, which violates MCP stdio transport specification',
                 [
                     'message' => $message,
                     'contains_lf' => str_contains($message, "\n"),

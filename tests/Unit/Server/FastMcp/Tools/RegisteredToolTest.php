@@ -9,10 +9,10 @@ namespace Dtyq\PhpMcp\Tests\Unit\Server\FastMcp\Tools;
 
 use Closure;
 use Dtyq\PhpMcp\Server\FastMcp\Tools\RegisteredTool;
+use Dtyq\PhpMcp\Shared\Exceptions\SystemException;
 use Dtyq\PhpMcp\Shared\Exceptions\ToolError;
 use Dtyq\PhpMcp\Types\Tools\Tool;
 use Dtyq\PhpMcp\Types\Tools\ToolAnnotations;
-use Exception;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -73,7 +73,7 @@ class RegisteredToolTest extends TestCase
     public function testExecuteWithCallableException(): void
     {
         $failingCallable = function (array $args): void {
-            throw new Exception('Callable failed');
+            throw new SystemException('Callable failed');
         };
 
         $registeredTool = new RegisteredTool($this->sampleTool, $failingCallable);

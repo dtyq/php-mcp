@@ -195,7 +195,7 @@ function createFileUploadTool(): RegisteredTool {
         // Validate filename
         $filename = basename($filename);
         if (empty($filename)) {
-            throw new InvalidArgumentException('Invalid filename');
+                            throw new \Dtyq\PhpMcp\Shared\Exceptions\ValidationError('Invalid filename');
         }
         
         // Create directory if it doesn't exist
@@ -207,7 +207,7 @@ function createFileUploadTool(): RegisteredTool {
         // Decode and save file
         $decodedContent = base64_decode($content);
         if ($decodedContent === false) {
-            throw new InvalidArgumentException('Invalid base64 content');
+                                throw new \Dtyq\PhpMcp\Shared\Exceptions\ValidationError('Invalid base64 content');
         }
         
         $filepath = $uploadDir . '/' . $filename;

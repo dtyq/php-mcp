@@ -81,7 +81,7 @@ class StdioTransport implements TransportInterface
     public function connect(): void
     {
         if ($this->connected) {
-            throw new TransportError('Transport is already connected');
+            throw TransportError::alreadyStarted('STDIO');
         }
 
         try {
@@ -95,14 +95,14 @@ class StdioTransport implements TransportInterface
 
             // Start the process
             if ($this->processManager === null) {
-                throw new TransportError('Process manager not initialized');
+                throw TransportError::notInitialized('Process manager');
             }
             $this->processManager->start();
 
             // Initialize stream handler after process is started
             $this->initializeStreamHandler();
             if ($this->streamHandler === null) {
-                throw new TransportError('Stream handler not initialized');
+                throw TransportError::notInitialized('Stream handler');
             }
             $this->streamHandler->initialize();
 
@@ -119,7 +119,7 @@ class StdioTransport implements TransportInterface
                 'command' => $this->command,
             ]);
             $this->cleanup();
-            throw new TransportError('Failed to connect: ' . $e->getMessage());
+            throw TransportError::startupFailed('STDIO', $e->getMessage());
         }
     }
 

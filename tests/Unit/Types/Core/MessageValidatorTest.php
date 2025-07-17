@@ -33,7 +33,7 @@ class MessageValidatorTest extends TestCase
         $message = "Invalid \xFF\xFE UTF-8";
 
         $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('Message contains invalid UTF-8 encoding');
+        $this->expectExceptionMessage('Invalid value for field \'message\': contains invalid UTF-8 encoding');
 
         MessageValidator::validateUtf8($message);
     }
@@ -54,7 +54,7 @@ class MessageValidatorTest extends TestCase
         $message = "{\n\"jsonrpc\":\"2.0\",\"method\":\"test\",\"id\":1}";
 
         $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('Message contains embedded newlines, which violates MCP stdio transport specification');
+        $this->expectExceptionMessage('Invalid value for field \'message\': contains embedded newlines, which violates MCP stdio transport specification');
 
         MessageValidator::validateStdioFormat($message);
     }
@@ -64,7 +64,7 @@ class MessageValidatorTest extends TestCase
         $message = "{\r\"jsonrpc\":\"2.0\",\"method\":\"test\",\"id\":1}";
 
         $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('Message contains embedded newlines, which violates MCP stdio transport specification');
+        $this->expectExceptionMessage('Invalid value for field \'message\': contains embedded newlines, which violates MCP stdio transport specification');
 
         MessageValidator::validateStdioFormat($message);
     }

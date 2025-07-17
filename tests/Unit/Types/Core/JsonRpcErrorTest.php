@@ -8,10 +8,10 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Core;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ErrorData;
+use Dtyq\PhpMcp\Shared\Exceptions\ProtocolError;
 use Dtyq\PhpMcp\Types\Constants\JsonRpcErrors;
 use Dtyq\PhpMcp\Types\Constants\McpErrors;
 use Dtyq\PhpMcp\Types\Core\JsonRpcError;
-use InvalidArgumentException;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 
@@ -69,8 +69,8 @@ class JsonRpcErrorTest extends TestCase
 
     public function testFromArrayWithoutJsonRpcThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid JSON-RPC version');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Invalid message format: Invalid JSON-RPC version');
 
         JsonRpcError::fromArray([
             'id' => 'test-id',
@@ -80,8 +80,8 @@ class JsonRpcErrorTest extends TestCase
 
     public function testFromArrayWithInvalidJsonRpcVersionThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid JSON-RPC version');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Invalid message format: Invalid JSON-RPC version');
 
         JsonRpcError::fromArray([
             'jsonrpc' => '1.0',
@@ -92,8 +92,8 @@ class JsonRpcErrorTest extends TestCase
 
     public function testFromArrayWithoutIdThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('ID is required for error responses');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Missing required fields: id');
 
         JsonRpcError::fromArray([
             'jsonrpc' => '2.0',
@@ -103,8 +103,8 @@ class JsonRpcErrorTest extends TestCase
 
     public function testFromArrayWithoutErrorThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Error is required for error responses');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Missing required fields: error');
 
         JsonRpcError::fromArray([
             'jsonrpc' => '2.0',
@@ -114,8 +114,8 @@ class JsonRpcErrorTest extends TestCase
 
     public function testFromArrayWithNonArrayErrorThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Error must be an array');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Invalid message format: Error must be an array');
 
         JsonRpcError::fromArray([
             'jsonrpc' => '2.0',
@@ -169,8 +169,8 @@ class JsonRpcErrorTest extends TestCase
         $errorData = new ErrorData(-32000, 'Test error');
         $error = new JsonRpcError('initial-id', $errorData);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('ID must be string or integer');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Invalid message format: ID must be string or integer');
 
         $error->setId(123.45);
     }

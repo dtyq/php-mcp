@@ -44,7 +44,7 @@ class McpPrompt extends McpAnnotation
         bool $enabled = true
     ) {
         if ($name !== '' && ! preg_match('/^[a-zA-Z0-9_-]+$/', $name)) {
-            throw new ValidationError('Prompt name must be alphanumeric, underscores, and hyphens.');
+            throw ValidationError::invalidFieldValue('name', 'Prompt name must be alphanumeric, underscores, and hyphens');
         }
         $this->name = $name;
         $this->description = $description;

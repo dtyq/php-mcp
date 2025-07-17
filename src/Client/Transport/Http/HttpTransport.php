@@ -111,7 +111,7 @@ class HttpTransport implements TransportInterface
     public function connect(): void
     {
         if ($this->connected) {
-            throw new TransportError('Transport is already connected');
+            throw TransportError::alreadyStarted('HTTP');
         }
 
         try {
@@ -151,7 +151,7 @@ class HttpTransport implements TransportInterface
                 'base_url' => $this->config->getBaseUrl(),
             ]);
             $this->cleanup();
-            throw new TransportError('Failed to connect: ' . $e->getMessage());
+            throw TransportError::startupFailed('HTTP', $e->getMessage());
         }
     }
 
@@ -178,7 +178,7 @@ class HttpTransport implements TransportInterface
                 'message_preview' => substr($message, 0, 100),
                 'protocol_version' => $this->protocolVersion,
             ]);
-            throw new TransportError('Failed to send message: ' . $e->getMessage());
+            throw TransportError::messageSendFailed('HTTP', $e->getMessage());
         }
     }
 

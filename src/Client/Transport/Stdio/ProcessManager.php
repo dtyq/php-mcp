@@ -9,6 +9,7 @@ namespace Dtyq\PhpMcp\Client\Transport\Stdio;
 
 use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Exception;
 
 /**
@@ -69,7 +70,7 @@ class ProcessManager
     public function start(): void
     {
         if ($this->isRunning()) {
-            throw new TransportError('Process is already running');
+            throw TransportError::alreadyStarted('Process');
         }
 
         try {
@@ -96,7 +97,7 @@ class ProcessManager
             );
 
             if (! is_resource($process)) {
-                throw new TransportError('Failed to start process: proc_open returned false');
+                throw TransportError::startupFailed('Process', 'proc_open returned false');
             }
 
             $this->process = $process;
@@ -105,7 +106,7 @@ class ProcessManager
             $status = proc_get_status($this->process);
             if (! $status['running']) {
                 $this->cleanup();
-                throw new TransportError('Process failed to start');
+                throw TransportError::startupFailed('Process', 'process failed to start');
             }
 
             $this->processId = $status['pid'];
@@ -249,7 +250,7 @@ class ProcessManager
     private function buildCommand(): string
     {
         if (empty($this->command)) {
-            throw new TransportError('Command cannot be empty');
+            throw ValidationError::emptyField('command');
         }
 
         // Escape command parts for shell execution

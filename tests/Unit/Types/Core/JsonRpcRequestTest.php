@@ -7,8 +7,8 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Core;
 
+use Dtyq\PhpMcp\Shared\Exceptions\ProtocolError;
 use Dtyq\PhpMcp\Types\Core\JsonRpcRequest;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -36,8 +36,8 @@ class JsonRpcRequestTest extends TestCase
 
     public function testConstructorWithEmptyMethodThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Method cannot be empty');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Invalid parameters for method \'request\': method cannot be empty');
 
         new JsonRpcRequest('');
     }
@@ -60,8 +60,8 @@ class JsonRpcRequestTest extends TestCase
 
     public function testFromArrayWithoutJsonRpcThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid JSON-RPC version');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Invalid message format: Invalid JSON-RPC version');
 
         JsonRpcRequest::fromArray([
             'id' => 'test-id',
@@ -71,8 +71,8 @@ class JsonRpcRequestTest extends TestCase
 
     public function testFromArrayWithInvalidJsonRpcVersionThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid JSON-RPC version');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Invalid message format: Invalid JSON-RPC version');
 
         JsonRpcRequest::fromArray([
             'jsonrpc' => '1.0',
@@ -83,8 +83,8 @@ class JsonRpcRequestTest extends TestCase
 
     public function testFromArrayWithoutMethodThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Method is required');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Missing required fields: method');
 
         JsonRpcRequest::fromArray([
             'jsonrpc' => '2.0',
@@ -94,8 +94,8 @@ class JsonRpcRequestTest extends TestCase
 
     public function testFromArrayWithoutIdThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('ID is required for requests');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Missing required fields: id');
 
         JsonRpcRequest::fromArray([
             'jsonrpc' => '2.0',
@@ -115,8 +115,8 @@ class JsonRpcRequestTest extends TestCase
     {
         $request = new JsonRpcRequest('initial.method');
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Method cannot be empty');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Invalid parameters for method \'request\': method cannot be empty');
 
         $request->setMethod('');
     }
@@ -159,8 +159,8 @@ class JsonRpcRequestTest extends TestCase
     {
         $request = new JsonRpcRequest('test.method');
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('ID must be string or integer');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Invalid message format: ID must be string or integer');
 
         $request->setId(123.45);
     }
@@ -201,8 +201,8 @@ class JsonRpcRequestTest extends TestCase
     {
         $request = new JsonRpcRequest('test.method');
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Progress token must be string, integer, or null');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Invalid message format: Progress token must be string, integer, or null');
 
         $request->setProgressToken(123.45);
     }

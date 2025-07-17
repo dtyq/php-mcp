@@ -873,7 +873,7 @@ class UserService
         ];
         
         if (!isset($users[$userId])) {
-            throw new \InvalidArgumentException("User {$userId} not found");
+                            throw ValidationError::requiredFieldMissing('user', 'User {$userId} not found');
         }
         
         return ['user' => $users[$userId]];

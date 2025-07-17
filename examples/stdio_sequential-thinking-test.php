@@ -7,6 +7,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use Dtyq\PhpMcp\Client\McpClient;
+use Dtyq\PhpMcp\Shared\Exceptions\SystemException;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -80,7 +81,7 @@ $container = new class implements ContainerInterface {
     public function get(string $id): object
     {
         if (! isset($this->services[$id])) {
-            throw new RuntimeException("Service {$id} not found");
+            throw new SystemException("Service {$id} not found");
         }
 
         return $this->services[$id];

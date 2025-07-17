@@ -92,7 +92,7 @@ class McpClient
             ]);
 
             $this->stats->recordConnectionError();
-            throw new TransportError('Failed to connect: ' . $e->getMessage());
+            throw TransportError::startupFailed($transportType, $e->getMessage());
         }
     }
 

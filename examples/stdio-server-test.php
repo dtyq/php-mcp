@@ -11,6 +11,7 @@ use Dtyq\PhpMcp\Server\FastMcp\Resources\RegisteredResource;
 use Dtyq\PhpMcp\Server\FastMcp\Resources\RegisteredResourceTemplate;
 use Dtyq\PhpMcp\Server\FastMcp\Tools\RegisteredTool;
 use Dtyq\PhpMcp\Server\McpServer;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\TextContent;
@@ -140,12 +141,12 @@ function createCalculatorTool(): RegisteredTool
                 break;
             case 'divide':
                 if ($b == 0) {
-                    throw new InvalidArgumentException('Division by zero');
+                    throw ValidationError::invalidFieldValue('divisor', 'cannot be zero');
                 }
                 $result = $a / $b;
                 break;
             default:
-                throw new InvalidArgumentException('Unknown operation: ' . $operation);
+                throw ValidationError::invalidFieldValue('operation', 'unknown operation: ' . $operation);
         }
 
         return [

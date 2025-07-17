@@ -52,11 +52,11 @@ class McpResource extends McpAnnotation
         array $uriTemplate = []
     ) {
         if ($name !== '' && ! preg_match('/^[a-zA-Z0-9_-]+$/', $name)) {
-            throw new ToolError('Resource name must be alphanumeric, underscores, and hyphens.');
+            throw ValidationError::invalidFieldValue('name', 'Resource name must be alphanumeric, underscores, and hyphens');
         }
 
         if ($uri !== '' && ! $this->isValidUri($uri)) {
-            throw new ToolError('Resource URI must be a valid URI format.');
+            throw ValidationError::invalidFieldValue('uri', 'Resource URI must be a valid URI format');
         }
 
         $this->name = $name;

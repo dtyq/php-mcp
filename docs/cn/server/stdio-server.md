@@ -277,11 +277,11 @@ function createCalculatorTool(): RegisteredTool {
             case 'subtract': $result = $a - $b; break;
             case 'multiply': $result = $a * $b; break;
             case 'divide':
-                if ($b == 0) throw new InvalidArgumentException('除零错误');
+                if ($b == 0) throw new \Dtyq\PhpMcp\Shared\Exceptions\ValidationError('除零错误');
                 $result = $a / $b;
                 break;
             default:
-                throw new InvalidArgumentException('未知操作: ' . $operation);
+                throw new \Dtyq\PhpMcp\Shared\Exceptions\ValidationError('未知操作: ' . $operation);
         }
 
         return [

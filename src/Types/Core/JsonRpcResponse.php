@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Core;
 
-use InvalidArgumentException;
+use Dtyq\PhpMcp\Shared\Exceptions\ProtocolError;
 
 /**
  * JSON-RPC 2.0 response implementation.
@@ -44,19 +44,19 @@ class JsonRpcResponse implements JsonRpcResponseInterface
     public static function fromArray(array $data): self
     {
         if (! isset($data['jsonrpc']) || $data['jsonrpc'] !== '2.0') {
-            throw new InvalidArgumentException('Invalid JSON-RPC version');
+            throw ProtocolError::invalidFormat('Invalid JSON-RPC version');
         }
 
         if (! isset($data['id'])) {
-            throw new InvalidArgumentException('ID is required for responses');
+            throw ProtocolError::missingRequiredFields(['id']);
         }
 
         if (! isset($data['result'])) {
-            throw new InvalidArgumentException('Result is required for successful responses');
+            throw ProtocolError::missingRequiredFields(['result']);
         }
 
         if (! is_array($data['result'])) {
-            throw new InvalidArgumentException('Result must be an array');
+            throw ProtocolError::invalidFormat('Result must be an array');
         }
 
         return new self($data['id'], $data['result']);
@@ -90,7 +90,7 @@ class JsonRpcResponse implements JsonRpcResponseInterface
     public function setId($id): void
     {
         if (! is_string($id) && ! is_int($id)) {
-            throw new InvalidArgumentException('ID must be string or integer');
+            throw ProtocolError::invalidFormat('ID must be string or integer');
         }
         $this->id = $id;
     }

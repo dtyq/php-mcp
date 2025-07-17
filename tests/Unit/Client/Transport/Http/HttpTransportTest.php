@@ -11,6 +11,7 @@ use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
 use Dtyq\PhpMcp\Client\Transport\Http\EventStore;
 use Dtyq\PhpMcp\Client\Transport\Http\HttpTransport;
 use Dtyq\PhpMcp\Client\Transport\Http\InMemoryEventStore;
+use Dtyq\PhpMcp\Shared\Exceptions\SystemException;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Shared\Message\JsonRpcMessage;
@@ -116,7 +117,7 @@ class HttpTransportTest extends TestCase
                         }
                     };
                 }
-                throw new Exception('Service not found: ' . $id);
+                throw new SystemException('Service not found: ' . $id);
             }
 
             public function has(string $id): bool

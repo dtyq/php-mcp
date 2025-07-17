@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Tests\Unit\Shared\Message;
 
+use Dtyq\PhpMcp\Shared\Exceptions\ProtocolError;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Message\JsonRpcMessage;
-use JsonException;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -155,8 +155,8 @@ class JsonRpcMessageTest extends TestCase
 
     public function testFromArrayInvalidVersion(): void
     {
-        $this->expectException(JsonException::class);
-        $this->expectExceptionMessage('Invalid JSON-RPC version');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Invalid message format: Invalid JSON-RPC version');
 
         $data = [
             'jsonrpc' => '1.0',
@@ -169,8 +169,8 @@ class JsonRpcMessageTest extends TestCase
 
     public function testFromArrayMissingVersion(): void
     {
-        $this->expectException(JsonException::class);
-        $this->expectExceptionMessage('Invalid JSON-RPC version');
+        $this->expectException(ProtocolError::class);
+        $this->expectExceptionMessage('Invalid message format: Invalid JSON-RPC version');
 
         $data = [
             'method' => 'test',

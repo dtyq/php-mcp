@@ -43,7 +43,7 @@ class McpTool extends McpAnnotation
         bool $enabled = true
     ) {
         if ($name !== '' && ! preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
-            throw new ValidationError('Tool name must be alphanumeric and underscores.');
+            throw ValidationError::invalidFieldValue('name', 'Tool name must be alphanumeric and underscores');
         }
         $this->name = $name;
         $this->description = $description;

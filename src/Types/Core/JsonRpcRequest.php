@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Core;
 
-use InvalidArgumentException;
+use Dtyq\PhpMcp\Shared\Exceptions\ProtocolError;
 
 /**
  * JSON-RPC 2.0 request implementation.
@@ -54,15 +54,15 @@ class JsonRpcRequest implements RequestInterface
     public static function fromArray(array $data): self
     {
         if (! isset($data['jsonrpc']) || $data['jsonrpc'] !== '2.0') {
-            throw new InvalidArgumentException('Invalid JSON-RPC version');
+            throw ProtocolError::invalidFormat('Invalid JSON-RPC version');
         }
 
         if (! isset($data['method'])) {
-            throw new InvalidArgumentException('Method is required');
+            throw ProtocolError::missingRequiredFields(['method']);
         }
 
         if (! isset($data['id'])) {
-            throw new InvalidArgumentException('ID is required for requests');
+            throw ProtocolError::missingRequiredFields(['id']);
         }
 
         return new self(
@@ -80,7 +80,7 @@ class JsonRpcRequest implements RequestInterface
     public function setMethod(string $method): void
     {
         if (empty($method)) {
-            throw new InvalidArgumentException('Method cannot be empty');
+            throw ProtocolError::invalidParams('request', 'method cannot be empty');
         }
         $this->method = $method;
     }
@@ -114,7 +114,7 @@ class JsonRpcRequest implements RequestInterface
     public function setId($id): void
     {
         if (! is_string($id) && ! is_int($id)) {
-            throw new InvalidArgumentException('ID must be string or integer');
+            throw ProtocolError::invalidFormat('ID must be string or integer');
         }
         $this->id = $id;
     }
@@ -137,7 +137,7 @@ class JsonRpcRequest implements RequestInterface
     public function setProgressToken($token): void
     {
         if ($token !== null && ! is_string($token) && ! is_int($token)) {
-            throw new InvalidArgumentException('Progress token must be string, integer, or null');
+            throw ProtocolError::invalidFormat('Progress token must be string, integer, or null');
         }
         $this->progressToken = $token;
 
