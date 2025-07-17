@@ -12,424 +12,324 @@ use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Test case for StdioConfig.
  * @internal
  */
 class StdioConfigTest extends TestCase
 {
     public function testConstructorWithDefaults(): void
     {
-        $config = new StdioConfig();
+        $config = new StdioConfig('php');
 
-        $this->assertEquals(30.0, $config->getReadTimeout());
-        $this->assertEquals(10.0, $config->getWriteTimeout());
-        $this->assertEquals(5.0, $config->getShutdownTimeout());
-        $this->assertEquals(8192, $config->getBufferSize());
+        $this->assertSame(['php'], $config->getCommand());
+        $this->assertSame(30.0, $config->getReadTimeout());
+        $this->assertSame(10.0, $config->getWriteTimeout());
+        $this->assertSame(5.0, $config->getShutdownTimeout());
+        $this->assertSame(8192, $config->getBufferSize());
         $this->assertTrue($config->shouldInheritEnvironment());
         $this->assertTrue($config->shouldValidateMessages());
         $this->assertTrue($config->shouldCaptureStderr());
-        $this->assertEquals([], $config->getEnv());
+        $this->assertSame([], $config->getEnv());
     }
 
-    public function testConstructorWithCustomValues(): void
+    public function testConstructorWithStringCommand(): void
     {
-        $env = ['CUSTOM_VAR' => 'custom_value'];
+        $config = new StdioConfig('php');
+        $this->assertSame(['php'], $config->getCommand());
+    }
 
-        $config = new StdioConfig(
-            60.0,    // readTimeout
-            45.0,    // writeTimeout
-            10.0,    // shutdownTimeout
-            4096,    // bufferSize
-            false,   // inheritEnvironment
-            false,   // validateMessages
-            false,   // captureStderr
-            $env     // env
+    public function testConstructorWithArrayCommand(): void
+    {
+        $config = new StdioConfig(['php', '-v']);
+        $this->assertSame(['php', '-v'], $config->getCommand());
+    }
+
+    public function testConstructorWithCommandAndArgs(): void
+    {
+        $config = new StdioConfig('php', ['server.php', '-v']);
+        $this->assertSame(['php', 'server.php', '-v'], $config->getCommand());
+    }
+
+    public function testCreateMethodWithDefaults(): void
+    {
+        $config = StdioConfig::create('php');
+
+        $this->assertSame(['php'], $config->getCommand());
+        $this->assertSame(30.0, $config->getReadTimeout());
+        $this->assertSame(10.0, $config->getWriteTimeout());
+        $this->assertSame(5.0, $config->getShutdownTimeout());
+        $this->assertSame(8192, $config->getBufferSize());
+        $this->assertTrue($config->shouldInheritEnvironment());
+        $this->assertTrue($config->shouldValidateMessages());
+        $this->assertTrue($config->shouldCaptureStderr());
+        $this->assertSame([], $config->getEnv());
+    }
+
+    public function testCreateMethodWithCustomParameters(): void
+    {
+        $config = StdioConfig::create(
+            'python',
+            ['server.py'],
+            60.0,  // readTimeout
+            20.0,  // writeTimeout
+            10.0,  // shutdownTimeout
+            16384, // bufferSize
+            false, // inheritEnvironment
+            false, // validateMessages
+            false, // captureStderr
+            ['DEBUG' => '1'] // env
         );
 
-        $this->assertEquals(60.0, $config->getReadTimeout());
-        $this->assertEquals(45.0, $config->getWriteTimeout());
-        $this->assertEquals(10.0, $config->getShutdownTimeout());
-        $this->assertEquals(4096, $config->getBufferSize());
+        $this->assertSame(['python', 'server.py'], $config->getCommand());
+        $this->assertSame(60.0, $config->getReadTimeout());
+        $this->assertSame(20.0, $config->getWriteTimeout());
+        $this->assertSame(10.0, $config->getShutdownTimeout());
+        $this->assertSame(16384, $config->getBufferSize());
         $this->assertFalse($config->shouldInheritEnvironment());
         $this->assertFalse($config->shouldValidateMessages());
         $this->assertFalse($config->shouldCaptureStderr());
-        $this->assertEquals($env, $config->getEnv());
+        $this->assertSame(['DEBUG' => '1'], $config->getEnv());
+    }
+
+    public function testCreateMethodWithStringCommand(): void
+    {
+        $config = StdioConfig::create('node');
+        $this->assertSame(['node'], $config->getCommand());
+    }
+
+    public function testCreateMethodWithArrayCommand(): void
+    {
+        $config = StdioConfig::create(['node', '--version']);
+        $this->assertSame(['node', '--version'], $config->getCommand());
+    }
+
+    public function testConstructorWithAllParameters(): void
+    {
+        $config = new StdioConfig(
+            'python',
+            ['script.py'],
+            25.0,
+            15.0,
+            8.0,
+            4096,
+            false,
+            false,
+            false,
+            ['VAR' => 'value']
+        );
+
+        $this->assertSame(['python', 'script.py'], $config->getCommand());
+        $this->assertSame(25.0, $config->getReadTimeout());
+        $this->assertSame(15.0, $config->getWriteTimeout());
+        $this->assertSame(8.0, $config->getShutdownTimeout());
+        $this->assertSame(4096, $config->getBufferSize());
+        $this->assertFalse($config->shouldInheritEnvironment());
+        $this->assertFalse($config->shouldValidateMessages());
+        $this->assertFalse($config->shouldCaptureStderr());
+        $this->assertSame(['VAR' => 'value'], $config->getEnv());
     }
 
     public function testFromArray(): void
     {
-        $env = ['FROM_ARRAY_VAR' => 'from_array_value'];
-
-        $data = [
-            'read_timeout' => 90.0,
-            'write_timeout' => 75.0,
-            'shutdown_timeout' => 15.0,
-            'buffer_size' => 16384,
+        $config = StdioConfig::fromArray([
+            'command' => 'node',
+            'args' => ['server.js'],
+            'read_timeout' => 20.0,
+            'write_timeout' => 12.0,
+            'shutdown_timeout' => 6.0,
+            'buffer_size' => 4096,
             'inherit_environment' => false,
             'validate_messages' => false,
             'capture_stderr' => false,
-            'env' => $env,
-        ];
+            'env' => ['NODE_ENV' => 'production'],
+        ]);
 
-        $config = StdioConfig::fromArray($data);
-
-        $this->assertEquals(90.0, $config->getReadTimeout());
-        $this->assertEquals(75.0, $config->getWriteTimeout());
-        $this->assertEquals(15.0, $config->getShutdownTimeout());
-        $this->assertEquals(16384, $config->getBufferSize());
+        $this->assertSame(['node', 'server.js'], $config->getCommand());
+        $this->assertSame(20.0, $config->getReadTimeout());
+        $this->assertSame(12.0, $config->getWriteTimeout());
+        $this->assertSame(6.0, $config->getShutdownTimeout());
+        $this->assertSame(4096, $config->getBufferSize());
         $this->assertFalse($config->shouldInheritEnvironment());
         $this->assertFalse($config->shouldValidateMessages());
         $this->assertFalse($config->shouldCaptureStderr());
-        $this->assertEquals($env, $config->getEnv());
+        $this->assertSame(['NODE_ENV' => 'production'], $config->getEnv());
     }
 
-    public function testFromArrayWithPartialData(): void
+    public function testFromArrayWithMissingCommand(): void
     {
-        $data = [
-            'read_timeout' => 120.0,
-            'validate_messages' => false,
-        ];
-
-        $config = StdioConfig::fromArray($data);
-
-        // Should merge with defaults
-        $this->assertEquals(120.0, $config->getReadTimeout());
-        $this->assertEquals(10.0, $config->getWriteTimeout()); // Default
-        $this->assertFalse($config->shouldValidateMessages());
-        $this->assertEquals(5.0, $config->getShutdownTimeout()); // Default
-        $this->assertEquals([], $config->getEnv()); // Default
+        $this->expectException(ValidationError::class);
+        StdioConfig::fromArray([
+            'read_timeout' => 30.0,
+        ]);
     }
 
-    public function testConstructorWithEnvVariables(): void
+    public function testFromArrayWithPartialConfig(): void
     {
-        $env = [
-            'API_KEY' => 'test-key',
-            'DEBUG' => 'true',
-        ];
-
-        $config = new StdioConfig(
-            30.0,    // readTimeout (default)
-            10.0,    // writeTimeout (default)
-            5.0,     // shutdownTimeout (default)
-            8192,    // bufferSize (default)
-            true,    // inheritEnvironment (default)
-            true,    // validateMessages (default)
-            false,   // captureStderr (default)
-            $env     // env
-        );
-
-        $this->assertEquals($env, $config->getEnv());
-    }
-
-    public function testFromArrayWithEnvVariables(): void
-    {
-        $env = [
-            'OPENAPI_MCP_HEADERS' => '{"Authorization": "Bearer token"}',
-            'NODE_ENV' => 'production',
-        ];
-
-        $data = [
-            'read_timeout' => 45.0,
-            'env' => $env,
-        ];
-
-        $config = StdioConfig::fromArray($data);
-
-        $this->assertEquals($env, $config->getEnv());
-        $this->assertEquals(45.0, $config->getReadTimeout());
-    }
-
-    public function testGetEnvDefault(): void
-    {
-        $config = new StdioConfig();
-        $this->assertEquals([], $config->getEnv());
-    }
-
-    public function testSetEnv(): void
-    {
-        $config = new StdioConfig();
-        $env = [
-            'MY_VAR' => 'my_value',
-            'ANOTHER_VAR' => 'another_value',
-        ];
-
-        $config->setEnv($env);
-        $this->assertEquals($env, $config->getEnv());
-    }
-
-    public function testSetEnvEmpty(): void
-    {
-        $config = new StdioConfig();
-        $config->setEnv([]);
-        $this->assertEquals([], $config->getEnv());
-    }
-
-    public function testWithChangesIncludesEnv(): void
-    {
-        $original = new StdioConfig();
-        $newEnv = [
-            'NEW_VAR' => 'new_value',
-            'ANOTHER_VAR' => 'another_value',
-        ];
-
-        $modified = $original->withChanges([
-            'env' => $newEnv,
-            'read_timeout' => 45.0,
+        $config = StdioConfig::fromArray([
+            'command' => 'php',
+            'read_timeout' => 25.0,
         ]);
 
-        // Original should be unchanged
-        $this->assertEquals([], $original->getEnv());
-        $this->assertEquals(30.0, $original->getReadTimeout());
-
-        // Modified should have changes
-        $this->assertEquals($newEnv, $modified->getEnv());
-        $this->assertEquals(45.0, $modified->getReadTimeout());
-    }
-
-    public function testJsonSerializationWithEnv(): void
-    {
-        $env = [
-            'API_KEY' => 'secret-key',
-            'DEBUG' => 'true',
-        ];
-
-        $config = new StdioConfig(
-            30.0,    // readTimeout (default)
-            10.0,    // writeTimeout (default)
-            5.0,     // shutdownTimeout (default)
-            8192,    // bufferSize (default)
-            true,    // inheritEnvironment (default)
-            true,    // validateMessages (default)
-            false,   // captureStderr (default)
-            $env     // env
-        );
-
-        $json = json_encode($config);
-        $this->assertIsString($json);
-
-        $decoded = json_decode($json, true);
-        $this->assertIsArray($decoded);
-        $this->assertArrayHasKey('env', $decoded);
-        $this->assertEquals($env, $decoded['env']);
+        $this->assertSame(['php'], $config->getCommand());
+        $this->assertSame(25.0, $config->getReadTimeout());
+        $this->assertSame(10.0, $config->getWriteTimeout()); // default
     }
 
     public function testToArray(): void
     {
-        $env = ['TEST_VAR' => 'test_value'];
-
         $config = new StdioConfig(
-            45.0,    // readTimeout
-            35.0,    // writeTimeout
-            8.0,     // shutdownTimeout
-            4096,    // bufferSize
-            false,   // inheritEnvironment
-            false,   // validateMessages
-            true,    // captureStderr
-            $env     // env
+            'python',
+            ['script.py'],
+            25.0,
+            15.0,
+            8.0,
+            4096,
+            false,
+            false,
+            false,
+            ['VAR' => 'value']
         );
 
-        $expected = [
-            'read_timeout' => 45.0,
-            'write_timeout' => 35.0,
-            'shutdown_timeout' => 8.0,
-            'buffer_size' => 4096,
-            'inherit_environment' => false,
-            'validate_messages' => false,
-            'capture_stderr' => true,
-            'env' => $env,
-        ];
+        $array = $config->toArray();
 
-        $this->assertEquals($expected, $config->toArray());
+        $this->assertSame(['python', 'script.py'], $array['command']);
+        $this->assertSame(25.0, $array['read_timeout']);
+        $this->assertSame(15.0, $array['write_timeout']);
+        $this->assertSame(8.0, $array['shutdown_timeout']);
+        $this->assertSame(4096, $array['buffer_size']);
+        $this->assertFalse($array['inherit_environment']);
+        $this->assertFalse($array['validate_messages']);
+        $this->assertFalse($array['capture_stderr']);
+        $this->assertSame(['VAR' => 'value'], $array['env']);
     }
 
-    public function testGetDefaults(): void
+    public function testSettersWithValidValues(): void
     {
-        $defaults = StdioConfig::getDefaults();
+        $config = new StdioConfig('php');
 
-        $this->assertIsArray($defaults);
-        $this->assertArrayHasKey('read_timeout', $defaults);
-        $this->assertArrayHasKey('write_timeout', $defaults);
-        $this->assertArrayHasKey('shutdown_timeout', $defaults);
-        $this->assertArrayHasKey('buffer_size', $defaults);
-        $this->assertArrayHasKey('inherit_environment', $defaults);
-        $this->assertArrayHasKey('validate_messages', $defaults);
-        $this->assertArrayHasKey('capture_stderr', $defaults);
-        $this->assertArrayHasKey('env', $defaults);
-        $this->assertEquals([], $defaults['env']);
-    }
+        $config->setCommand('node', ['server.js']);
+        $this->assertSame(['node', 'server.js'], $config->getCommand());
 
-    public function testSetReadTimeoutInvalid(): void
-    {
-        $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('must be greater than 0');
+        $config->setReadTimeout(35.0);
+        $this->assertSame(35.0, $config->getReadTimeout());
 
-        $config = new StdioConfig();
-        $config->setReadTimeout(0.0);
-    }
+        $config->setWriteTimeout(15.0);
+        $this->assertSame(15.0, $config->getWriteTimeout());
 
-    public function testSetReadTimeoutNegative(): void
-    {
-        $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('must be greater than 0');
+        $config->setShutdownTimeout(8.0);
+        $this->assertSame(8.0, $config->getShutdownTimeout());
 
-        $config = new StdioConfig();
-        $config->setReadTimeout(-5.0);
-    }
-
-    public function testSetWriteTimeoutInvalid(): void
-    {
-        $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('must be greater than 0');
-
-        $config = new StdioConfig();
-        $config->setWriteTimeout(0.0);
-    }
-
-    public function testSetShutdownTimeoutInvalid(): void
-    {
-        $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('must be greater than 0');
-
-        $config = new StdioConfig();
-        $config->setShutdownTimeout(-1.0);
-    }
-
-    public function testSetBufferSize(): void
-    {
-        $config = new StdioConfig();
-
-        $config->setBufferSize(16384);
-        $this->assertEquals(16384, $config->getBufferSize());
-    }
-
-    public function testSetBufferSizeInvalid(): void
-    {
-        $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('must be greater than 0');
-
-        $config = new StdioConfig();
-        $config->setBufferSize(0);
-    }
-
-    public function testSetInheritEnvironment(): void
-    {
-        $config = new StdioConfig();
+        $config->setBufferSize(4096);
+        $this->assertSame(4096, $config->getBufferSize());
 
         $config->setInheritEnvironment(false);
         $this->assertFalse($config->shouldInheritEnvironment());
 
-        $config->setInheritEnvironment(true);
-        $this->assertTrue($config->shouldInheritEnvironment());
-    }
-
-    public function testSetValidateMessages(): void
-    {
-        $config = new StdioConfig();
-
         $config->setValidateMessages(false);
         $this->assertFalse($config->shouldValidateMessages());
-
-        $config->setValidateMessages(true);
-        $this->assertTrue($config->shouldValidateMessages());
-    }
-
-    public function testSetCaptureStderr(): void
-    {
-        $config = new StdioConfig();
 
         $config->setCaptureStderr(false);
         $this->assertFalse($config->shouldCaptureStderr());
 
-        $config->setCaptureStderr(true);
-        $this->assertTrue($config->shouldCaptureStderr());
+        $config->setEnv(['VAR' => 'value']);
+        $this->assertSame(['VAR' => 'value'], $config->getEnv());
     }
 
-    public function testValidate(): void
+    public function testSetCommandWithInvalidValues(): void
     {
-        $config = new StdioConfig();
+        $config = new StdioConfig('php');
 
-        // Should not throw for valid configuration
+        $config->setCommand('');
+        $this->expectException(ValidationError::class);
         $config->validate();
+    }
 
-        $this->addToAssertionCount(1);
+    public function testSetCommandWithInvalidType(): void
+    {
+        $config = new StdioConfig('php');
+
+        $config->setCommand(123);
+        $this->expectException(ValidationError::class);
+        $config->validate();
+    }
+
+    public function testSetCommandWithEmptyParts(): void
+    {
+        $config = new StdioConfig('php');
+
+        $config->setCommand(['php', '']);
+        $this->expectException(ValidationError::class);
+        $config->validate();
+    }
+
+    public function testSetReadTimeoutWithInvalidValue(): void
+    {
+        $config = new StdioConfig('php');
+
+        $config->setReadTimeout(0.0);
+        $this->expectException(ValidationError::class);
+        $config->validate();
+    }
+
+    public function testSetWriteTimeoutWithInvalidValue(): void
+    {
+        $config = new StdioConfig('php');
+
+        $config->setWriteTimeout(-1.0);
+        $this->expectException(ValidationError::class);
+        $config->validate();
+    }
+
+    public function testSetShutdownTimeoutWithInvalidValue(): void
+    {
+        $config = new StdioConfig('php');
+
+        $config->setShutdownTimeout(0.0);
+        $this->expectException(ValidationError::class);
+        $config->validate();
+    }
+
+    public function testSetBufferSizeWithInvalidValue(): void
+    {
+        $config = new StdioConfig('php');
+        $config->setBufferSize(-1);
+
+        $this->expectException(ValidationError::class);
+        $config->validate();
     }
 
     public function testWithChanges(): void
     {
-        $originalEnv = ['ORIGINAL_VAR' => 'original_value'];
-
-        $original = new StdioConfig(
-            30.0,    // readTimeout
-            10.0,    // writeTimeout
-            5.0,     // shutdownTimeout
-            8192,    // bufferSize
-            true,    // inheritEnvironment
-            true,    // validateMessages
-            true,    // captureStderr
-            $originalEnv // env
-        );
-
-        $changes = [
-            'read_timeout' => 60.0,
-            'validate_messages' => false,
-            'buffer_size' => 4096,
-        ];
-
-        $modified = $original->withChanges($changes);
-
-        // Original should be unchanged
-        $this->assertEquals(30.0, $original->getReadTimeout());
-        $this->assertTrue($original->shouldValidateMessages());
-        $this->assertEquals(8192, $original->getBufferSize());
-        $this->assertEquals($originalEnv, $original->getEnv());
-
-        // Modified should have changes
-        $this->assertEquals(60.0, $modified->getReadTimeout());
-        $this->assertFalse($modified->shouldValidateMessages());
-        $this->assertEquals(4096, $modified->getBufferSize());
-
-        // Unchanged values should be preserved
-        $this->assertEquals(10.0, $modified->getWriteTimeout());
-        $this->assertEquals(5.0, $modified->getShutdownTimeout());
-        $this->assertTrue($modified->shouldInheritEnvironment());
-        $this->assertEquals($originalEnv, $modified->getEnv());
-    }
-
-    public function testWithChangesInvalidValue(): void
-    {
-        $config = new StdioConfig();
-
-        $this->expectException(ValidationError::class);
-
-        $config->withChanges([
-            'read_timeout' => -1.0,
+        $config = new StdioConfig('php');
+        $newConfig = $config->withChanges([
+            'command' => 'python',
+            'read_timeout' => 35.0,
         ]);
+
+        $this->assertSame(['python'], $newConfig->getCommand());
+        $this->assertSame(35.0, $newConfig->getReadTimeout());
+        $this->assertSame(10.0, $newConfig->getWriteTimeout()); // unchanged
+
+        // Original config should be unchanged
+        $this->assertSame(['php'], $config->getCommand());
+        $this->assertSame(30.0, $config->getReadTimeout());
     }
 
-    public function testJsonSerialization(): void
+    public function testValidate(): void
     {
-        $env = ['JSON_VAR' => 'json_value'];
+        $config = new StdioConfig('php');
 
-        $config = new StdioConfig(
-            45.0,    // readTimeout
-            35.0,    // writeTimeout
-            8.0,     // shutdownTimeout
-            4096,    // bufferSize
-            false,   // inheritEnvironment
-            false,   // validateMessages
-            true,    // captureStderr
-            $env     // env
-        );
+        // Should not throw exception
+        $config->validate();
+        $this->assertTrue(true);
+    }
 
-        $json = json_encode($config);
-        $this->assertIsString($json);
+    public function testJsonSerialize(): void
+    {
+        $config = new StdioConfig('php');
+        $json = $config->jsonSerialize();
 
-        $decoded = json_decode($json, true);
-        $this->assertIsArray($decoded);
-        $this->assertEquals(45.0, $decoded['read_timeout']);
-        $this->assertEquals(35.0, $decoded['write_timeout']);
-        $this->assertFalse($decoded['validate_messages']);
-        $this->assertTrue($decoded['capture_stderr']);
-        $this->assertEquals($env, $decoded['env']);
+        $this->assertIsArray($json);
+        $this->assertSame(['php'], $json['command']);
+        $this->assertSame(30.0, $json['read_timeout']);
     }
 }

@@ -54,15 +54,16 @@ $config = ['sdk_name' => 'my-http-client'];
 $app = new Application($container, $config);
 $client = new McpClient('my-http-client', '1.0.0', $app);
 
-// 连接到 HTTP 服务器
-$session = $client->connect('http', [
-    'url' => 'https://your-mcp-server.com/mcp',
-    'timeout' => 30,
-    'headers' => [
-        'Authorization' => 'Bearer your-api-token',
-        'Content-Type' => 'application/json',
-    ],
+// ✅ 推荐：使用类型化配置的快捷方法
+use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
+
+$config = new HttpConfig('https://your-mcp-server.com/mcp');
+$config->setTimeout(30);
+$config->setHeaders([
+    'Authorization' => 'Bearer your-api-token',
+    'Content-Type' => 'application/json',
 ]);
+$session = $client->http($config);
 
 // 初始化会话
 $session->initialize();
@@ -73,20 +74,30 @@ echo "已连接到 HTTP MCP 服务器！\n";
 ### 2. 连接到不同的服务器
 
 ```php
+// ✅ 推荐：使用类型化配置的快捷方法
+use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
+
 // 连接到本地开发服务器
+$localConfig = new HttpConfig('http://localhost:8000/mcp');
+$localConfig->setTimeout(10);
+$session = $client->http($localConfig);
+
+// 带认证的连接
+$authConfig = new HttpConfig('https://api.example.com/mcp');
+$authConfig->setHeaders([
+    'Authorization' => 'Bearer ' . $apiToken,
+    'X-API-Key' => $apiKey,
+]);
+$authConfig->setTimeout(60);
+$session = $client->http($authConfig);
+```
+
+**传统方法（已弃用）**：
+```php
+// ⚠️ 此方法已弃用，请使用 http() 快捷方法
 $session = $client->connect('http', [
     'url' => 'http://localhost:8000/mcp',
     'timeout' => 10,
-]);
-
-// 带认证的连接
-$session = $client->connect('http', [
-    'url' => 'https://api.example.com/mcp',
-    'headers' => [
-        'Authorization' => 'Bearer ' . $apiToken,
-        'X-API-Key' => $apiKey,
-    ],
-    'timeout' => 60,
 ]);
 
 // 使用自定义 HTTP 客户端配置连接

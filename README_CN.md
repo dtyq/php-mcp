@@ -102,14 +102,29 @@ $server->stdio(); // 或 $server->http($request)
 ```php
 <?php
 use Dtyq\PhpMcp\Client\McpClient;
+use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
 
 $client = new McpClient('my-client', '1.0.0', $app);
-$session = $client->connect('stdio', ['command' => 'php server.php']);
+
+// ✅ 推荐：使用类型化配置的快捷方法
+$config = new StdioConfig('php server.php');
+$session = $client->stdio($config);
 $session->initialize();
 
 // 调用工具
 $result = $session->callTool('echo', ['message' => 'Hello, MCP!']);
 echo $result->getContent()[0]->getText();
+```
+
+**其他方法**：
+```php
+// HTTP 快捷方法
+use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
+$httpConfig = new HttpConfig('http://localhost:8080/mcp');
+$session = $client->http($httpConfig);
+
+// ⚠️ 传统方法（已弃用）
+$session = $client->connect('stdio', ['command' => 'php server.php']);
 ```
 
 ## 📖 文档

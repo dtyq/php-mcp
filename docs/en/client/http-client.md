@@ -54,15 +54,16 @@ $config = ['sdk_name' => 'my-http-client'];
 $app = new Application($container, $config);
 $client = new McpClient('my-http-client', '1.0.0', $app);
 
-// Connect to HTTP server
-$session = $client->connect('http', [
-    'url' => 'https://your-mcp-server.com/mcp',
-    'timeout' => 30,
-    'headers' => [
-        'Authorization' => 'Bearer your-api-token',
-        'Content-Type' => 'application/json',
-    ],
+// ✅ Recommended: Use typed configuration with shortcut method
+use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
+
+$config = new HttpConfig('https://your-mcp-server.com/mcp');
+$config->setTimeout(30);
+$config->setHeaders([
+    'Authorization' => 'Bearer your-api-token',
+    'Content-Type' => 'application/json',
 ]);
+$session = $client->http($config);
 
 // Initialize session
 $session->initialize();
@@ -73,20 +74,30 @@ echo "Connected to HTTP MCP server!\n";
 ### 2. Connecting to Different Servers
 
 ```php
+// ✅ Recommended: Use typed configuration with shortcut method
+use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
+
 // Connect to local development server
+$localConfig = new HttpConfig('http://localhost:8000/mcp');
+$localConfig->setTimeout(10);
+$session = $client->http($localConfig);
+
+// Connect with authentication
+$authConfig = new HttpConfig('https://api.example.com/mcp');
+$authConfig->setHeaders([
+    'Authorization' => 'Bearer ' . $apiToken,
+    'X-API-Key' => $apiKey,
+]);
+$authConfig->setTimeout(60);
+$session = $client->http($authConfig);
+```
+
+**Legacy Method (Deprecated)**:
+```php
+// ⚠️ This method is deprecated, use http() shortcut instead
 $session = $client->connect('http', [
     'url' => 'http://localhost:8000/mcp',
     'timeout' => 10,
-]);
-
-// Connect with authentication
-$session = $client->connect('http', [
-    'url' => 'https://api.example.com/mcp',
-    'headers' => [
-        'Authorization' => 'Bearer ' . $apiToken,
-        'X-API-Key' => $apiKey,
-    ],
-    'timeout' => 60,
 ]);
 
 // Connect with custom HTTP client configuration

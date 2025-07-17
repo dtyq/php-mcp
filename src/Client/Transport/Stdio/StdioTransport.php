@@ -24,9 +24,6 @@ use Exception;
  */
 class StdioTransport implements TransportInterface
 {
-    /** @var array<string> Command to execute */
-    private array $command;
-
     /** @var StdioConfig Transport configuration */
     private StdioConfig $config;
 
@@ -52,13 +49,11 @@ class StdioTransport implements TransportInterface
     private ?float $connectedAt = null;
 
     /**
-     * @param array<string> $command Command and arguments to execute
      * @param StdioConfig $config Transport configuration
      * @param Application $application Application instance for services
      */
-    public function __construct(array $command, StdioConfig $config, Application $application)
+    public function __construct(StdioConfig $config, Application $application)
     {
-        $this->command = $command;
         $this->config = $config;
         $this->application = $application;
         $this->logger = $application->getLogger();
@@ -86,7 +81,7 @@ class StdioTransport implements TransportInterface
 
         try {
             $this->logger->info('Starting stdio transport connection', [
-                'command' => $this->command,
+                'command' => $this->config->getCommand(),
                 'config' => $this->config->toArray(),
             ]);
 
@@ -116,7 +111,7 @@ class StdioTransport implements TransportInterface
         } catch (Exception $e) {
             $this->logger->error('Failed to connect stdio transport', [
                 'error' => $e->getMessage(),
-                'command' => $this->command,
+                'command' => $this->config->getCommand(),
             ]);
             $this->cleanup();
             throw TransportError::startupFailed('STDIO', $e->getMessage());
@@ -227,7 +222,7 @@ class StdioTransport implements TransportInterface
      */
     public function getCommand(): array
     {
-        return $this->command;
+        return $this->config->getCommand();
     }
 
     /**
@@ -260,7 +255,7 @@ class StdioTransport implements TransportInterface
         $stats = [
             'connected' => $this->connected,
             'connectedAt' => $this->connectedAt,
-            'command' => $this->command,
+            'command' => $this->config->getCommand(),
             'type' => $this->getType(),
         ];
 
@@ -316,7 +311,7 @@ class StdioTransport implements TransportInterface
     private function initializeComponents(): void
     {
         // Create process manager
-        $this->processManager = new ProcessManager($this->command, $this->config);
+        $this->processManager = new ProcessManager($this->config->getCommand(), $this->config);
 
         // Create message parser
         $this->messageParser = new MessageParser($this->config);

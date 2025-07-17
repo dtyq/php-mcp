@@ -85,6 +85,7 @@ Create a file called `my-client.php`:
 require_once 'vendor/autoload.php';
 
 use Dtyq\PhpMcp\Client\McpClient;
+use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Types\Content\TextContent;
 
@@ -111,12 +112,10 @@ try {
     $app = new Application($container, ['sdk_name' => 'my-first-client']);
     $client = new McpClient('my-first-client', '1.0.0', $app);
 
-    // Connect to our server
+    // Connect to our server using the new shortcut method
     echo "1. Connecting to server...\n";
-    $session = $client->connect('stdio', [
-        'command' => 'php',
-        'args' => [__DIR__ . '/my-server.php'],
-    ]);
+    $config = new StdioConfig('php', [__DIR__ . '/my-server.php']);
+    $session = $client->stdio($config);
 
     $session->initialize();
     echo "   ✓ Connected!\n";
@@ -310,11 +309,8 @@ $container = new class implements \Psr\Container\ContainerInterface {
 ### Issue: "Connection timeout" error
 **Solution:** Increase the timeout in your client configuration:
 ```php
-$session = $client->connect('stdio', [
-    'command' => 'php',
-    'args' => ['my-server.php'],
-    'timeout' => 60, // Increase timeout to 60 seconds
-]);
+$config = new StdioConfig('php', ['my-server.php'], 60); // 60 seconds timeout
+$session = $client->stdio($config);
 ```
 
 ### Issue: "JSON-RPC parse error"

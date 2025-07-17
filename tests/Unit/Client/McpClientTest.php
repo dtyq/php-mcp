@@ -7,7 +7,10 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Tests\Unit\Client;
 
+use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
+use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
 use Dtyq\PhpMcp\Client\McpClient;
+use Dtyq\PhpMcp\Client\Session\ClientSession;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
@@ -52,7 +55,7 @@ class McpClientTest extends TestCase
 
     public function testConnectWithInvalidTransportType(): void
     {
-        $this->expectException(TransportError::class);
+        $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('Unsupported transport type');
 
         $this->client->connect('invalid', []);
@@ -60,7 +63,7 @@ class McpClientTest extends TestCase
 
     public function testConnectStdioWithoutCommand(): void
     {
-        $this->expectException(TransportError::class);
+        $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('command');
 
         $this->client->connect('stdio', []);
@@ -78,10 +81,8 @@ class McpClientTest extends TestCase
 
     public function testGetSessionWithInvalidId(): void
     {
-        $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('Session not found');
-
-        $this->client->getSession('invalid-session-id');
+        $session = $this->client->getSession('invalid-session-id');
+        $this->assertNull($session);
     }
 
     public function testHasSession(): void
@@ -125,6 +126,63 @@ class McpClientTest extends TestCase
         $this->client->close();
 
         $this->addToAssertionCount(1);
+    }
+
+    public function testStdioShortcutMethod(): void
+    {
+        $config = new StdioConfig(['php', '-v']);
+        $session = $this->client->stdio($config);
+
+        $this->assertInstanceOf(ClientSession::class, $session);
+        $this->assertNotEmpty($session->getSessionId());
+        $this->assertTrue($this->client->hasSession($session->getSessionId()));
+    }
+
+    public function testHttpShortcutMethod(): void
+    {
+        // Mock the HTTP transport to avoid actual connection
+        $this->markTestSkipped('HTTP transport tests require actual server connection');
+    }
+
+    public function testStdioShortcutMethodWithInvalidConfig(): void
+    {
+        $this->expectException(ValidationError::class);
+        $config = new StdioConfig([]);
+        $this->client->stdio($config);
+    }
+
+    public function testHttpShortcutMethodWithInvalidConfig(): void
+    {
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('cannot be empty when provided');
+
+        // This should fail at validation level, not connection level
+        $config = new HttpConfig('');
+        $config->validate();
+    }
+
+    public function testStdioConfigValidationCalledOnSessionCreation(): void
+    {
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('All command parts must be non-empty strings');
+
+        // Create invalid config with empty command
+        $config = new StdioConfig('', []);
+
+        // This should fail at validation level during session creation
+        $this->client->stdio($config);
+    }
+
+    public function testHttpConfigValidationCalledOnSessionCreation(): void
+    {
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage("Invalid value for field 'base_url': cannot be empty when provided");
+
+        // Create invalid config with empty base URL
+        $config = new HttpConfig('');
+
+        // This should fail at validation level during session creation
+        $this->client->http($config);
     }
 
     private function createMockContainer(): ContainerInterface

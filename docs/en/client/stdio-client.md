@@ -4,12 +4,24 @@
 
 The STDIO (Standard Input/Output) client provides a simple way to communicate with MCP servers using standard input and output streams. This transport is perfect for command-line applications, process automation, and development testing.
 
+In this guide, we'll use the **Sequential Thinking MCP Server** as our primary example. This server provides a structured approach to problem-solving through step-by-step reasoning, making it ideal for demonstrating MCP capabilities.
+
 ## Key Features
 
 - **Process Spawning**: Automatically spawn and manage server processes
 - **Simple Communication**: Direct stdin/stdout communication
 - **Development Friendly**: Easy debugging and testing
 - **Cross-Platform**: Works on all platforms with PHP support
+
+### Sequential Thinking MCP Server Features
+
+The Sequential Thinking server we'll use in examples provides:
+
+- **Structured Problem-Solving**: Break down complex problems into manageable steps
+- **Thought Revision**: Refine and improve previous thoughts as understanding deepens
+- **Branching Logic**: Explore alternative reasoning paths
+- **Dynamic Adjustment**: Modify the total number of thoughts as needed
+- **Context Preservation**: Maintain context across multiple thinking steps
 
 ## Quick Start
 
@@ -52,45 +64,55 @@ $config = ['sdk_name' => 'my-mcp-client'];
 $app = new Application($container, $config);
 $client = new McpClient('my-client', '1.0.0', $app);
 
-// Connect to server
-$session = $client->connect('stdio', [
-    'command' => 'php',
-    'args' => ['path/to/server.php'],
-]);
+// ✅ Recommended: Use typed configuration with shortcut method
+use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
+
+// Connect to Sequential Thinking MCP Server
+$config = new StdioConfig('npx', ['-y', '@modelcontextprotocol/server-sequential-thinking']);
+$session = $client->stdio($config);
 
 // Initialize session
 $session->initialize();
 
-echo "Connected to MCP server!\n";
+echo "Connected to Sequential Thinking MCP server!\n";
 ```
 
 ### 2. Connecting to Different Servers
 
 ```php
-// Connect to a Node.js MCP server
+// ✅ Recommended: Use typed configuration with shortcut method
+use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
+
+// Connect to Sequential Thinking MCP Server (recommended for testing)
+$sequentialConfig = new StdioConfig('npx', ['-y', '@modelcontextprotocol/server-sequential-thinking']);
+$session = $client->stdio($sequentialConfig);
+
+// Connect to other MCP servers
+$nodeConfig = new StdioConfig('node', ['path/to/server.js']);
+$session = $client->stdio($nodeConfig);
+
+// Connect to Python MCP server
+$pythonConfig = new StdioConfig('python', ['path/to/server.py']);
+$session = $client->stdio($pythonConfig);
+
+// Connect with environment variables (disable thought logging)
+$customConfig = new StdioConfig('npx', ['-y', '@modelcontextprotocol/server-sequential-thinking']);
+$customConfig->setEnv([
+    'DISABLE_THOUGHT_LOGGING' => 'true',
+]);
+$session = $client->stdio($customConfig);
+```
+
+**Legacy Method (Deprecated)**:
+```php
+// ⚠️ This method is deprecated, use stdio() shortcut instead
 $session = $client->connect('stdio', [
     'command' => 'node',
     'args' => ['path/to/server.js'],
 ]);
-
-// Connect to a Python MCP server
-$session = $client->connect('stdio', [
-    'command' => 'python',
-    'args' => ['path/to/server.py'],
-]);
-
-// Connect to any executable
-$session = $client->connect('stdio', [
-    'command' => '/usr/local/bin/my-mcp-server',
-    'args' => ['--config', 'config.json'],
-    'env' => [
-        'MCP_LOG_LEVEL' => 'debug',
-        'MCP_CONFIG_PATH' => '/etc/mcp/',
-    ],
-]);
 ```
 
-### 3. Working with Tools
+### 3. Working with Sequential Thinking Tool
 
 ```php
 // List available tools
@@ -100,10 +122,58 @@ foreach ($toolsResult->getTools() as $tool) {
     echo "- {$tool->getName()}: {$tool->getDescription()}\n";
 }
 
-// Call a tool
+// Use Sequential Thinking for problem-solving
 try {
-    $result = $session->callTool('echo', ['message' => 'Hello from client!']);
-    echo "Tool result:\n";
+    // Start with the first thought
+    $result = $session->callTool('sequential_thinking', [
+        'thought' => 'Let me break down this complex problem: How to build a scalable web application?',
+        'nextThoughtNeeded' => true,
+        'thoughtNumber' => 1,
+        'totalThoughts' => 5,
+    ]);
+    
+    echo "First thought processed:\n";
+    foreach ($result->getContent() as $content) {
+        if ($content instanceof \Dtyq\PhpMcp\Types\Content\TextContent) {
+            echo $content->getText() . "\n";
+        }
+    }
+    
+    // Continue with next thought
+    $result = $session->callTool('sequential_thinking', [
+        'thought' => 'I need to consider the architecture: microservices vs monolithic approach.',
+        'nextThoughtNeeded' => true,
+        'thoughtNumber' => 2,
+        'totalThoughts' => 5,
+    ]);
+    
+    // Branch into alternative thinking
+    $result = $session->callTool('sequential_thinking', [
+        'thought' => 'Actually, let me explore a different approach - serverless architecture.',
+        'nextThoughtNeeded' => true,
+        'thoughtNumber' => 3,
+        'totalThoughts' => 6,
+        'branchFromThought' => 2,
+        'branchId' => 'serverless-branch',
+        'needsMoreThoughts' => true,
+    ]);
+    
+    echo "Sequential thinking process completed!\n";
+    
+} catch (Exception $e) {
+    echo "Sequential thinking failed: " . $e->getMessage() . "\n";
+}
+
+// Simple tool call example
+try {
+    $result = $session->callTool('sequential_thinking', [
+        'thought' => 'What are the key factors for choosing a database?',
+        'nextThoughtNeeded' => false,
+        'thoughtNumber' => 1,
+        'totalThoughts' => 1,
+    ]);
+    
+    echo "Single thought result:\n";
     foreach ($result->getContent() as $content) {
         if ($content instanceof \Dtyq\PhpMcp\Types\Content\TextContent) {
             echo $content->getText() . "\n";
@@ -111,22 +181,6 @@ try {
     }
 } catch (Exception $e) {
     echo "Tool call failed: " . $e->getMessage() . "\n";
-}
-
-// Call tool with complex parameters
-$calcResult = $session->callTool('calculate', [
-    'operation' => 'multiply',
-    'a' => 15,
-    'b' => 7,
-]);
-
-$content = $calcResult->getContent();
-if (!empty($content)) {
-    $firstContent = $content[0];
-    if ($firstContent instanceof \Dtyq\PhpMcp\Types\Content\TextContent) {
-        $data = json_decode($firstContent->getText(), true);
-        echo "Calculation result: {$data['result']}\n";
-    }
 }
 ```
 

@@ -38,6 +38,68 @@ class HttpConfigTest extends TestCase
         $this->assertTrue($config->shouldTerminateOnClose());
     }
 
+    public function testCreateMethodWithDefaults(): void
+    {
+        $config = HttpConfig::create('https://example.com');
+
+        $this->assertEquals('https://example.com', $config->getBaseUrl());
+        $this->assertEquals(30.0, $config->getTimeout());
+        $this->assertEquals(300.0, $config->getSseTimeout());
+        $this->assertEquals(3, $config->getMaxRetries());
+        $this->assertEquals(1.0, $config->getRetryDelay());
+        $this->assertTrue($config->getValidateSsl());
+        $this->assertEquals('php-mcp-client/1.0', $config->getUserAgent());
+        $this->assertEquals([], $config->getHeaders());
+        $this->assertNull($config->getAuth());
+        $this->assertEquals('auto', $config->getProtocolVersion());
+        $this->assertTrue($config->isResumptionEnabled());
+        $this->assertEquals('memory', $config->getEventStoreType());
+        $this->assertEquals([], $config->getEventStoreConfig());
+        $this->assertFalse($config->isJsonResponseMode());
+        $this->assertTrue($config->shouldTerminateOnClose());
+    }
+
+    public function testCreateMethodWithCustomParameters(): void
+    {
+        $headers = ['X-Custom' => 'value'];
+        $auth = ['type' => 'bearer', 'token' => 'token123'];
+        $eventStoreConfig = ['max_events' => 1000];
+
+        $config = HttpConfig::create(
+            'https://api.example.com',
+            60.0,  // timeout
+            600.0, // sseTimeout
+            5,     // maxRetries
+            2.0,   // retryDelay
+            false, // validateSsl
+            'custom-agent/1.0', // userAgent
+            $headers,
+            $auth,
+            '2025-03-26', // protocolVersion
+            false, // enableResumption
+            'file', // eventStoreType
+            $eventStoreConfig,
+            true,  // jsonResponseMode
+            false  // terminateOnClose
+        );
+
+        $this->assertEquals('https://api.example.com', $config->getBaseUrl());
+        $this->assertEquals(60.0, $config->getTimeout());
+        $this->assertEquals(600.0, $config->getSseTimeout());
+        $this->assertEquals(5, $config->getMaxRetries());
+        $this->assertEquals(2.0, $config->getRetryDelay());
+        $this->assertFalse($config->getValidateSsl());
+        $this->assertEquals('custom-agent/1.0', $config->getUserAgent());
+        $this->assertEquals($headers, $config->getHeaders());
+        $this->assertEquals($auth, $config->getAuth());
+        $this->assertEquals('2025-03-26', $config->getProtocolVersion());
+        $this->assertFalse($config->isResumptionEnabled());
+        $this->assertEquals('file', $config->getEventStoreType());
+        $this->assertEquals($eventStoreConfig, $config->getEventStoreConfig());
+        $this->assertTrue($config->isJsonResponseMode());
+        $this->assertFalse($config->shouldTerminateOnClose());
+    }
+
     public function testConstructorWithCustomValues(): void
     {
         $headers = ['X-Custom' => 'value'];
@@ -123,16 +185,18 @@ class HttpConfigTest extends TestCase
         $config = HttpConfig::fromArray($configArray);
 
         $this->assertEquals('https://example.com', $config->getBaseUrl());
-        $this->assertEquals(HttpConfig::DEFAULTS['timeout'], $config->getTimeout());
+        $this->assertEquals(30.0, $config->getTimeout());
     }
 
-    public function testGetDefaults(): void
+    public function testFromArrayMissingBaseUrl(): void
     {
-        $defaults = HttpConfig::getDefaults();
-        $this->assertIsArray($defaults);
-        $this->assertArrayHasKey('base_url', $defaults);
-        $this->assertArrayHasKey('timeout', $defaults);
-        $this->assertEquals(30.0, $defaults['timeout']);
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('Required field \'base_url\' is missing');
+
+        HttpConfig::fromArray([
+            'timeout' => 30.0,
+            'sse_timeout' => 300.0,
+        ]);
     }
 
     public function testToArray(): void
@@ -177,7 +241,8 @@ class HttpConfigTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('must be a valid URL');
 
-        new HttpConfig('invalid-url');
+        $config = new HttpConfig('invalid-url');
+        $config->validate();
     }
 
     public function testEmptyBaseUrlWhenProvided(): void
@@ -185,7 +250,8 @@ class HttpConfigTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('cannot be empty when provided');
 
-        new HttpConfig('   ');
+        $config = new HttpConfig('   ');
+        $config->validate();
     }
 
     public function testInvalidTimeout(): void
@@ -193,7 +259,8 @@ class HttpConfigTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('must be greater than 0');
 
-        new HttpConfig('https://example.com', 0.0);
+        $config = new HttpConfig('https://example.com', 0.0);
+        $config->validate();
     }
 
     public function testNegativeTimeout(): void
@@ -201,7 +268,8 @@ class HttpConfigTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('must be greater than 0');
 
-        new HttpConfig('https://example.com', -1.0);
+        $config = new HttpConfig('https://example.com', -1.0);
+        $config->validate();
     }
 
     public function testInvalidSseTimeout(): void
@@ -209,7 +277,8 @@ class HttpConfigTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('must be greater than 0');
 
-        new HttpConfig('https://example.com', 30.0, 0.0);
+        $config = new HttpConfig('https://example.com', 30.0, 0.0);
+        $config->validate();
     }
 
     public function testNegativeMaxRetries(): void
@@ -217,7 +286,8 @@ class HttpConfigTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('cannot be negative');
 
-        new HttpConfig('https://example.com', 30.0, 300.0, -1);
+        $config = new HttpConfig('https://example.com', 30.0, 300.0, -1);
+        $config->validate();
     }
 
     public function testNegativeRetryDelay(): void
@@ -225,7 +295,8 @@ class HttpConfigTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('cannot be negative');
 
-        new HttpConfig('https://example.com', 30.0, 300.0, 3, -1.0);
+        $config = new HttpConfig('https://example.com', 30.0, 300.0, 3, -1.0);
+        $config->validate();
     }
 
     public function testEmptyUserAgent(): void
@@ -233,7 +304,8 @@ class HttpConfigTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('cannot be empty');
 
-        new HttpConfig('https://example.com', 30.0, 300.0, 3, 1.0, true, '');
+        $config = new HttpConfig('https://example.com', 30.0, 300.0, 3, 1.0, true, '');
+        $config->validate();
     }
 
     public function testInvalidHeaders(): void
@@ -241,7 +313,8 @@ class HttpConfigTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('must be an array of string key-value pairs');
 
-        new HttpConfig('https://example.com', 30.0, 300.0, 3, 1.0, true, 'agent', [123 => 'value']);
+        $config = new HttpConfig('https://example.com', 30.0, 300.0, 3, 1.0, true, 'agent', [123 => 'value']);
+        $config->validate();
     }
 
     public function testInvalidProtocolVersion(): void
@@ -249,7 +322,8 @@ class HttpConfigTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('must be one of');
 
-        new HttpConfig('https://example.com', 30.0, 300.0, 3, 1.0, true, 'agent', [], null, 'invalid');
+        $config = new HttpConfig('https://example.com', 30.0, 300.0, 3, 1.0, true, 'agent', [], null, 'invalid');
+        $config->validate();
     }
 
     public function testInvalidEventStoreType(): void
@@ -257,15 +331,7 @@ class HttpConfigTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('must be one of');
 
-        new HttpConfig('https://example.com', 30.0, 300.0, 3, 1.0, true, 'agent', [], null, 'auto', true, 'invalid');
-    }
-
-    public function testValidateRequiresBaseUrl(): void
-    {
-        $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('base_url');
-
-        $config = new HttpConfig(null);
+        $config = new HttpConfig('https://example.com', 30.0, 300.0, 3, 1.0, true, 'agent', [], null, 'auto', true, 'invalid');
         $config->validate();
     }
 
@@ -284,7 +350,8 @@ class HttpConfigTest extends TestCase
         $this->expectExceptionMessage('is required for bearer authentication');
 
         $auth = ['type' => 'bearer']; // Missing token
-        new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
+        $config = new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
+        $config->validate();
     }
 
     public function testValidateBasicAuth(): void
@@ -302,7 +369,8 @@ class HttpConfigTest extends TestCase
         $this->expectExceptionMessage('is required for basic authentication');
 
         $auth = ['type' => 'basic', 'username' => 'user']; // Missing password
-        new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
+        $config = new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
+        $config->validate();
     }
 
     public function testValidateOAuth2Auth(): void
@@ -320,7 +388,8 @@ class HttpConfigTest extends TestCase
         $this->expectExceptionMessage('is required for OAuth2 authentication');
 
         $auth = ['type' => 'oauth2', 'client_id' => 'id']; // Missing client_secret
-        new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
+        $config = new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
+        $config->validate();
     }
 
     public function testValidateCustomAuth(): void
@@ -338,7 +407,8 @@ class HttpConfigTest extends TestCase
         $this->expectExceptionMessage('is required for custom authentication');
 
         $auth = ['type' => 'custom']; // Missing headers
-        new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
+        $config = new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
+        $config->validate();
     }
 
     public function testValidateInvalidAuthType(): void
@@ -347,7 +417,8 @@ class HttpConfigTest extends TestCase
         $this->expectExceptionMessage('must be one of');
 
         $auth = ['type' => 'invalid'];
-        new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
+        $config = new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
+        $config->validate();
     }
 
     public function testValidateEmptyAuthType(): void
@@ -356,6 +427,7 @@ class HttpConfigTest extends TestCase
         $this->expectExceptionMessage('auth.type');
 
         $auth = []; // Missing type
-        new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
+        $config = new HttpConfig('https://example.com', 15.0, 300.0, 3, 1.0, true, 'test-agent', [], $auth);
+        $config->validate();
     }
 }

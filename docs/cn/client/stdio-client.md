@@ -4,12 +4,24 @@
 
 STDIO（标准输入输出）客户端提供了一种简单的方式来使用标准输入和输出流与 MCP 服务器通信。这种传输方式非常适合命令行应用程序、进程自动化和开发测试。
 
+在本指南中，我们将使用 **Sequential Thinking MCP 服务器** 作为主要示例。该服务器通过逐步推理提供结构化的问题解决方法，非常适合演示 MCP 功能。
+
 ## 核心特性
 
 - **进程生成**：自动生成和管理服务器进程
 - **简单通信**：通过 stdin/stdout 直接通信
 - **开发友好**：易于调试和测试
 - **跨平台**：在所有支持 PHP 的平台上工作
+
+### Sequential Thinking MCP 服务器特性
+
+我们在示例中使用的 Sequential Thinking 服务器提供：
+
+- **结构化问题解决**：将复杂问题分解为可管理的步骤
+- **思考修订**：随着理解的深入，完善和改进先前的思考
+- **分支逻辑**：探索替代推理路径
+- **动态调整**：根据需要修改思考步骤的总数
+- **上下文保持**：在多个思考步骤中保持上下文
 
 ## 快速开始
 
@@ -52,45 +64,55 @@ $config = ['sdk_name' => 'my-mcp-client'];
 $app = new Application($container, $config);
 $client = new McpClient('my-client', '1.0.0', $app);
 
-// 连接到服务器
-$session = $client->connect('stdio', [
-    'command' => 'php',
-    'args' => ['path/to/server.php'],
-]);
+// ✅ 推荐：使用类型化配置的快捷方法
+use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
+
+// 连接到 Sequential Thinking MCP 服务器
+$config = new StdioConfig('npx', ['-y', '@modelcontextprotocol/server-sequential-thinking']);
+$session = $client->stdio($config);
 
 // 初始化会话
 $session->initialize();
 
-echo "已连接到 MCP 服务器！\n";
+echo "已连接到 Sequential Thinking MCP 服务器！\n";
 ```
 
 ### 2. 连接到不同的服务器
 
 ```php
-// 连接到 Node.js MCP 服务器
+// ✅ 推荐：使用类型化配置的快捷方法
+use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
+
+// 连接到 Sequential Thinking MCP 服务器（推荐用于测试）
+$sequentialConfig = new StdioConfig('npx', ['-y', '@modelcontextprotocol/server-sequential-thinking']);
+$session = $client->stdio($sequentialConfig);
+
+// 连接到其他 MCP 服务器
+$nodeConfig = new StdioConfig('node', ['path/to/server.js']);
+$session = $client->stdio($nodeConfig);
+
+// 连接到 Python MCP 服务器
+$pythonConfig = new StdioConfig('python', ['path/to/server.py']);
+$session = $client->stdio($pythonConfig);
+
+// 使用环境变量连接（禁用思考日志）
+$customConfig = new StdioConfig('npx', ['-y', '@modelcontextprotocol/server-sequential-thinking']);
+$customConfig->setEnv([
+    'DISABLE_THOUGHT_LOGGING' => 'true',
+]);
+$session = $client->stdio($customConfig);
+```
+
+**传统方法（已弃用）**：
+```php
+// ⚠️ 此方法已弃用，请使用 stdio() 快捷方法
 $session = $client->connect('stdio', [
     'command' => 'node',
     'args' => ['path/to/server.js'],
 ]);
-
-// 连接到 Python MCP 服务器
-$session = $client->connect('stdio', [
-    'command' => 'python',
-    'args' => ['path/to/server.py'],
-]);
-
-// 连接到任何可执行文件
-$session = $client->connect('stdio', [
-    'command' => '/usr/local/bin/my-mcp-server',
-    'args' => ['--config', 'config.json'],
-    'env' => [
-        'MCP_LOG_LEVEL' => 'debug',
-        'MCP_CONFIG_PATH' => '/etc/mcp/',
-    ],
-]);
 ```
 
-### 3. 使用工具
+### 3. 使用 Sequential Thinking 工具
 
 ```php
 // 列出可用工具
@@ -100,10 +122,58 @@ foreach ($toolsResult->getTools() as $tool) {
     echo "- {$tool->getName()}: {$tool->getDescription()}\n";
 }
 
-// 调用工具
+// 使用 Sequential Thinking 进行问题解决
 try {
-    $result = $session->callTool('echo', ['message' => '来自客户端的问候！']);
-    echo "工具结果：\n";
+    // 开始第一个思考步骤
+    $result = $session->callTool('sequential_thinking', [
+        'thought' => '让我来分解这个复杂问题：如何构建一个可扩展的 Web 应用程序？',
+        'nextThoughtNeeded' => true,
+        'thoughtNumber' => 1,
+        'totalThoughts' => 5,
+    ]);
+    
+    echo "第一个思考步骤已处理：\n";
+    foreach ($result->getContent() as $content) {
+        if ($content instanceof \Dtyq\PhpMcp\Types\Content\TextContent) {
+            echo $content->getText() . "\n";
+        }
+    }
+    
+    // 继续下一个思考步骤
+    $result = $session->callTool('sequential_thinking', [
+        'thought' => '我需要考虑架构：微服务 vs 单体应用架构。',
+        'nextThoughtNeeded' => true,
+        'thoughtNumber' => 2,
+        'totalThoughts' => 5,
+    ]);
+    
+    // 分支到替代思考路径
+    $result = $session->callTool('sequential_thinking', [
+        'thought' => '实际上，让我探索一个不同的方法 - 无服务器架构。',
+        'nextThoughtNeeded' => true,
+        'thoughtNumber' => 3,
+        'totalThoughts' => 6,
+        'branchFromThought' => 2,
+        'branchId' => 'serverless-branch',
+        'needsMoreThoughts' => true,
+    ]);
+    
+    echo "顺序思考过程完成！\n";
+    
+} catch (Exception $e) {
+    echo "顺序思考失败：" . $e->getMessage() . "\n";
+}
+
+// 简单工具调用示例
+try {
+    $result = $session->callTool('sequential_thinking', [
+        'thought' => '选择数据库的关键因素有哪些？',
+        'nextThoughtNeeded' => false,
+        'thoughtNumber' => 1,
+        'totalThoughts' => 1,
+    ]);
+    
+    echo "单个思考结果：\n";
     foreach ($result->getContent() as $content) {
         if ($content instanceof \Dtyq\PhpMcp\Types\Content\TextContent) {
             echo $content->getText() . "\n";
@@ -111,22 +181,6 @@ try {
     }
 } catch (Exception $e) {
     echo "工具调用失败：" . $e->getMessage() . "\n";
-}
-
-// 使用复杂参数调用工具
-$calcResult = $session->callTool('calculate', [
-    'operation' => 'multiply',
-    'a' => 15,
-    'b' => 7,
-]);
-
-$content = $calcResult->getContent();
-if (!empty($content)) {
-    $firstContent = $content[0];
-    if ($firstContent instanceof \Dtyq\PhpMcp\Types\Content\TextContent) {
-        $data = json_decode($firstContent->getText(), true);
-        echo "计算结果：{$data['result']}\n";
-    }
 }
 ```
 

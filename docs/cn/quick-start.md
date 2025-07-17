@@ -85,6 +85,7 @@ $server
 require_once 'vendor/autoload.php';
 
 use Dtyq\PhpMcp\Client\McpClient;
+use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Types\Content\TextContent;
 
@@ -111,12 +112,10 @@ try {
     $app = new Application($container, ['sdk_name' => 'my-first-client']);
     $client = new McpClient('my-first-client', '1.0.0', $app);
 
-    // 连接到我们的服务器
+    // 使用新的快捷方法连接到我们的服务器
     echo "1. 连接到服务器...\n";
-    $session = $client->connect('stdio', [
-        'command' => 'php',
-        'args' => [__DIR__ . '/my-server.php'],
-    ]);
+    $config = new StdioConfig('php', [__DIR__ . '/my-server.php']);
+    $session = $client->stdio($config);
 
     $session->initialize();
     echo "   ✓ 连接成功！\n";
@@ -310,11 +309,8 @@ $container = new class implements \Psr\Container\ContainerInterface {
 ### 问题："连接超时"错误
 **解决方案：** 在您的客户端配置中增加超时时间：
 ```php
-$session = $client->connect('stdio', [
-    'command' => 'php',
-    'args' => ['my-server.php'],
-    'timeout' => 60, // 将超时时间增加到 60 秒
-]);
+$config = new StdioConfig('php', ['my-server.php'], 60); // 60 秒超时
+$session = $client->stdio($config);
 ```
 
 ### 问题："JSON-RPC 解析错误"

@@ -7,93 +7,251 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Client;
 
-use Dtyq\PhpMcp\Client\Configuration\ClientConfig;
+use Dtyq\PhpMcp\Client\Configuration\ConnectionConfig;
+use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
+use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
 use Dtyq\PhpMcp\Client\Core\ClientStats;
 use Dtyq\PhpMcp\Client\Session\ClientSession;
 use Dtyq\PhpMcp\Client\Session\SessionManager;
 use Dtyq\PhpMcp\Client\Session\SessionMetadata;
 use Dtyq\PhpMcp\Client\Transport\TransportFactory;
-use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
-use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
 use Dtyq\PhpMcp\Types\Constants\TransportTypes;
-use Exception;
 
 /**
- * Main MCP client for connecting to MCP servers.
+ * MCP client for connecting to MCP servers.
+ * 用于连接 MCP 服务器的 MCP 客户端。
  *
- * This is the primary interface for users to interact with MCP servers.
- * It provides a simplified API for establishing connections and managing sessions.
+ * This client provides a high-level interface for connecting to MCP servers
+ * using different transport mechanisms (stdio, HTTP) with type-safe configuration
+ * and comprehensive session management.
+ * 此客户端提供了一个高级接口，用于使用不同的传输机制（stdio、HTTP）
+ * 连接到 MCP 服务器，具有类型安全的配置和全面的会话管理。
  */
 class McpClient
 {
+    /**
+     * Client name for identification.
+     * 用于标识的客户端名称。
+     */
     private string $name;
 
+    /**
+     * Client version.
+     * 客户端版本。
+     */
     private string $version;
 
+    /**
+     * Application instance.
+     * 应用程序实例。
+     */
     private Application $application;
 
-    /** @var SessionManager Session manager for handling multiple sessions */
+    /**
+     * Session manager for managing client sessions.
+     * 用于管理客户端会话的会话管理器。
+     */
     private SessionManager $sessionManager;
 
-    /** @var ClientStats Connection statistics and metrics */
+    /**
+     * Client statistics.
+     * 客户端统计信息。
+     */
     private ClientStats $stats;
 
-    private LoggerProxy $logger;
-
     /**
-     * @param string $name Client name for identification
-     * @param string $version Client version
-     * @param Application $application Application container
+     * @param string $name Client name / 客户端名称
+     * @param string $version Client version / 客户端版本
+     * @param Application $application Application instance / 应用程序实例
      */
-    public function __construct(
-        string $name,
-        string $version,
-        Application $application
-    ) {
+    public function __construct(string $name, string $version, Application $application)
+    {
         $this->name = $name;
         $this->version = $version;
         $this->application = $application;
-        $this->logger = $application->getLogger();
         $this->sessionManager = new SessionManager();
         $this->stats = new ClientStats();
     }
 
     /**
-     * Cleanup resources on destruction.
+     * Create a stdio connection with stdio configuration.
+     * 使用 stdio 配置创建 stdio 连接。
+     *
+     * This is a convenience method that directly accepts a StdioConfig object
+     * and creates a stdio transport connection.
+     * 这是一个便捷方法，直接接受 StdioConfig 对象并创建 stdio 传输连接。
+     *
+     * @param StdioConfig $config Stdio configuration / Stdio 配置
+     * @return ClientSession The created session / 创建的会话
+     * @throws ValidationError If configuration is invalid / 如果配置无效
      */
-    public function __destruct()
+    public function stdio(StdioConfig $config): ClientSession
     {
-        $this->close();
+        return $this->createStdioSession($config);
     }
 
     /**
-     * Connect to an MCP server using specified transport.
+     * Create an HTTP connection with HTTP configuration.
+     * 使用 HTTP 配置创建 HTTP 连接。
      *
-     * @param string $transportType Transport type (e.g., 'stdio', 'http')
-     * @param array<string, mixed> $config Transport configuration
-     * @return ClientSession The created session
-     * @throws TransportError If connection fails
+     * This is a convenience method that directly accepts an HttpConfig object
+     * and creates an HTTP transport connection.
+     * 这是一个便捷方法，直接接受 HttpConfig 对象并创建 HTTP 传输连接。
+     *
+     * @param HttpConfig $config HTTP configuration / HTTP 配置
+     * @return ClientSession The created session / 创建的会话
+     * @throws ValidationError If configuration is invalid / 如果配置无效
      */
-    public function connect(string $transportType, array $config): ClientSession
+    public function http(HttpConfig $config): ClientSession
+    {
+        return $this->createHttpSession($config);
+    }
+
+    /**
+     * Connect to an MCP server.
+     * 连接到 MCP 服务器。
+     *
+     * @deprecated Use stdio() or http() shortcut methods instead. This method may be removed in future versions.
+     * @deprecated 建议使用 stdio() 或 http() 快捷方法。此方法可能在未来版本中被移除。
+     *
+     * @param string $transportType Transport type (stdio, http) / 传输类型（stdio、http）
+     * @param array<string, mixed>|ConnectionConfig $config Configuration / 配置
+     * @return ClientSession The created session / 创建的会话
+     * @throws ValidationError If transport type is invalid or configuration is malformed / 如果传输类型无效或配置格式错误
+     */
+    public function connect(string $transportType, $config = []): ClientSession
+    {
+        // Validate transport type
+        $this->validateTransportType($transportType);
+
+        // Convert array config to ConnectionConfig if needed
+        if (is_array($config)) {
+            $connectionConfig = ConnectionConfig::fromArray($transportType, $config);
+        } elseif ($config instanceof ConnectionConfig) {
+            $connectionConfig = $config;
+
+            // Validate that transport type matches
+            if ($connectionConfig->getTransportType() !== $transportType) {
+                throw ValidationError::invalidFieldValue(
+                    'transportType',
+                    'Transport type mismatch',
+                    [
+                        'expected' => $transportType,
+                        'actual' => $connectionConfig->getTransportType(),
+                    ]
+                );
+            }
+        } else {
+            throw ValidationError::invalidFieldType(
+                'config',
+                'array or ConnectionConfig',
+                gettype($config)
+            );
+        }
+
+        // Create session based on transport type
+        switch ($transportType) {
+            case TransportTypes::TRANSPORT_TYPE_STDIO:
+                return $this->createStdioSession($connectionConfig->getStdioConfig());
+            case TransportTypes::TRANSPORT_TYPE_HTTP:
+                return $this->createHttpSession($connectionConfig->getHttpConfig());
+            default:
+                throw ValidationError::invalidFieldValue(
+                    'transportType',
+                    'Unsupported transport type',
+                    ['type' => $transportType]
+                );
+        }
+    }
+
+    /**
+     * Disconnect from a server session.
+     *
+     * @param string $sessionId Session ID to disconnect
+     * @throws ValidationError If session is not found
+     */
+    public function disconnect(string $sessionId): void
+    {
+        $session = $this->getSession($sessionId);
+        if ($session === null) {
+            throw ValidationError::invalidFieldValue(
+                'sessionId',
+                'Session not found',
+                ['sessionId' => $sessionId]
+            );
+        }
+
+        $session->close();
+        $this->sessionManager->removeSession($sessionId);
+    }
+
+    /**
+     * Get a session by ID.
+     *
+     * @param string $sessionId Session ID
+     * @return null|ClientSession Session instance or null if not found
+     */
+    public function getSession(string $sessionId): ?ClientSession
     {
         try {
-            $session = $this->createSession($transportType, $config);
-
-            $this->logger->info('Successfully connected to MCP server', ['session_id' => $session->getSessionId()]);
-
-            $this->stats->recordConnectionAttempt();
-            return $session;
-        } catch (Exception $e) {
-            $this->logger->error('Failed to connect to MCP server', [
-                'error' => $e->getMessage(),
-                'transport' => $transportType,
-            ]);
-
-            $this->stats->recordConnectionError();
-            throw TransportError::startupFailed($transportType, $e->getMessage());
+            return $this->sessionManager->getSession($sessionId);
+        } catch (ValidationError $e) {
+            return null;
         }
+    }
+
+    /**
+     * Get all active sessions.
+     *
+     * @return array<string, ClientSession> Array of session ID => session
+     */
+    public function getSessions(): array
+    {
+        $sessions = [];
+        foreach ($this->sessionManager->getSessionIds() as $sessionId) {
+            $session = $this->getSession($sessionId);
+            if ($session !== null) {
+                $sessions[$sessionId] = $session;
+            }
+        }
+        return $sessions;
+    }
+
+    /**
+     * Get session manager.
+     * 获取会话管理器。
+     *
+     * @return SessionManager Session manager instance / 会话管理器实例
+     */
+    public function getSessionManager(): SessionManager
+    {
+        return $this->sessionManager;
+    }
+
+    /**
+     * Get client name.
+     */
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    /**
+     * Get client version.
+     */
+    public function getVersion(): string
+    {
+        return $this->version;
+    }
+
+    /**
+     * Get application instance.
+     */
+    public function getApplication(): Application
+    {
+        return $this->application;
     }
 
     /**
@@ -101,31 +259,7 @@ class McpClient
      */
     public function close(): void
     {
-        try {
-            $this->sessionManager->closeAll();
-
-            $this->stats->recordClosure();
-            $this->logger->info('MCP client closed successfully');
-        } catch (Exception $e) {
-            $this->logger->error('Error while closing MCP client', [
-                'error' => $e->getMessage(),
-                'client' => $this->name,
-            ]);
-
-            $this->stats->recordCloseError();
-        }
-    }
-
-    /**
-     * Get a specific session by ID.
-     *
-     * @param string $sessionId Session ID
-     * @return ClientSession The session
-     * @throws ValidationError If session not found
-     */
-    public function getSession(string $sessionId): ClientSession
-    {
-        return $this->sessionManager->getSession($sessionId);
+        $this->sessionManager->closeAll();
     }
 
     /**
@@ -160,7 +294,7 @@ class McpClient
     }
 
     /**
-     * Remove a specific session.
+     * Remove a session from the manager.
      *
      * @param string $sessionId Session ID to remove
      * @return bool True if session was removed
@@ -172,8 +306,9 @@ class McpClient
 
     /**
      * Get client statistics.
+     * 获取客户端统计信息。
      *
-     * @return ClientStats Statistics data
+     * @return ClientStats Client statistics / 客户端统计信息
      */
     public function getStats(): ClientStats
     {
@@ -187,84 +322,82 @@ class McpClient
     }
 
     /**
-     * Create a session for the specified transport type.
+     * Validate transport type.
+     * 验证传输类型。
      *
-     * @param string $transportType Transport type
-     * @param array<string, mixed> $config Transport configuration
-     * @return ClientSession The created session
-     * @throws ValidationError If configuration is invalid
+     * @param string $transportType Transport type to validate / 要验证的传输类型
+     * @throws ValidationError If transport type is invalid / 如果传输类型无效
      */
-    private function createSession(string $transportType, array $config): ClientSession
+    private function validateTransportType(string $transportType): void
     {
-        switch ($transportType) {
-            case TransportTypes::TRANSPORT_TYPE_STDIO:
-                $session = $this->createStdioSession($config);
-                break;
-            case TransportTypes::TRANSPORT_TYPE_HTTP:
-                $session = $this->createHttpSession($config);
-                break;
-            default:
-                throw ValidationError::invalidFieldValue(
-                    'transportType',
-                    'Unsupported transport type',
-                    [
-                        'type' => $transportType,
-                        'supported' => [
-                            TransportTypes::TRANSPORT_TYPE_STDIO,
-                            TransportTypes::TRANSPORT_TYPE_HTTP,
-                        ],
-                    ]
-                );
+        $supportedTypes = [
+            TransportTypes::TRANSPORT_TYPE_STDIO,
+            TransportTypes::TRANSPORT_TYPE_HTTP,
+        ];
+
+        if (! in_array($transportType, $supportedTypes, true)) {
+            throw ValidationError::invalidFieldValue(
+                'transportType',
+                'Unsupported transport type',
+                [
+                    'type' => $transportType,
+                    'supported' => $supportedTypes,
+                ]
+            );
         }
+    }
+
+    /**
+     * Create stdio session with configuration.
+     * 使用配置创建 stdio 会话。
+     *
+     * @param StdioConfig $stdioConfig Stdio configuration / Stdio 配置
+     * @return ClientSession The created session / 创建的会话
+     * @throws ValidationError If configuration is invalid / 如果配置无效
+     */
+    private function createStdioSession(StdioConfig $stdioConfig): ClientSession
+    {
+        // Validate configuration before creating session
+        $stdioConfig->validate();
+
+        // Create transport using factory with config object
+        $transport = TransportFactory::create($stdioConfig, $this->application);
+
+        // Connect transport
+        $transport->connect();
+
+        // Create session metadata
+        $metadata = SessionMetadata::fromArray([
+            'client_name' => $this->name,
+            'client_version' => $this->version,
+            'response_timeout' => $stdioConfig->getReadTimeout(),
+            'initialization_timeout' => $stdioConfig->getReadTimeout() * 2,
+        ]);
+
+        // Create session
+        $session = new ClientSession($transport, $metadata);
+
+        // Add session to manager
         $this->sessionManager->addSession($session->getSessionId(), $session);
+
         return $session;
     }
 
     /**
-     * Create a stdio session.
+     * Create HTTP session with configuration.
+     * 使用配置创建 HTTP 会话。
      *
-     * @param array<string, mixed> $config Stdio configuration
-     * @return ClientSession The created session
-     * @throws ValidationError If configuration is invalid
+     * @param HttpConfig $httpConfig HTTP configuration / HTTP 配置
+     * @return ClientSession The created session / 创建的会话
+     * @throws ValidationError If configuration is invalid / 如果配置无效
      */
-    private function createStdioSession(array $config): ClientSession
+    private function createHttpSession(HttpConfig $httpConfig): ClientSession
     {
-        // Validate required stdio config
-        if (! isset($config['command'])) {
-            throw ValidationError::emptyField('command');
-        }
+        // Validate configuration before creating session
+        $httpConfig->validate();
 
-        // Normalize command to array BEFORE creating transport config
-        $command = is_array($config['command']) ? $config['command'] : [$config['command']];
-
-        // Add args if provided
-        if (isset($config['args']) && is_array($config['args'])) {
-            $command = array_merge($command, $config['args']);
-        }
-
-        // Create transport config with normalized command array
-        $transportConfig = array_merge([
-            'command' => $command, // This is now guaranteed to be an array
-            'read_timeout' => 30.0,
-            'write_timeout' => 30.0,
-            'shutdown_timeout' => 5.0,
-        ], $config);
-
-        // Override the command in the config to ensure it's the normalized array
-        $transportConfig['command'] = $command;
-
-        // Create client config
-        $clientConfig = new ClientConfig(
-            TransportTypes::TRANSPORT_TYPE_STDIO,
-            $transportConfig
-        );
-
-        // Create transport using factory
-        $transport = TransportFactory::create(
-            TransportTypes::TRANSPORT_TYPE_STDIO,
-            $clientConfig,
-            $this->application
-        );
+        // Create transport using factory with config object
+        $transport = TransportFactory::create($httpConfig, $this->application);
 
         // Connect transport
         $transport->connect();
@@ -273,71 +406,16 @@ class McpClient
         $metadata = SessionMetadata::fromArray([
             'client_name' => $this->name,
             'client_version' => $this->version,
-            'response_timeout' => $transportConfig['read_timeout'],
-            'initialization_timeout' => $transportConfig['read_timeout'] * 2,
+            'response_timeout' => $httpConfig->getTimeout(),
+            'initialization_timeout' => $httpConfig->getTimeout() * 2,
         ]);
 
         // Create session
-        return new ClientSession($transport, $metadata);
-    }
+        $session = new ClientSession($transport, $metadata);
 
-    /**
-     * Create an HTTP session.
-     *
-     * @param array<string, mixed> $config HTTP configuration
-     * @return ClientSession The created session
-     * @throws ValidationError If configuration is invalid
-     */
-    private function createHttpSession(array $config): ClientSession
-    {
-        // Validate required HTTP config
-        if (! isset($config['base_url'])) {
-            throw ValidationError::emptyField('base_url');
-        }
+        // Add session to manager
+        $this->sessionManager->addSession($session->getSessionId(), $session);
 
-        // Create transport config with defaults
-        $transportConfig = array_merge([
-            'timeout' => 30.0,
-            'sse_timeout' => 300.0,
-            'max_retries' => 3,
-            'retry_delay' => 1.0,
-            'validate_ssl' => true,
-            'user_agent' => 'php-mcp-client/1.0',
-            'headers' => [],
-            'auth' => null,
-            'protocol_version' => 'auto',
-            'enable_resumption' => true,
-            'event_store_type' => 'memory',
-            'event_store_config' => [],
-            'json_response_mode' => false,
-            'terminate_on_close' => true,
-        ], $config);
-
-        // Create client config
-        $clientConfig = new ClientConfig(
-            TransportTypes::TRANSPORT_TYPE_HTTP,
-            $transportConfig
-        );
-
-        // Create transport using factory
-        $transport = TransportFactory::create(
-            TransportTypes::TRANSPORT_TYPE_HTTP,
-            $clientConfig,
-            $this->application
-        );
-
-        // Connect transport
-        $transport->connect();
-
-        // Create session metadata
-        $metadata = SessionMetadata::fromArray([
-            'client_name' => $this->name,
-            'client_version' => $this->version,
-            'response_timeout' => $transportConfig['timeout'],
-            'initialization_timeout' => $transportConfig['timeout'] * 2,
-        ]);
-
-        // Create session
-        return new ClientSession($transport, $metadata);
+        return $session;
     }
 }

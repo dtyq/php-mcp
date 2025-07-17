@@ -102,14 +102,29 @@ $server->stdio(); // or $server->http($request)
 ```php
 <?php
 use Dtyq\PhpMcp\Client\McpClient;
+use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
 
 $client = new McpClient('my-client', '1.0.0', $app);
-$session = $client->connect('stdio', ['command' => 'php server.php']);
+
+// ✅ Recommended: Use shortcut methods with typed configuration
+$config = new StdioConfig('php server.php');
+$session = $client->stdio($config);
 $session->initialize();
 
 // Call a tool
 $result = $session->callTool('echo', ['message' => 'Hello, MCP!']);
 echo $result->getContent()[0]->getText();
+```
+
+**Alternative Methods**:
+```php
+// HTTP shortcut method
+use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
+$httpConfig = new HttpConfig('http://localhost:8080/mcp');
+$session = $client->http($httpConfig);
+
+// ⚠️ Legacy method (deprecated)
+$session = $client->connect('stdio', ['command' => 'php server.php']);
 ```
 
 ## 📖 Documentation

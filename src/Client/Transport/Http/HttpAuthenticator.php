@@ -138,7 +138,7 @@ class HttpAuthenticator
      */
     private function addBearerAuth(array $headers, array $authConfig): array
     {
-        if (! isset($authConfig['token']) || ! is_string($authConfig['token'])) {
+        if (! isset($authConfig['token']) || ! is_string($authConfig['token']) || empty($authConfig['token'])) {
             throw new TransportError('Bearer token is required but not provided');
         }
 
@@ -159,8 +159,9 @@ class HttpAuthenticator
             throw new TransportError('Username and password are required for Basic authentication');
         }
 
-        if (! is_string($authConfig['username']) || ! is_string($authConfig['password'])) {
-            throw new TransportError('Username and password must be strings');
+        if (! is_string($authConfig['username']) || ! is_string($authConfig['password'])
+            || empty($authConfig['username']) || empty($authConfig['password'])) {
+            throw new TransportError('Username and password are required for Basic authentication');
         }
 
         $credentials = base64_encode($authConfig['username'] . ':' . $authConfig['password']);

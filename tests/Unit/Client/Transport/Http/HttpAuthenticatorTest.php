@@ -10,7 +10,6 @@ namespace Dtyq\PhpMcp\Tests\Unit\Client\Transport\Http;
 use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
 use Dtyq\PhpMcp\Client\Transport\Http\HttpAuthenticator;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
-use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -69,11 +68,11 @@ class HttpAuthenticatorTest extends TestCase
 
     public function testAddBearerAuthMissingToken(): void
     {
-        $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('Invalid value for field \'auth.token\': is required for bearer authentication');
+        $this->expectException(TransportError::class);
+        $this->expectExceptionMessage('Bearer token is required but not provided');
 
         $authConfig = ['type' => 'bearer'];
-        new HttpConfig(
+        $config = new HttpConfig(
             'https://example.com',        // baseUrl
             15.0, // timeout
             300.0,                        // sseTimeout
@@ -84,15 +83,17 @@ class HttpAuthenticatorTest extends TestCase
             [],                           // headers
             $authConfig                   // auth
         );
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $authenticator->addAuthHeaders([]);
     }
 
     public function testAddBearerAuthInvalidToken(): void
     {
-        $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('Invalid value for field \'auth.token\': is required for bearer authentication');
+        $this->expectException(TransportError::class);
+        $this->expectExceptionMessage('Bearer token is required but not provided');
 
         $authConfig = ['type' => 'bearer', 'token' => 123];
-        new HttpConfig(
+        $config = new HttpConfig(
             'https://example.com',        // baseUrl
             15.0, // timeout
             300.0,                        // sseTimeout
@@ -103,6 +104,8 @@ class HttpAuthenticatorTest extends TestCase
             [],                           // headers
             $authConfig                   // auth
         );
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $authenticator->addAuthHeaders([]);
     }
 
     public function testAddBasicAuth(): void
@@ -131,11 +134,11 @@ class HttpAuthenticatorTest extends TestCase
 
     public function testAddBasicAuthMissingUsername(): void
     {
-        $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('Invalid value for field \'auth.username\': is required for basic authentication');
+        $this->expectException(TransportError::class);
+        $this->expectExceptionMessage('Username and password are required for Basic authentication');
 
         $authConfig = ['type' => 'basic', 'password' => 'pass'];
-        new HttpConfig(
+        $config = new HttpConfig(
             'https://example.com',        // baseUrl
             15.0, // timeout
             300.0,                        // sseTimeout
@@ -146,15 +149,17 @@ class HttpAuthenticatorTest extends TestCase
             [],                           // headers
             $authConfig                   // auth
         );
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $authenticator->addAuthHeaders([]);
     }
 
     public function testAddBasicAuthMissingPassword(): void
     {
-        $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('Invalid value for field \'auth.password\': is required for basic authentication');
+        $this->expectException(TransportError::class);
+        $this->expectExceptionMessage('Username and password are required for Basic authentication');
 
         $authConfig = ['type' => 'basic', 'username' => 'user'];
-        new HttpConfig(
+        $config = new HttpConfig(
             'https://example.com',        // baseUrl
             15.0, // timeout
             300.0,                        // sseTimeout
@@ -165,15 +170,17 @@ class HttpAuthenticatorTest extends TestCase
             [],                           // headers
             $authConfig                   // auth
         );
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $authenticator->addAuthHeaders([]);
     }
 
     public function testAddBasicAuthInvalidCredentials(): void
     {
-        $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('Invalid value for field \'auth.username\': is required for basic authentication');
+        $this->expectException(TransportError::class);
+        $this->expectExceptionMessage('Username and password are required for Basic authentication');
 
         $authConfig = ['type' => 'basic', 'username' => 123, 'password' => 'pass'];
-        new HttpConfig(
+        $config = new HttpConfig(
             'https://example.com',        // baseUrl
             15.0, // timeout
             300.0,                        // sseTimeout
@@ -184,6 +191,8 @@ class HttpAuthenticatorTest extends TestCase
             [],                           // headers
             $authConfig                   // auth
         );
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $authenticator->addAuthHeaders([]);
     }
 
     public function testAddCustomAuth(): void
@@ -213,11 +222,11 @@ class HttpAuthenticatorTest extends TestCase
 
     public function testAddCustomAuthMissingHeaders(): void
     {
-        $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('Invalid value for field \'auth.headers\': is required for custom authentication');
+        $this->expectException(TransportError::class);
+        $this->expectExceptionMessage('Custom headers are required for custom authentication');
 
         $authConfig = ['type' => 'custom'];
-        new HttpConfig(
+        $config = new HttpConfig(
             'https://example.com',        // baseUrl
             15.0, // timeout
             300.0,                        // sseTimeout
@@ -228,6 +237,8 @@ class HttpAuthenticatorTest extends TestCase
             [],                           // headers
             $authConfig                   // auth
         );
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $authenticator->addAuthHeaders([]);
     }
 
     public function testAddCustomAuthInvalidHeaders(): void
@@ -509,10 +520,10 @@ class HttpAuthenticatorTest extends TestCase
     {
         $authConfig = ['type' => 'invalid'];
 
-        $this->expectException(ValidationError::class);
-        $this->expectExceptionMessage('must be one of: bearer, basic, oauth2, custom');
+        $this->expectException(TransportError::class);
+        $this->expectExceptionMessage('Unsupported authentication type: invalid');
 
-        new HttpConfig(
+        $config = new HttpConfig(
             'https://example.com',        // baseUrl
             15.0, // timeout
             300.0,                        // sseTimeout
@@ -523,15 +534,18 @@ class HttpAuthenticatorTest extends TestCase
             [],                           // headers
             $authConfig                   // auth
         );
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $authenticator->addAuthHeaders([]);
     }
 
     public function testMissingBasicCredentials(): void
     {
         $authConfig = ['type' => 'basic'];
 
-        $this->expectException(ValidationError::class);
+        $this->expectException(TransportError::class);
+        $this->expectExceptionMessage('Username and password are required for Basic authentication');
 
-        new HttpConfig(
+        $config = new HttpConfig(
             'https://example.com',        // baseUrl
             15.0, // timeout
             300.0,                        // sseTimeout
@@ -542,6 +556,8 @@ class HttpAuthenticatorTest extends TestCase
             [],                           // headers
             $authConfig                   // auth
         );
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $authenticator->addAuthHeaders([]);
     }
 
     public function testBearerAuth(): void
@@ -574,9 +590,10 @@ class HttpAuthenticatorTest extends TestCase
     {
         $authConfig = ['type' => 'bearer'];
 
-        $this->expectException(ValidationError::class);
+        $this->expectException(TransportError::class);
+        $this->expectExceptionMessage('Bearer token is required but not provided');
 
-        new HttpConfig(
+        $config = new HttpConfig(
             'https://example.com',        // baseUrl
             15.0, // timeout
             300.0,                        // sseTimeout
@@ -587,15 +604,18 @@ class HttpAuthenticatorTest extends TestCase
             [],                           // headers
             $authConfig                   // auth
         );
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $authenticator->addAuthHeaders([]);
     }
 
     public function testEmptyBearerToken(): void
     {
         $authConfig = ['type' => 'bearer', 'token' => ''];
 
-        $this->expectException(ValidationError::class);
+        $this->expectException(TransportError::class);
+        $this->expectExceptionMessage('Bearer token is required but not provided');
 
-        new HttpConfig(
+        $config = new HttpConfig(
             'https://example.com',        // baseUrl
             15.0, // timeout
             300.0,                        // sseTimeout
@@ -606,15 +626,18 @@ class HttpAuthenticatorTest extends TestCase
             [],                           // headers
             $authConfig                   // auth
         );
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $authenticator->addAuthHeaders([]);
     }
 
     public function testEmptyBasicUsername(): void
     {
         $authConfig = ['type' => 'basic', 'username' => '', 'password' => 'pass'];
 
-        $this->expectException(ValidationError::class);
+        $this->expectException(TransportError::class);
+        $this->expectExceptionMessage('Username and password are required for Basic authentication');
 
-        new HttpConfig(
+        $config = new HttpConfig(
             'https://example.com',        // baseUrl
             15.0, // timeout
             300.0,                        // sseTimeout
@@ -625,6 +648,8 @@ class HttpAuthenticatorTest extends TestCase
             [],                           // headers
             $authConfig                   // auth
         );
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $authenticator->addAuthHeaders([]);
     }
 
     public function testCustomHeaders(): void
@@ -660,9 +685,10 @@ class HttpAuthenticatorTest extends TestCase
     {
         $authConfig = ['type' => 'basic', 'username' => 'user'];
 
-        $this->expectException(ValidationError::class);
+        $this->expectException(TransportError::class);
+        $this->expectExceptionMessage('Username and password are required for Basic authentication');
 
-        new HttpConfig(
+        $config = new HttpConfig(
             'https://example.com',        // baseUrl
             15.0, // timeout
             300.0,                        // sseTimeout
@@ -673,6 +699,8 @@ class HttpAuthenticatorTest extends TestCase
             [],                           // headers
             $authConfig                   // auth
         );
+        $authenticator = new HttpAuthenticator($config, $this->logger);
+        $authenticator->addAuthHeaders([]);
     }
 
     public function testOAuth2WithClientCredentials(): void
