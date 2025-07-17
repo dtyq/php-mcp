@@ -40,7 +40,7 @@ Shared/
 - `McpError.php` - 所有 MCP 相关错误的基础异常类
 - `ValidationError.php` - 输入验证和数据格式错误的异常
 - `AuthenticationError.php` - 身份验证和 OAuth 相关错误的异常
-- `TransportError.php` - 传输层错误的异常（HTTP、WebSocket 等）
+- `TransportError.php` - 传输层错误的异常（HTTP、SSE 等）
 - `ProtocolError.php` - MCP 协议违规的异常
 - `SystemException.php` - 系统级错误的异常
 - `ErrorData.php` - 错误信息的数据结构

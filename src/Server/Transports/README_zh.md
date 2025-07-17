@@ -279,7 +279,7 @@ composer test -- tests/Unit/Server/Transports/
 
 架构支持额外的传输实现：
 
-- **HTTP 传输**: REST/WebSocket 支持
+- **HTTP 传输**: 增强的 REST 支持
 - **TCP 传输**: 直接套接字通信
 - **IPC 传输**: 进程间通信
 - **自定义协议**: 特定领域的实现

@@ -13,7 +13,7 @@ use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
  * Interface for MCP transport implementations.
  *
  * This interface defines the contract for different transport mechanisms
- * (stdio, HTTP, WebSocket, etc.) used to communicate with MCP servers.
+ * (stdio, HTTP, SSE, etc.) used to communicate with MCP servers.
  */
 interface TransportInterface
 {
@@ -71,7 +71,7 @@ interface TransportInterface
      * Get the transport type identifier.
      *
      * This method returns a string identifier for the transport type
-     * (e.g., "stdio", "http", "websocket") for logging and debugging.
+     * (e.g., "stdio", "http", "sse") for logging and debugging.
      *
      * @return string The transport type identifier
      */

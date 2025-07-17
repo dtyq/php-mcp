@@ -32,7 +32,7 @@ class ClientConfig
         'debug' => false,
     ];
 
-    /** @var string The transport type (stdio, http, websocket, etc.) */
+    /** @var string The transport type (stdio, http, sse, etc.) */
     private string $transportType;
 
     /** @var array<string, mixed> Transport-specific configuration */

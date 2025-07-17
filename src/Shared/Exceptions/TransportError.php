@@ -182,17 +182,6 @@ class TransportError extends McpError
     }
 
     /**
-     * Create a TransportError for WebSocket transport errors.
-     *
-     * @param string $message The error message
-     * @param mixed $data Additional error data (optional)
-     */
-    public static function webSocketError(string $message, $data = null): TransportError
-    {
-        return new self("WebSocket transport error: {$message}", $data);
-    }
-
-    /**
      * Create a TransportError for malformed message.
      *
      * @param string $transport The transport type

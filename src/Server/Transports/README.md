@@ -279,7 +279,7 @@ Enable detailed logging for transport debugging:
 
 The architecture supports additional transport implementations:
 
-- **HTTP Transport**: REST/WebSocket support
+- **HTTP Transport**: Enhanced REST support
 - **TCP Transport**: Direct socket communication
 - **IPC Transport**: Inter-process communication
 - **Custom Protocols**: Domain-specific implementations

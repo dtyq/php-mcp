@@ -48,10 +48,10 @@ class ExceptionFactoryTest extends TestCase
         $this->assertStringContainsString('30', $error->getMessage());
         $this->assertSame(ErrorCodes::TRANSPORT_ERROR, $error->getErrorCode());
 
-        $error = TransportError::connectionRefused('WebSocket', 'ws://localhost:8080');
+        $error = TransportError::connectionRefused('HTTP', 'https://localhost:8080');
         $this->assertInstanceOf(TransportError::class, $error);
-        $this->assertStringContainsString('WebSocket', $error->getMessage());
-        $this->assertStringContainsString('ws://localhost:8080', $error->getMessage());
+        $this->assertStringContainsString('HTTP', $error->getMessage());
+        $this->assertStringContainsString('https://localhost:8080', $error->getMessage());
 
         $error = TransportError::httpError(404, 'Not Found');
         $this->assertInstanceOf(TransportError::class, $error);

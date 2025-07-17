@@ -40,7 +40,7 @@ Contains comprehensive exception handling classes for the MCP protocol, includin
 - `McpError.php` - Base exception class for all MCP-related errors
 - `ValidationError.php` - Exception for input validation and data format errors
 - `AuthenticationError.php` - Exception for authentication and OAuth-related errors
-- `TransportError.php` - Exception for transport layer errors (HTTP, WebSocket, etc.)
+- `TransportError.php` - Exception for transport layer errors (HTTP, SSE, etc.)
 - `ProtocolError.php` - Exception for MCP protocol violations
 - `SystemException.php` - Exception for system-level errors
 - `ErrorData.php` - Data structure for error information
@@ -407,7 +407,7 @@ The Shared directory provides the foundation for:
 
 1. **Client Implementation**: Message creation, error handling, transport utilities
 2. **Server Implementation**: Request processing, response generation, notification sending
-3. **Transport Layers**: HTTP, WebSocket, STDIO transport implementations
+3. **Transport Layers**: HTTP, SSE, STDIO transport implementations
 4. **Protocol Compliance**: JSON-RPC 2.0 and MCP 2025-03-26 specification adherence
 
 ## Error Handling Flow
@@ -424,7 +424,7 @@ ValidationError → McpError → TransportError → JsonRpcMessage
 // 1. Create request
 $request = MessageUtils::createListToolsRequest(1);
 
-// 2. Send via transport (HTTP, WebSocket, etc.)
+// 2. Send via transport (HTTP, SSE, etc.)
 $response = $transport->send($request);
 
 // 3. Handle response or error

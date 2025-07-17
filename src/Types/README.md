@@ -79,7 +79,6 @@ Foundation types and interfaces that define the basic protocol structure:
 ProtocolConstants::TRANSPORT_TYPE_STDIO     // 'stdio'
 ProtocolConstants::TRANSPORT_TYPE_HTTP      // 'http'  
 ProtocolConstants::TRANSPORT_TYPE_SSE       // 'sse'
-ProtocolConstants::TRANSPORT_TYPE_WEBSOCKET // 'websocket'
 
 // Utility methods
 ProtocolConstants::getSupportedTransportTypes(): array

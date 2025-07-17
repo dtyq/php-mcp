@@ -165,7 +165,7 @@ class TransportFactoryTest extends TestCase
         $this->assertTrue(TransportFactory::isSupported(TransportTypes::TRANSPORT_TYPE_STDIO));
         $this->assertTrue(TransportFactory::isSupported(TransportTypes::TRANSPORT_TYPE_HTTP));
         $this->assertFalse(TransportFactory::isSupported('invalid-type'));
-        $this->assertFalse(TransportFactory::isSupported('websocket')); // Not implemented yet
+        $this->assertFalse(TransportFactory::isSupported('unknown-transport'));
     }
 
     public function testRegisterTransport(): void

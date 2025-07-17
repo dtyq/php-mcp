@@ -10,19 +10,21 @@ namespace Dtyq\PhpMcp\Types\Constants;
 /**
  * Transport type constants for MCP protocol.
  *
- * Contains definitions for various transport mechanisms
- * supported by the Model Context Protocol.
+ * Contains definitions for transport mechanisms officially
+ * supported by the Model Context Protocol specification (2025-03-26).
+ *
+ * According to MCP spec, there are two standard transport mechanisms:
+ * 1. stdio - communication over standard input/output
+ * 2. Streamable HTTP - HTTP POST + Server-Sent Events
  */
 final class TransportTypes
 {
-    // Transport types
+    // Standard transport types defined in MCP 2025-03-26 specification
     public const TRANSPORT_TYPE_STDIO = 'stdio';
 
     public const TRANSPORT_TYPE_HTTP = 'http';
 
     public const TRANSPORT_TYPE_SSE = 'sse';
-
-    public const TRANSPORT_TYPE_WEBSOCKET = 'websocket';
 
     /**
      * Get all supported transport types.
@@ -35,7 +37,6 @@ final class TransportTypes
             self::TRANSPORT_TYPE_STDIO,
             self::TRANSPORT_TYPE_HTTP,
             self::TRANSPORT_TYPE_SSE,
-            self::TRANSPORT_TYPE_WEBSOCKET,
         ];
     }
 
@@ -52,10 +53,7 @@ final class TransportTypes
      */
     public static function supportsBidirectional(string $transportType): bool
     {
-        return in_array($transportType, [
-            self::TRANSPORT_TYPE_STDIO,
-            self::TRANSPORT_TYPE_WEBSOCKET,
-        ], true);
+        return $transportType === self::TRANSPORT_TYPE_STDIO;
     }
 
     /**
@@ -66,7 +64,6 @@ final class TransportTypes
         return in_array($transportType, [
             self::TRANSPORT_TYPE_HTTP,
             self::TRANSPORT_TYPE_SSE,
-            self::TRANSPORT_TYPE_WEBSOCKET,
         ], true);
     }
 
@@ -78,7 +75,6 @@ final class TransportTypes
         return in_array($transportType, [
             self::TRANSPORT_TYPE_STDIO,
             self::TRANSPORT_TYPE_SSE,
-            self::TRANSPORT_TYPE_WEBSOCKET,
         ], true);
     }
 
@@ -108,7 +104,6 @@ final class TransportTypes
         return in_array($transportType, [
             self::TRANSPORT_TYPE_HTTP,
             self::TRANSPORT_TYPE_SSE,
-            self::TRANSPORT_TYPE_WEBSOCKET,
         ], true);
     }
 
@@ -119,10 +114,6 @@ final class TransportTypes
     {
         if ($transportType === self::TRANSPORT_TYPE_HTTP || $transportType === self::TRANSPORT_TYPE_SSE) {
             return $secure ? 'https' : 'http';
-        }
-
-        if ($transportType === self::TRANSPORT_TYPE_WEBSOCKET) {
-            return $secure ? 'wss' : 'ws';
         }
 
         return null;
@@ -137,7 +128,6 @@ final class TransportTypes
     {
         return [
             self::TRANSPORT_TYPE_HTTP => 80,
-            self::TRANSPORT_TYPE_WEBSOCKET => 80,
         ];
     }
 
@@ -150,7 +140,6 @@ final class TransportTypes
     {
         return [
             self::TRANSPORT_TYPE_HTTP => 443,
-            self::TRANSPORT_TYPE_WEBSOCKET => 443,
         ];
     }
 }

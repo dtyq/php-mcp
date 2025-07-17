@@ -79,7 +79,6 @@ assert($anonymous->hasScope('any-scope') === true);
 ProtocolConstants::TRANSPORT_TYPE_STDIO     // 'stdio'
 ProtocolConstants::TRANSPORT_TYPE_HTTP      // 'http'  
 ProtocolConstants::TRANSPORT_TYPE_SSE       // 'sse'
-ProtocolConstants::TRANSPORT_TYPE_WEBSOCKET // 'websocket'
 
 // 工具方法
 ProtocolConstants::getSupportedTransportTypes(): array
