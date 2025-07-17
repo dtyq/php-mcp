@@ -14,7 +14,9 @@ use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
 use Dtyq\PhpMcp\Shared\Message\JsonRpcMessage;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Constants\HttpConstants;
+use Dtyq\PhpMcp\Types\Constants\MethodConstants;
+use Dtyq\PhpMcp\Types\Constants\ProtocolVersions;
 use Exception;
 
 /**
@@ -129,7 +131,7 @@ class HttpTransport implements TransportInterface
             $this->stats['protocol_version'] = $this->protocolVersion;
 
             // Connect based on protocol version
-            if ($this->protocolVersion === '2025-03-26') {
+            if (ProtocolVersions::usesStreamableHttp($this->protocolVersion)) {
                 $this->connectStreamableHttp();
             } else {
                 $this->connectLegacyHttpSse();
@@ -162,7 +164,7 @@ class HttpTransport implements TransportInterface
             $jsonRpcMessage = JsonRpcMessage::fromJson($message);
 
             // Send message based on protocol
-            if ($this->protocolVersion === '2025-03-26') {
+            if (ProtocolVersions::usesStreamableHttp($this->protocolVersion)) {
                 $this->sendNewProtocol($jsonRpcMessage);
             } else {
                 $this->sendLegacyProtocol($jsonRpcMessage);
@@ -186,7 +188,7 @@ class HttpTransport implements TransportInterface
 
         try {
             // For new protocol, check stored synchronous responses first
-            if ($this->protocolVersion === '2025-03-26') {
+            if (ProtocolVersions::usesStreamableHttp($this->protocolVersion)) {
                 foreach ($this->syncResponses as $messageId => $responseData) {
                     unset($this->syncResponses[$messageId]);
                     $message = JsonUtils::encode($responseData);
@@ -229,7 +231,7 @@ class HttpTransport implements TransportInterface
     public function isConnected(): bool
     {
         // For new protocol, we don't require SSE to be always connected
-        if ($this->protocolVersion === '2025-03-26') {
+        if (ProtocolVersions::usesStreamableHttp($this->protocolVersion)) {
             return $this->connected;
         }
 
@@ -429,14 +431,14 @@ class HttpTransport implements TransportInterface
             $response = $this->performProtocolDetectionRequest();
 
             if ($response['status_code'] === 200) {
-                $this->logger->info('Detected new protocol (2025-03-26)');
-                return '2025-03-26';
+                $this->logger->info('Detected new protocol (' . ProtocolVersions::LATEST_PROTOCOL_VERSION . ')');
+                return ProtocolVersions::LATEST_PROTOCOL_VERSION;
             }
 
             // Check for 405 Method Not Allowed - indicates legacy protocol
             if ($response['status_code'] === 405) {
-                $this->logger->info('Server returned 405 for POST, detected legacy protocol (2024-11-05)');
-                return '2024-11-05';
+                $this->logger->info('Server returned 405 for POST, detected legacy protocol (' . ProtocolVersions::PROTOCOL_VERSION_20241105 . ')');
+                return ProtocolVersions::PROTOCOL_VERSION_20241105;
             }
 
             // For other error codes, try legacy protocol
@@ -446,8 +448,8 @@ class HttpTransport implements TransportInterface
         }
 
         // Fallback to legacy protocol
-        $this->logger->info('Using legacy protocol (2024-11-05)');
-        return '2024-11-05';
+        $this->logger->info('Using legacy protocol (' . ProtocolVersions::PROTOCOL_VERSION_20241105 . ')');
+        return ProtocolVersions::PROTOCOL_VERSION_20241105;
     }
 
     /**
@@ -463,9 +465,9 @@ class HttpTransport implements TransportInterface
         }
 
         $headers = [
-            'Content-Type' => 'application/json',
-            'Accept' => 'text/event-stream, application/json',
-            'User-Agent' => $this->config->getUserAgent(),
+            HttpConstants::HTTP_HEADER_CONTENT_TYPE => HttpConstants::HTTP_CONTENT_TYPE_JSON,
+            HttpConstants::HTTP_HEADER_ACCEPT => HttpConstants::HTTP_ACCEPT_SSE_JSON,
+            HttpConstants::HTTP_HEADER_USER_AGENT => $this->config->getUserAgent(),
         ];
 
         // Add authentication headers
@@ -474,11 +476,11 @@ class HttpTransport implements TransportInterface
         }
 
         $initMessage = [
-            'jsonrpc' => '2.0',
+            'jsonrpc' => ProtocolVersions::JSONRPC_VERSION,
             'id' => 1,
-            'method' => 'initialize',
+            'method' => MethodConstants::METHOD_INITIALIZE,
             'params' => [
-                'protocolVersion' => '2025-03-26',
+                'protocolVersion' => ProtocolVersions::LATEST_PROTOCOL_VERSION,
                 'capabilities' => [],
                 'clientInfo' => [
                     'name' => 'php-mcp-client',
@@ -510,9 +512,9 @@ class HttpTransport implements TransportInterface
         }
 
         $headers = [
-            'Content-Type' => 'application/json',
-            'Accept' => 'application/json',
-            'User-Agent' => $this->config->getUserAgent(),
+            HttpConstants::HTTP_HEADER_CONTENT_TYPE => HttpConstants::HTTP_CONTENT_TYPE_JSON,
+            HttpConstants::HTTP_HEADER_ACCEPT => HttpConstants::HTTP_ACCEPT_JSON,
+            HttpConstants::HTTP_HEADER_USER_AGENT => $this->config->getUserAgent(),
         ];
 
         // Add authentication headers
@@ -521,9 +523,9 @@ class HttpTransport implements TransportInterface
         }
 
         $initMessage = [
-            'jsonrpc' => '2.0',
+            'jsonrpc' => ProtocolVersions::JSONRPC_VERSION,
             'id' => 1,
-            'method' => 'initialize',
+            'method' => MethodConstants::METHOD_INITIALIZE,
             'params' => [
                 'protocolVersion' => $protocolVersion,
                 'capabilities' => [],
@@ -553,7 +555,7 @@ class HttpTransport implements TransportInterface
         }
 
         // Send initialize request
-        $initResponse = $this->sendInitializeRequest('2025-03-26');
+        $initResponse = $this->sendInitializeRequest($this->protocolVersion);
 
         // Extract session ID from response headers or MCP-Session-Id header
         $this->sessionId = $this->extractSessionId($initResponse);
@@ -568,7 +570,7 @@ class HttpTransport implements TransportInterface
         $this->sendInitializedNotification();
 
         // Mark as connected - SSE will be established on demand when needed
-        $this->protocolVersion = ProtocolConstants::PROTOCOL_VERSION_20250326;
+        // Protocol version is already set in connect() method
     }
 
     /**
@@ -624,7 +626,7 @@ class HttpTransport implements TransportInterface
 
         // Convert relative URL to absolute URL if needed
         $this->legacyPostEndpoint = $this->resolveUrl($endpointInfo['post_endpoint']);
-        $this->protocolVersion = ProtocolConstants::PROTOCOL_VERSION_20241105;
+        // Protocol version is already set in connect() method
     }
 
     /**
@@ -678,16 +680,16 @@ class HttpTransport implements TransportInterface
         }
 
         $headers = [
-            'Content-Type' => 'application/json',
-            'Accept' => 'text/event-stream, application/json',
+            HttpConstants::HTTP_HEADER_CONTENT_TYPE => HttpConstants::HTTP_CONTENT_TYPE_JSON,
+            HttpConstants::HTTP_HEADER_ACCEPT => HttpConstants::HTTP_ACCEPT_SSE_JSON,
         ];
 
         $headers = $this->authenticator->addAuthHeaders($headers);
 
         $initMessage = [
-            'jsonrpc' => '2.0',
+            'jsonrpc' => ProtocolVersions::JSONRPC_VERSION,
             'id' => 1,
-            'method' => 'initialize',
+            'method' => MethodConstants::METHOD_INITIALIZE,
             'params' => [
                 'protocolVersion' => $protocolVersion,
                 'capabilities' => $this->getClientCapabilities(),
@@ -897,7 +899,7 @@ class HttpTransport implements TransportInterface
 
         // For new protocol, we don't require SSE to be always connected
         // Session ID is optional - if not available, continue without session management
-        if ($this->protocolVersion === '2025-03-26') {
+        if (ProtocolVersions::usesStreamableHttp($this->protocolVersion)) {
             return;
         }
 

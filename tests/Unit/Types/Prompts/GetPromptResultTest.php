@@ -8,9 +8,9 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Prompts;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
 use Dtyq\PhpMcp\Types\Content\ImageContent;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Prompts\GetPromptResult;
 use Dtyq\PhpMcp\Types\Prompts\PromptMessage;
 use Dtyq\PhpMcp\Types\Resources\TextResourceContents;
@@ -55,16 +55,16 @@ class GetPromptResultTest extends TestCase
             'description' => 'Test result',
             'messages' => [
                 [
-                    'role' => ProtocolConstants::ROLE_USER,
+                    'role' => MessageConstants::ROLE_USER,
                     'content' => [
-                        'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
+                        'type' => MessageConstants::CONTENT_TYPE_TEXT,
                         'text' => 'Hello',
                     ],
                 ],
                 [
-                    'role' => ProtocolConstants::ROLE_ASSISTANT,
+                    'role' => MessageConstants::ROLE_ASSISTANT,
                     'content' => [
-                        'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
+                        'type' => MessageConstants::CONTENT_TYPE_TEXT,
                         'text' => 'Hi there!',
                     ],
                 ],
@@ -202,7 +202,7 @@ class GetPromptResultTest extends TestCase
     public function testGetTextMessages(): void
     {
         $textMsg = PromptMessage::createUserMessage('Text message');
-        $imageMsg = new PromptMessage(ProtocolConstants::ROLE_USER, new ImageContent('dGVzdA==', 'image/png'));
+        $imageMsg = new PromptMessage(MessageConstants::ROLE_USER, new ImageContent('dGVzdA==', 'image/png'));
         $result = new GetPromptResult(null, [$textMsg, $imageMsg]);
 
         $textMessages = $result->getTextMessages();
@@ -213,7 +213,7 @@ class GetPromptResultTest extends TestCase
     public function testGetImageMessages(): void
     {
         $textMsg = PromptMessage::createUserMessage('Text message');
-        $imageMsg = new PromptMessage(ProtocolConstants::ROLE_USER, new ImageContent('dGVzdA==', 'image/png'));
+        $imageMsg = new PromptMessage(MessageConstants::ROLE_USER, new ImageContent('dGVzdA==', 'image/png'));
         $result = new GetPromptResult(null, [$textMsg, $imageMsg]);
 
         $imageMessages = $result->getImageMessages();
@@ -237,7 +237,7 @@ class GetPromptResultTest extends TestCase
     {
         $textMsg1 = PromptMessage::createUserMessage('First text');
         $textMsg2 = PromptMessage::createAssistantMessage('Second text');
-        $imageMsg = new PromptMessage(ProtocolConstants::ROLE_USER, new ImageContent('dGVzdA==', 'image/png'));
+        $imageMsg = new PromptMessage(MessageConstants::ROLE_USER, new ImageContent('dGVzdA==', 'image/png'));
         $result = new GetPromptResult(null, [$textMsg1, $textMsg2, $imageMsg]);
 
         $textContent = $result->getAllTextContent();
@@ -257,16 +257,16 @@ class GetPromptResultTest extends TestCase
         $expected = [
             'messages' => [
                 [
-                    'role' => ProtocolConstants::ROLE_USER,
+                    'role' => MessageConstants::ROLE_USER,
                     'content' => [
-                        'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
+                        'type' => MessageConstants::CONTENT_TYPE_TEXT,
                         'text' => 'Hello',
                     ],
                 ],
                 [
-                    'role' => ProtocolConstants::ROLE_ASSISTANT,
+                    'role' => MessageConstants::ROLE_ASSISTANT,
                     'content' => [
-                        'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
+                        'type' => MessageConstants::CONTENT_TYPE_TEXT,
                         'text' => 'Hi',
                     ],
                 ],

@@ -4,6 +4,7 @@ parameters:
     paths:
         - src
         - tests
+        - examples
     excludePaths:
         - src/Server/Framework
     treatPhpDocTypesAsCertain: false

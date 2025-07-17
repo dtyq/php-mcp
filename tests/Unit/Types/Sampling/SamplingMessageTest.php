@@ -8,9 +8,9 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Sampling;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\ImageContent;
 use Dtyq\PhpMcp\Types\Content\TextContent;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Sampling\SamplingMessage;
 use PHPUnit\Framework\TestCase;
 
@@ -22,9 +22,9 @@ class SamplingMessageTest extends TestCase
     public function testConstructorWithValidData(): void
     {
         $content = new TextContent('Hello, world!');
-        $message = new SamplingMessage(ProtocolConstants::ROLE_USER, $content);
+        $message = new SamplingMessage(MessageConstants::ROLE_USER, $content);
 
-        $this->assertSame(ProtocolConstants::ROLE_USER, $message->getRole());
+        $this->assertSame(MessageConstants::ROLE_USER, $message->getRole());
         $this->assertSame($content, $message->getContent());
         $this->assertTrue($message->isUserMessage());
         $this->assertFalse($message->isAssistantMessage());
@@ -36,9 +36,9 @@ class SamplingMessageTest extends TestCase
     public function testConstructorWithAssistantRole(): void
     {
         $content = new TextContent('I can help you with that.');
-        $message = new SamplingMessage(ProtocolConstants::ROLE_ASSISTANT, $content);
+        $message = new SamplingMessage(MessageConstants::ROLE_ASSISTANT, $content);
 
-        $this->assertSame(ProtocolConstants::ROLE_ASSISTANT, $message->getRole());
+        $this->assertSame(MessageConstants::ROLE_ASSISTANT, $message->getRole());
         $this->assertFalse($message->isUserMessage());
         $this->assertTrue($message->isAssistantMessage());
     }
@@ -46,7 +46,7 @@ class SamplingMessageTest extends TestCase
     public function testConstructorWithImageContent(): void
     {
         $content = new ImageContent('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==', 'image/png');
-        $message = new SamplingMessage(ProtocolConstants::ROLE_USER, $content);
+        $message = new SamplingMessage(MessageConstants::ROLE_USER, $content);
 
         $this->assertFalse($message->isTextContent());
         $this->assertTrue($message->isImageContent());
@@ -74,7 +74,7 @@ class SamplingMessageTest extends TestCase
     public function testFromArrayWithValidData(): void
     {
         $data = [
-            'role' => ProtocolConstants::ROLE_USER,
+            'role' => MessageConstants::ROLE_USER,
             'content' => [
                 'type' => 'text',
                 'text' => 'Hello, world!',
@@ -83,7 +83,7 @@ class SamplingMessageTest extends TestCase
 
         $message = SamplingMessage::fromArray($data);
 
-        $this->assertSame(ProtocolConstants::ROLE_USER, $message->getRole());
+        $this->assertSame(MessageConstants::ROLE_USER, $message->getRole());
         $this->assertTrue($message->isTextContent());
         $this->assertSame('Hello, world!', $message->getTextContent());
     }
@@ -91,7 +91,7 @@ class SamplingMessageTest extends TestCase
     public function testFromArrayWithImageContent(): void
     {
         $data = [
-            'role' => ProtocolConstants::ROLE_USER,
+            'role' => MessageConstants::ROLE_USER,
             'content' => [
                 'type' => 'image',
                 'data' => 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
@@ -109,7 +109,7 @@ class SamplingMessageTest extends TestCase
     public function testFromArrayWithEmbeddedResource(): void
     {
         $data = [
-            'role' => ProtocolConstants::ROLE_ASSISTANT,
+            'role' => MessageConstants::ROLE_ASSISTANT,
             'content' => [
                 'type' => 'resource',
                 'resource' => [
@@ -147,7 +147,7 @@ class SamplingMessageTest extends TestCase
         $this->expectExceptionMessage('Required field \'content\' is missing');
 
         $data = [
-            'role' => ProtocolConstants::ROLE_USER,
+            'role' => MessageConstants::ROLE_USER,
         ];
 
         SamplingMessage::fromArray($data);
@@ -175,7 +175,7 @@ class SamplingMessageTest extends TestCase
         $this->expectExceptionMessage('Invalid type for field \'content\': expected array, got string');
 
         $data = [
-            'role' => ProtocolConstants::ROLE_USER,
+            'role' => MessageConstants::ROLE_USER,
             'content' => 'invalid',
         ];
 
@@ -188,7 +188,7 @@ class SamplingMessageTest extends TestCase
         $this->expectExceptionMessage('Unsupported content type \'unknown\'');
 
         $data = [
-            'role' => ProtocolConstants::ROLE_USER,
+            'role' => MessageConstants::ROLE_USER,
             'content' => [
                 'type' => 'unknown',
             ],
@@ -201,7 +201,7 @@ class SamplingMessageTest extends TestCase
     {
         $message = SamplingMessage::createUserMessage('Hello, world!');
 
-        $this->assertSame(ProtocolConstants::ROLE_USER, $message->getRole());
+        $this->assertSame(MessageConstants::ROLE_USER, $message->getRole());
         $this->assertTrue($message->isUserMessage());
         $this->assertTrue($message->isTextContent());
         $this->assertSame('Hello, world!', $message->getTextContent());
@@ -211,7 +211,7 @@ class SamplingMessageTest extends TestCase
     {
         $message = SamplingMessage::createAssistantMessage('I can help you.');
 
-        $this->assertSame(ProtocolConstants::ROLE_ASSISTANT, $message->getRole());
+        $this->assertSame(MessageConstants::ROLE_ASSISTANT, $message->getRole());
         $this->assertTrue($message->isAssistantMessage());
         $this->assertTrue($message->isTextContent());
         $this->assertSame('I can help you.', $message->getTextContent());
@@ -221,7 +221,7 @@ class SamplingMessageTest extends TestCase
     {
         $message = SamplingMessage::createUserImageMessage('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==', 'image/jpeg');
 
-        $this->assertSame(ProtocolConstants::ROLE_USER, $message->getRole());
+        $this->assertSame(MessageConstants::ROLE_USER, $message->getRole());
         $this->assertTrue($message->isUserMessage());
         $this->assertTrue($message->isImageContent());
         $this->assertSame('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==', $message->getImageData());
@@ -231,7 +231,7 @@ class SamplingMessageTest extends TestCase
     public function testGetTextContentWithNonTextContent(): void
     {
         $content = new ImageContent('data', 'image/png');
-        $message = new SamplingMessage(ProtocolConstants::ROLE_USER, $content);
+        $message = new SamplingMessage(MessageConstants::ROLE_USER, $content);
 
         $this->assertNull($message->getTextContent());
     }
@@ -239,7 +239,7 @@ class SamplingMessageTest extends TestCase
     public function testGetImageDataWithNonImageContent(): void
     {
         $content = new TextContent('Hello');
-        $message = new SamplingMessage(ProtocolConstants::ROLE_USER, $content);
+        $message = new SamplingMessage(MessageConstants::ROLE_USER, $content);
 
         $this->assertNull($message->getImageData());
         $this->assertNull($message->getImageMimeType());
@@ -248,11 +248,11 @@ class SamplingMessageTest extends TestCase
     public function testSetRole(): void
     {
         $content = new TextContent('Hello');
-        $message = new SamplingMessage(ProtocolConstants::ROLE_USER, $content);
+        $message = new SamplingMessage(MessageConstants::ROLE_USER, $content);
 
-        $message->setRole(ProtocolConstants::ROLE_ASSISTANT);
+        $message->setRole(MessageConstants::ROLE_ASSISTANT);
 
-        $this->assertSame(ProtocolConstants::ROLE_ASSISTANT, $message->getRole());
+        $this->assertSame(MessageConstants::ROLE_ASSISTANT, $message->getRole());
         $this->assertTrue($message->isAssistantMessage());
         $this->assertFalse($message->isUserMessage());
     }
@@ -261,7 +261,7 @@ class SamplingMessageTest extends TestCase
     {
         $originalContent = new TextContent('Hello');
         $newContent = new ImageContent('data', 'image/png');
-        $message = new SamplingMessage(ProtocolConstants::ROLE_USER, $originalContent);
+        $message = new SamplingMessage(MessageConstants::ROLE_USER, $originalContent);
 
         $message->setContent($newContent);
 
@@ -273,20 +273,20 @@ class SamplingMessageTest extends TestCase
     public function testWithRole(): void
     {
         $content = new TextContent('Hello');
-        $original = new SamplingMessage(ProtocolConstants::ROLE_USER, $content);
+        $original = new SamplingMessage(MessageConstants::ROLE_USER, $content);
 
-        $modified = $original->withRole(ProtocolConstants::ROLE_ASSISTANT);
+        $modified = $original->withRole(MessageConstants::ROLE_ASSISTANT);
 
         $this->assertNotSame($original, $modified);
-        $this->assertSame(ProtocolConstants::ROLE_USER, $original->getRole());
-        $this->assertSame(ProtocolConstants::ROLE_ASSISTANT, $modified->getRole());
+        $this->assertSame(MessageConstants::ROLE_USER, $original->getRole());
+        $this->assertSame(MessageConstants::ROLE_ASSISTANT, $modified->getRole());
     }
 
     public function testWithContent(): void
     {
         $originalContent = new TextContent('Hello');
         $newContent = new ImageContent('data', 'image/png');
-        $original = new SamplingMessage(ProtocolConstants::ROLE_USER, $originalContent);
+        $original = new SamplingMessage(MessageConstants::ROLE_USER, $originalContent);
 
         $modified = $original->withContent($newContent);
 
@@ -298,10 +298,10 @@ class SamplingMessageTest extends TestCase
     public function testToArray(): void
     {
         $content = new TextContent('Hello, world!');
-        $message = new SamplingMessage(ProtocolConstants::ROLE_USER, $content);
+        $message = new SamplingMessage(MessageConstants::ROLE_USER, $content);
 
         $expected = [
-            'role' => ProtocolConstants::ROLE_USER,
+            'role' => MessageConstants::ROLE_USER,
             'content' => [
                 'type' => 'text',
                 'text' => 'Hello, world!',
@@ -314,12 +314,12 @@ class SamplingMessageTest extends TestCase
     public function testToJson(): void
     {
         $content = new TextContent('Hello');
-        $message = new SamplingMessage(ProtocolConstants::ROLE_ASSISTANT, $content);
+        $message = new SamplingMessage(MessageConstants::ROLE_ASSISTANT, $content);
 
         $json = $message->toJson();
         $decoded = json_decode($json, true);
 
-        $this->assertSame(ProtocolConstants::ROLE_ASSISTANT, $decoded['role']);
+        $this->assertSame(MessageConstants::ROLE_ASSISTANT, $decoded['role']);
         $this->assertSame('text', $decoded['content']['type']);
         $this->assertSame('Hello', $decoded['content']['text']);
     }

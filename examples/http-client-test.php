@@ -33,6 +33,11 @@ $container = new class implements ContainerInterface {
     public function __construct()
     {
         $this->services[LoggerInterface::class] = new class extends AbstractLogger {
+            /**
+             * @param mixed $level
+             * @param mixed $message
+             * @param array<string, mixed> $context
+             */
             public function log($level, $message, array $context = []): void
             {
                 $timestamp = date('Y-m-d H:i:s');

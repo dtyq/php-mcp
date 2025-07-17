@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Content;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Resources\ResourceContents;
 
 /**
@@ -21,7 +21,7 @@ use Dtyq\PhpMcp\Types\Resources\ResourceContents;
 class EmbeddedResource implements ContentInterface
 {
     /** @var string Content type identifier */
-    private string $type = ProtocolConstants::CONTENT_TYPE_RESOURCE;
+    private string $type = MessageConstants::CONTENT_TYPE_RESOURCE;
 
     /** @var ResourceContents The embedded resource contents */
     private ResourceContents $resource;
@@ -42,8 +42,8 @@ class EmbeddedResource implements ContentInterface
      */
     public static function fromArray(array $data): self
     {
-        if (! isset($data['type']) || $data['type'] !== ProtocolConstants::CONTENT_TYPE_RESOURCE) {
-            throw ValidationError::invalidContentType(ProtocolConstants::CONTENT_TYPE_RESOURCE, $data['type'] ?? 'unknown');
+        if (! isset($data['type']) || $data['type'] !== MessageConstants::CONTENT_TYPE_RESOURCE) {
+            throw ValidationError::invalidContentType(MessageConstants::CONTENT_TYPE_RESOURCE, $data['type'] ?? 'unknown');
         }
 
         if (! isset($data['resource'])) {

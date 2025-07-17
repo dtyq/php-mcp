@@ -9,7 +9,7 @@ namespace Dtyq\PhpMcp\Tests\Unit\Client\Configuration;
 
 use Dtyq\PhpMcp\Client\Configuration\ClientConfig;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Constants\TransportTypes;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -22,7 +22,7 @@ class ClientConfigTest extends TestCase
     {
         $config = new ClientConfig();
 
-        $this->assertEquals(ProtocolConstants::TRANSPORT_TYPE_STDIO, $config->getTransportType());
+        $this->assertEquals(TransportTypes::TRANSPORT_TYPE_STDIO, $config->getTransportType());
         $this->assertEquals([], $config->getTransportConfig());
         $this->assertEquals(30, $config->getDefaultTimeout());
         $this->assertEquals(3, $config->getMaxRetries());
@@ -93,7 +93,7 @@ class ClientConfigTest extends TestCase
         $config = ClientConfig::fromArray($data);
 
         // Should merge with defaults
-        $this->assertEquals(ProtocolConstants::TRANSPORT_TYPE_STDIO, $config->getTransportType());
+        $this->assertEquals(TransportTypes::TRANSPORT_TYPE_STDIO, $config->getTransportType());
         $this->assertEquals('partial-client', $config->getClientName());
         $this->assertEquals(90, $config->getDefaultTimeout());
         $this->assertEquals(3, $config->getMaxRetries()); // Default value

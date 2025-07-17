@@ -7,8 +7,9 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Notifications;
 
+use Dtyq\PhpMcp\Types\Constants\MethodConstants;
+use Dtyq\PhpMcp\Types\Constants\ProtocolVersions;
 use Dtyq\PhpMcp\Types\Core\NotificationInterface;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 
 /**
  * Notification sent from client to server after initialization has finished.
@@ -18,7 +19,7 @@ use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
  */
 class InitializedNotification implements NotificationInterface
 {
-    private string $method = ProtocolConstants::NOTIFICATION_INITIALIZED;
+    private string $method = MethodConstants::NOTIFICATION_INITIALIZED;
 
     /** @var null|array<string, mixed> */
     private ?array $meta = null;
@@ -52,7 +53,7 @@ class InitializedNotification implements NotificationInterface
     public function toJsonRpc(): array
     {
         $data = [
-            'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
+            'jsonrpc' => ProtocolVersions::JSONRPC_VERSION,
             'method' => $this->method,
         ];
 

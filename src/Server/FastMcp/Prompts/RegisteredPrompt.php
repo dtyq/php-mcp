@@ -9,8 +9,8 @@ namespace Dtyq\PhpMcp\Server\FastMcp\Prompts;
 
 use Closure;
 use Dtyq\PhpMcp\Shared\Exceptions\PromptError;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\TextContent;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Prompts\GetPromptResult;
 use Dtyq\PhpMcp\Types\Prompts\Prompt;
 use Dtyq\PhpMcp\Types\Prompts\PromptArgument;
@@ -58,7 +58,7 @@ class RegisteredPrompt
                 $result = json_encode($result, JSON_UNESCAPED_UNICODE);
             }
             if (is_string($result)) {
-                $message = new PromptMessage(ProtocolConstants::ROLE_USER, new TextContent($result));
+                $message = new PromptMessage(MessageConstants::ROLE_USER, new TextContent($result));
                 $result = new GetPromptResult(null, [$message]);
             }
 

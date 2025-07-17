@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Server\Transports\Core\Handlers;
 
 use Dtyq\PhpMcp\Server\Transports\Core\TransportMetadata;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Constants\ProtocolVersions;
 use Dtyq\PhpMcp\Types\Core\RequestInterface;
 use Dtyq\PhpMcp\Types\Core\ResultInterface;
 use Dtyq\PhpMcp\Types\Requests\InitializeRequest;
@@ -59,7 +59,7 @@ class InitializeMessageHandler extends AbstractMessageHandler
         ];
 
         return new InitializeResult(
-            ProtocolConstants::LATEST_PROTOCOL_VERSION,
+            ProtocolVersions::DEFAULT_SERVER_PROTOCOL_VERSION,
             $capabilities,
             $serverInfo,
             $metadata->getInstructions()

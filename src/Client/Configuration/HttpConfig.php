@@ -32,7 +32,7 @@ class HttpConfig implements JsonSerializable
         'user_agent' => 'php-mcp-client/1.0',  // User agent string
         'headers' => [],                       // Custom headers
         'auth' => null,                        // Authentication configuration
-        'protocol_version' => 'auto',          // Protocol version: 'auto', '2025-03-26', '2024-11-05'
+        'protocol_version' => 'auto',          // Protocol version: 'auto', '2025-06-18', '2025-03-26', '2024-11-05'
         'enable_resumption' => true,           // Enable event replay mechanism
         'event_store_type' => 'memory',        // Event store type: 'memory', 'file', 'redis'
         'event_store_config' => [],            // Event store configuration
@@ -405,7 +405,7 @@ class HttpConfig implements JsonSerializable
 
     public function setProtocolVersion(string $protocolVersion): void
     {
-        $validVersions = ['auto', '2025-03-26', '2024-11-05'];
+        $validVersions = ['auto', '2025-06-18', '2025-03-26', '2024-11-05'];
         if (! in_array($protocolVersion, $validVersions, true)) {
             throw ValidationError::invalidFieldValue(
                 'protocol_version',

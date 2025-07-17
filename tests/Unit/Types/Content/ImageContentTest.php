@@ -8,10 +8,10 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Content;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\Annotations;
 use Dtyq\PhpMcp\Types\Content\ContentInterface;
 use Dtyq\PhpMcp\Types\Content\ImageContent;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -30,7 +30,7 @@ class ImageContentTest extends TestCase
         $content = new ImageContent($data, $mimeType);
 
         $this->assertInstanceOf(ContentInterface::class, $content);
-        $this->assertEquals(ProtocolConstants::CONTENT_TYPE_IMAGE, $content->getType());
+        $this->assertEquals(MessageConstants::CONTENT_TYPE_IMAGE, $content->getType());
         $this->assertEquals($data, $content->getData());
         $this->assertEquals($mimeType, $content->getMimeType());
         $this->assertNull($content->getAnnotations());
@@ -44,7 +44,7 @@ class ImageContentTest extends TestCase
     {
         $data = base64_encode('fake image data');
         $mimeType = 'image/jpeg';
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER], 0.8);
+        $annotations = new Annotations([MessageConstants::ROLE_USER], 0.8);
         $content = new ImageContent($data, $mimeType, $annotations);
 
         $this->assertEquals($data, $content->getData());
@@ -86,7 +86,7 @@ class ImageContentTest extends TestCase
 
         $this->assertFalse($content->hasAnnotations());
 
-        $annotations = new Annotations([ProtocolConstants::ROLE_ASSISTANT], 0.5);
+        $annotations = new Annotations([MessageConstants::ROLE_ASSISTANT], 0.5);
         $content->setAnnotations($annotations);
 
         $this->assertTrue($content->hasAnnotations());
@@ -106,15 +106,15 @@ class ImageContentTest extends TestCase
         $content = new ImageContent($data, 'image/png');
 
         // Without annotations, should return true for any role
-        $this->assertTrue($content->isTargetedTo(ProtocolConstants::ROLE_USER));
-        $this->assertTrue($content->isTargetedTo(ProtocolConstants::ROLE_ASSISTANT));
+        $this->assertTrue($content->isTargetedTo(MessageConstants::ROLE_USER));
+        $this->assertTrue($content->isTargetedTo(MessageConstants::ROLE_ASSISTANT));
 
         // With annotations
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER]);
+        $annotations = new Annotations([MessageConstants::ROLE_USER]);
         $content->setAnnotations($annotations);
 
-        $this->assertTrue($content->isTargetedTo(ProtocolConstants::ROLE_USER));
-        $this->assertFalse($content->isTargetedTo(ProtocolConstants::ROLE_ASSISTANT));
+        $this->assertTrue($content->isTargetedTo(MessageConstants::ROLE_USER));
+        $this->assertFalse($content->isTargetedTo(MessageConstants::ROLE_ASSISTANT));
     }
 
     /**
@@ -129,7 +129,7 @@ class ImageContentTest extends TestCase
         $this->assertNull($content->getPriority());
 
         // With annotations
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER], 0.7);
+        $annotations = new Annotations([MessageConstants::ROLE_USER], 0.7);
         $content->setAnnotations($annotations);
 
         $this->assertEquals(0.7, $content->getPriority());
@@ -150,13 +150,13 @@ class ImageContentTest extends TestCase
         $this->assertArrayHasKey('type', $array);
         $this->assertArrayHasKey('data', $array);
         $this->assertArrayHasKey('mimeType', $array);
-        $this->assertEquals(ProtocolConstants::CONTENT_TYPE_IMAGE, $array['type']);
+        $this->assertEquals(MessageConstants::CONTENT_TYPE_IMAGE, $array['type']);
         $this->assertEquals($data, $array['data']);
         $this->assertEquals($mimeType, $array['mimeType']);
         $this->assertArrayNotHasKey('annotations', $array);
 
         // Test with annotations
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER]);
+        $annotations = new Annotations([MessageConstants::ROLE_USER]);
         $content->setAnnotations($annotations);
 
         $arrayWithAnnotations = $content->toArray();
@@ -178,7 +178,7 @@ class ImageContentTest extends TestCase
         $this->assertJson($json);
 
         $decoded = json_decode($json, true);
-        $this->assertEquals(ProtocolConstants::CONTENT_TYPE_IMAGE, $decoded['type']);
+        $this->assertEquals(MessageConstants::CONTENT_TYPE_IMAGE, $decoded['type']);
         $this->assertEquals($data, $decoded['data']);
         $this->assertEquals($mimeType, $decoded['mimeType']);
     }
@@ -190,7 +190,7 @@ class ImageContentTest extends TestCase
     {
         $data = base64_encode('fake image data');
         $arrayData = [
-            'type' => ProtocolConstants::CONTENT_TYPE_IMAGE,
+            'type' => MessageConstants::CONTENT_TYPE_IMAGE,
             'data' => $data,
             'mimeType' => 'image/png',
         ];
@@ -211,7 +211,7 @@ class ImageContentTest extends TestCase
         $this->expectExceptionMessage('Invalid content type');
 
         $arrayData = [
-            'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
+            'type' => MessageConstants::CONTENT_TYPE_TEXT,
             'data' => base64_encode('fake image data'),
             'mimeType' => 'image/png',
         ];
@@ -228,7 +228,7 @@ class ImageContentTest extends TestCase
         $this->expectExceptionMessage('Required field \'data\' is missing for ImageContent');
 
         $arrayData = [
-            'type' => ProtocolConstants::CONTENT_TYPE_IMAGE,
+            'type' => MessageConstants::CONTENT_TYPE_IMAGE,
             'mimeType' => 'image/png',
         ];
 
@@ -244,7 +244,7 @@ class ImageContentTest extends TestCase
         $this->expectExceptionMessage('Required field \'mimeType\' is missing for ImageContent');
 
         $arrayData = [
-            'type' => ProtocolConstants::CONTENT_TYPE_IMAGE,
+            'type' => MessageConstants::CONTENT_TYPE_IMAGE,
             'data' => base64_encode('fake image data'),
         ];
 

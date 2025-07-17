@@ -7,12 +7,12 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Types\Messages;
 
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\ContentInterface;
 use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
 use Dtyq\PhpMcp\Types\Content\ImageContent;
 use Dtyq\PhpMcp\Types\Content\TextContent;
 use Dtyq\PhpMcp\Types\Core\BaseTypes;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use InvalidArgumentException;
 
 /**
@@ -247,11 +247,11 @@ class PromptMessage implements MessageInterface
         }
 
         switch ($data['type']) {
-            case ProtocolConstants::CONTENT_TYPE_TEXT:
+            case MessageConstants::CONTENT_TYPE_TEXT:
                 return TextContent::fromArray($data);
-            case ProtocolConstants::CONTENT_TYPE_IMAGE:
+            case MessageConstants::CONTENT_TYPE_IMAGE:
                 return ImageContent::fromArray($data);
-            case ProtocolConstants::CONTENT_TYPE_RESOURCE:
+            case MessageConstants::CONTENT_TYPE_RESOURCE:
                 return EmbeddedResource::fromArray($data);
             default:
                 throw new InvalidArgumentException("Unsupported content type for PromptMessage: {$data['type']}");

@@ -8,10 +8,10 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Prompts;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
 use Dtyq\PhpMcp\Types\Content\ImageContent;
 use Dtyq\PhpMcp\Types\Content\TextContent;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Prompts\PromptMessage;
 use Dtyq\PhpMcp\Types\Resources\TextResourceContents;
 use PHPUnit\Framework\TestCase;
@@ -23,7 +23,7 @@ class PromptMessageTest extends TestCase
 {
     public function testConstructorWithTextContent(): void
     {
-        $role = ProtocolConstants::ROLE_USER;
+        $role = MessageConstants::ROLE_USER;
         $content = new TextContent('Hello, world!');
 
         $message = new PromptMessage($role, $content);
@@ -39,7 +39,7 @@ class PromptMessageTest extends TestCase
 
     public function testConstructorWithImageContent(): void
     {
-        $role = ProtocolConstants::ROLE_USER;
+        $role = MessageConstants::ROLE_USER;
         $content = new ImageContent('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==', 'image/png');
 
         $message = new PromptMessage($role, $content);
@@ -53,7 +53,7 @@ class PromptMessageTest extends TestCase
 
     public function testConstructorWithResourceContent(): void
     {
-        $role = ProtocolConstants::ROLE_USER;
+        $role = MessageConstants::ROLE_USER;
         $resourceContents = new TextResourceContents('file:///test.txt', 'Test content');
         $content = new EmbeddedResource($resourceContents);
 
@@ -69,9 +69,9 @@ class PromptMessageTest extends TestCase
     public function testFromArrayWithTextContent(): void
     {
         $data = [
-            'role' => ProtocolConstants::ROLE_USER,
+            'role' => MessageConstants::ROLE_USER,
             'content' => [
-                'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
+                'type' => MessageConstants::CONTENT_TYPE_TEXT,
                 'text' => 'Hello, world!',
             ],
         ];
@@ -86,9 +86,9 @@ class PromptMessageTest extends TestCase
     public function testFromArrayWithImageContent(): void
     {
         $data = [
-            'role' => ProtocolConstants::ROLE_USER,
+            'role' => MessageConstants::ROLE_USER,
             'content' => [
-                'type' => ProtocolConstants::CONTENT_TYPE_IMAGE,
+                'type' => MessageConstants::CONTENT_TYPE_IMAGE,
                 'data' => 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
                 'mimeType' => 'image/png',
             ],
@@ -103,9 +103,9 @@ class PromptMessageTest extends TestCase
     public function testFromArrayWithResourceContent(): void
     {
         $data = [
-            'role' => ProtocolConstants::ROLE_USER,
+            'role' => MessageConstants::ROLE_USER,
             'content' => [
-                'type' => ProtocolConstants::CONTENT_TYPE_RESOURCE,
+                'type' => MessageConstants::CONTENT_TYPE_RESOURCE,
                 'resource' => [
                     'uri' => 'file:///test.txt',
                     'text' => 'Test content',
@@ -126,7 +126,7 @@ class PromptMessageTest extends TestCase
 
         PromptMessage::fromArray([
             'content' => [
-                'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
+                'type' => MessageConstants::CONTENT_TYPE_TEXT,
                 'text' => 'Hello',
             ],
         ]);
@@ -140,7 +140,7 @@ class PromptMessageTest extends TestCase
         PromptMessage::fromArray([
             'role' => 123,
             'content' => [
-                'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
+                'type' => MessageConstants::CONTENT_TYPE_TEXT,
                 'text' => 'Hello',
             ],
         ]);
@@ -152,7 +152,7 @@ class PromptMessageTest extends TestCase
         $this->expectExceptionMessage('Required field \'content\' is missing for PromptMessage');
 
         PromptMessage::fromArray([
-            'role' => ProtocolConstants::ROLE_USER,
+            'role' => MessageConstants::ROLE_USER,
         ]);
     }
 
@@ -162,7 +162,7 @@ class PromptMessageTest extends TestCase
         $this->expectExceptionMessage('Invalid type for field \'content\': expected array, got string');
 
         PromptMessage::fromArray([
-            'role' => ProtocolConstants::ROLE_USER,
+            'role' => MessageConstants::ROLE_USER,
             'content' => 'invalid',
         ]);
     }
@@ -173,7 +173,7 @@ class PromptMessageTest extends TestCase
         $this->expectExceptionMessage('Invalid content type: expected text, image, or resource, got invalid');
 
         PromptMessage::fromArray([
-            'role' => ProtocolConstants::ROLE_USER,
+            'role' => MessageConstants::ROLE_USER,
             'content' => [
                 'type' => 'invalid',
                 'text' => 'Hello',
@@ -186,14 +186,14 @@ class PromptMessageTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('Invalid value for field \'role\': must be one of: user, assistant');
 
-        $message = new PromptMessage(ProtocolConstants::ROLE_USER, new TextContent('Hello'));
+        $message = new PromptMessage(MessageConstants::ROLE_USER, new TextContent('Hello'));
         $message->setRole('invalid');
     }
 
     public function testIsUserMessage(): void
     {
-        $userMessage = new PromptMessage(ProtocolConstants::ROLE_USER, new TextContent('Hello'));
-        $assistantMessage = new PromptMessage(ProtocolConstants::ROLE_ASSISTANT, new TextContent('Hi'));
+        $userMessage = new PromptMessage(MessageConstants::ROLE_USER, new TextContent('Hello'));
+        $assistantMessage = new PromptMessage(MessageConstants::ROLE_ASSISTANT, new TextContent('Hi'));
 
         $this->assertTrue($userMessage->isUserMessage());
         $this->assertFalse($userMessage->isAssistantMessage());
@@ -204,8 +204,8 @@ class PromptMessageTest extends TestCase
 
     public function testGetTextContent(): void
     {
-        $textMessage = new PromptMessage(ProtocolConstants::ROLE_USER, new TextContent('Hello'));
-        $imageMessage = new PromptMessage(ProtocolConstants::ROLE_USER, new ImageContent('dGVzdA==', 'image/png'));
+        $textMessage = new PromptMessage(MessageConstants::ROLE_USER, new TextContent('Hello'));
+        $imageMessage = new PromptMessage(MessageConstants::ROLE_USER, new ImageContent('dGVzdA==', 'image/png'));
 
         $this->assertSame('Hello', $textMessage->getTextContent());
         $this->assertNull($imageMessage->getTextContent());
@@ -213,23 +213,23 @@ class PromptMessageTest extends TestCase
 
     public function testGetContentType(): void
     {
-        $textMessage = new PromptMessage(ProtocolConstants::ROLE_USER, new TextContent('Hello'));
-        $imageMessage = new PromptMessage(ProtocolConstants::ROLE_USER, new ImageContent('dGVzdA==', 'image/png'));
+        $textMessage = new PromptMessage(MessageConstants::ROLE_USER, new TextContent('Hello'));
+        $imageMessage = new PromptMessage(MessageConstants::ROLE_USER, new ImageContent('dGVzdA==', 'image/png'));
 
-        $this->assertSame(ProtocolConstants::CONTENT_TYPE_TEXT, $textMessage->getContentType());
-        $this->assertSame(ProtocolConstants::CONTENT_TYPE_IMAGE, $imageMessage->getContentType());
+        $this->assertSame(MessageConstants::CONTENT_TYPE_TEXT, $textMessage->getContentType());
+        $this->assertSame(MessageConstants::CONTENT_TYPE_IMAGE, $imageMessage->getContentType());
     }
 
     public function testToArray(): void
     {
-        $role = ProtocolConstants::ROLE_USER;
+        $role = MessageConstants::ROLE_USER;
         $content = new TextContent('Hello, world!');
         $message = new PromptMessage($role, $content);
 
         $expected = [
             'role' => $role,
             'content' => [
-                'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
+                'type' => MessageConstants::CONTENT_TYPE_TEXT,
                 'text' => 'Hello, world!',
             ],
         ];
@@ -239,23 +239,23 @@ class PromptMessageTest extends TestCase
 
     public function testToJson(): void
     {
-        $message = new PromptMessage(ProtocolConstants::ROLE_USER, new TextContent('Hello'));
+        $message = new PromptMessage(MessageConstants::ROLE_USER, new TextContent('Hello'));
         $json = $message->toJson();
         $decoded = json_decode($json, true);
 
-        $this->assertSame(ProtocolConstants::ROLE_USER, $decoded['role']);
-        $this->assertSame(ProtocolConstants::CONTENT_TYPE_TEXT, $decoded['content']['type']);
+        $this->assertSame(MessageConstants::ROLE_USER, $decoded['role']);
+        $this->assertSame(MessageConstants::CONTENT_TYPE_TEXT, $decoded['content']['type']);
         $this->assertSame('Hello', $decoded['content']['text']);
     }
 
     public function testWithMethods(): void
     {
-        $original = new PromptMessage(ProtocolConstants::ROLE_USER, new TextContent('Original'));
+        $original = new PromptMessage(MessageConstants::ROLE_USER, new TextContent('Original'));
 
-        $withRole = $original->withRole(ProtocolConstants::ROLE_ASSISTANT);
+        $withRole = $original->withRole(MessageConstants::ROLE_ASSISTANT);
         $this->assertNotSame($original, $withRole);
-        $this->assertSame(ProtocolConstants::ROLE_USER, $original->getRole());
-        $this->assertSame(ProtocolConstants::ROLE_ASSISTANT, $withRole->getRole());
+        $this->assertSame(MessageConstants::ROLE_USER, $original->getRole());
+        $this->assertSame(MessageConstants::ROLE_ASSISTANT, $withRole->getRole());
 
         $newContent = new TextContent('New content');
         $withContent = $original->withContent($newContent);

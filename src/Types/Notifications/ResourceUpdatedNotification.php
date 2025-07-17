@@ -8,8 +8,8 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Notifications;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Constants\ProtocolVersions;
 use Dtyq\PhpMcp\Types\Core\NotificationInterface;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 
 /**
  * Notification that a specific resource has been updated.
@@ -59,7 +59,7 @@ class ResourceUpdatedNotification implements NotificationInterface
     public function toJsonRpc(): array
     {
         return [
-            'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
+            'jsonrpc' => ProtocolVersions::JSONRPC_VERSION,
             'method' => $this->method,
             'params' => $this->getParams(),
         ];

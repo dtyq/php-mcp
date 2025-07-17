@@ -10,8 +10,8 @@ namespace Dtyq\PhpMcp\Tests\Unit\Server\FastMcp\Prompts;
 use Closure;
 use Dtyq\PhpMcp\Server\FastMcp\Prompts\RegisteredPrompt;
 use Dtyq\PhpMcp\Shared\Exceptions\PromptError;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\TextContent;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Prompts\GetPromptResult;
 use Dtyq\PhpMcp\Types\Prompts\Prompt;
 use Dtyq\PhpMcp\Types\Prompts\PromptArgument;
@@ -48,7 +48,7 @@ class RegisteredPromptTest extends TestCase
                 : "Hello, {$name}!";
 
             $message = new PromptMessage(
-                ProtocolConstants::ROLE_USER,
+                MessageConstants::ROLE_USER,
                 new TextContent($greeting)
             );
 
@@ -75,7 +75,7 @@ class RegisteredPromptTest extends TestCase
         $this->assertCount(1, $result->getMessages());
 
         $message = $result->getMessages()[0];
-        $this->assertEquals(ProtocolConstants::ROLE_USER, $message->getRole());
+        $this->assertEquals(MessageConstants::ROLE_USER, $message->getRole());
         $this->assertEquals('Good day, Alice.', $message->getTextContent());
     }
 
@@ -195,15 +195,15 @@ class RegisteredPromptTest extends TestCase
         $complexCallable = function (array $args): GetPromptResult {
             $messages = [
                 new PromptMessage(
-                    ProtocolConstants::ROLE_USER,
+                    MessageConstants::ROLE_USER,
                     new TextContent('System: Please review the following code.')
                 ),
                 new PromptMessage(
-                    ProtocolConstants::ROLE_ASSISTANT,
+                    MessageConstants::ROLE_ASSISTANT,
                     new TextContent('I\'ll review the code for you.')
                 ),
                 new PromptMessage(
-                    ProtocolConstants::ROLE_USER,
+                    MessageConstants::ROLE_USER,
                     new TextContent($args['code'] ?? 'No code provided')
                 ),
             ];

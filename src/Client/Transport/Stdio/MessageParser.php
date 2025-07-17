@@ -10,7 +10,7 @@ namespace Dtyq\PhpMcp\Client\Transport\Stdio;
 use Dtyq\PhpMcp\Client\Configuration\StdioConfig;
 use Dtyq\PhpMcp\Shared\Exceptions\ProtocolError;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Constants\ProtocolVersions;
 use Exception;
 
 /**
@@ -148,7 +148,7 @@ class MessageParser
     public function validateJsonRpcStructure(array $data): void
     {
         // Check JSON-RPC version
-        if (! isset($data['jsonrpc']) || $data['jsonrpc'] !== ProtocolConstants::JSONRPC_VERSION) {
+        if (! isset($data['jsonrpc']) || $data['jsonrpc'] !== ProtocolVersions::JSONRPC_VERSION) {
             throw new ProtocolError('Invalid or missing JSON-RPC version');
         }
 

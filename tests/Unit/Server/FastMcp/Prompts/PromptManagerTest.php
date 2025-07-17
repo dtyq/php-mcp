@@ -10,8 +10,8 @@ namespace Dtyq\PhpMcp\Tests\Unit\Server\FastMcp\Prompts;
 use Dtyq\PhpMcp\Server\FastMcp\Prompts\PromptManager;
 use Dtyq\PhpMcp\Server\FastMcp\Prompts\RegisteredPrompt;
 use Dtyq\PhpMcp\Shared\Exceptions\PromptError;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\TextContent;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Prompts\GetPromptResult;
 use Dtyq\PhpMcp\Types\Prompts\Prompt;
 use Dtyq\PhpMcp\Types\Prompts\PromptArgument;
@@ -46,7 +46,7 @@ class PromptManagerTest extends TestCase
                 : "Hello, {$name}!";
 
             $message = new PromptMessage(
-                ProtocolConstants::ROLE_USER,
+                MessageConstants::ROLE_USER,
                 new TextContent($greeting)
             );
 
@@ -196,7 +196,7 @@ class PromptManagerTest extends TestCase
                 $content = "# Code Review Template for {$language}";
 
                 $message = new PromptMessage(
-                    ProtocolConstants::ROLE_USER,
+                    MessageConstants::ROLE_USER,
                     new TextContent($content)
                 );
 
@@ -260,7 +260,7 @@ class PromptManagerTest extends TestCase
                 $content .= "Format: {$format}";
 
                 $message = new PromptMessage(
-                    ProtocolConstants::ROLE_USER,
+                    MessageConstants::ROLE_USER,
                     new TextContent($content)
                 );
 
@@ -291,7 +291,7 @@ class PromptManagerTest extends TestCase
             new Prompt('simple', 'Simple prompt without arguments'),
             fn (array $args) => new GetPromptResult('Simple result', [
                 new PromptMessage(
-                    ProtocolConstants::ROLE_USER,
+                    MessageConstants::ROLE_USER,
                     new TextContent('This is a simple prompt result.')
                 ),
             ])

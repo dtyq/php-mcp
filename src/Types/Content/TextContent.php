@@ -8,8 +8,8 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Content;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Core\BaseTypes;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 
 /**
  * Text content for MCP messages.
@@ -20,7 +20,7 @@ use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 class TextContent implements ContentInterface
 {
     /** @var string Content type identifier */
-    private string $type = ProtocolConstants::CONTENT_TYPE_TEXT;
+    private string $type = MessageConstants::CONTENT_TYPE_TEXT;
 
     /** @var string The text content */
     private string $text;
@@ -41,8 +41,8 @@ class TextContent implements ContentInterface
      */
     public static function fromArray(array $data): self
     {
-        if (! isset($data['type']) || $data['type'] !== ProtocolConstants::CONTENT_TYPE_TEXT) {
-            throw ValidationError::invalidContentType(ProtocolConstants::CONTENT_TYPE_TEXT, $data['type'] ?? 'unknown');
+        if (! isset($data['type']) || $data['type'] !== MessageConstants::CONTENT_TYPE_TEXT) {
+            throw ValidationError::invalidContentType(MessageConstants::CONTENT_TYPE_TEXT, $data['type'] ?? 'unknown');
         }
 
         if (! isset($data['text'])) {

@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Shared\Utilities;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Constants\ProtocolVersions;
 use Exception;
 use JsonException;
 
@@ -322,7 +322,7 @@ class JsonUtils
         }
 
         // Must have jsonrpc field with value "2.0"
-        if (! isset($data['jsonrpc']) || $data['jsonrpc'] !== ProtocolConstants::JSONRPC_VERSION) {
+        if (! isset($data['jsonrpc']) || $data['jsonrpc'] !== ProtocolVersions::JSONRPC_VERSION) {
             return false;
         }
 

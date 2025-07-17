@@ -11,7 +11,7 @@ use Dtyq\PhpMcp\Server\Transports\Core\AbstractTransport;
 use Dtyq\PhpMcp\Server\Transports\Core\TransportMetadata;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Constants\TransportTypes;
 use Exception;
 use Throwable;
 
@@ -273,7 +273,7 @@ class StdioTransport extends AbstractTransport
 
     protected function getTransportType(): string
     {
-        return ProtocolConstants::TRANSPORT_TYPE_STDIO;
+        return TransportTypes::TRANSPORT_TYPE_STDIO;
     }
 
     /**

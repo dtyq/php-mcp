@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Core;
 
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Constants\ProtocolVersions;
 use Dtyq\PhpMcp\Types\Core\RequestInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -49,7 +49,7 @@ class RequestInterfaceTest extends TestCase
             public function toJsonRpc(): array
             {
                 return [
-                    'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
+                    'jsonrpc' => ProtocolVersions::JSONRPC_VERSION,
                     'id' => $this->getId(),
                     'method' => $this->getMethod(),
                     'params' => $this->getParams(),
@@ -107,7 +107,7 @@ class RequestInterfaceTest extends TestCase
             public function toJsonRpc(): array
             {
                 return [
-                    'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
+                    'jsonrpc' => ProtocolVersions::JSONRPC_VERSION,
                     'id' => $this->getId(),
                     'method' => $this->getMethod(),
                 ];
@@ -165,7 +165,7 @@ class RequestInterfaceTest extends TestCase
             public function toJsonRpc(): array
             {
                 $result = [
-                    'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
+                    'jsonrpc' => ProtocolVersions::JSONRPC_VERSION,
                     'id' => $this->getId(),
                     'method' => $this->getMethod(),
                 ];
@@ -195,7 +195,7 @@ class RequestInterfaceTest extends TestCase
         $this->assertArrayHasKey('id', $jsonRpc);
         $this->assertArrayHasKey('method', $jsonRpc);
         $this->assertArrayHasKey('params', $jsonRpc);
-        $this->assertEquals(ProtocolConstants::JSONRPC_VERSION, $jsonRpc['jsonrpc']);
+        $this->assertEquals(ProtocolVersions::JSONRPC_VERSION, $jsonRpc['jsonrpc']);
         $this->assertEquals('test-id', $jsonRpc['id']);
         $this->assertEquals('test/request', $jsonRpc['method']);
         $this->assertEquals(['key1' => 'value1', 'key2' => 123], $jsonRpc['params']);
@@ -233,7 +233,7 @@ class RequestInterfaceTest extends TestCase
             public function toJsonRpc(): array
             {
                 return [
-                    'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
+                    'jsonrpc' => ProtocolVersions::JSONRPC_VERSION,
                     'id' => $this->getId(),
                     'method' => $this->getMethod(),
                 ];
@@ -292,7 +292,7 @@ class RequestInterfaceTest extends TestCase
             public function toJsonRpc(): array
             {
                 return [
-                    'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
+                    'jsonrpc' => ProtocolVersions::JSONRPC_VERSION,
                     'id' => $this->getId(),
                     'method' => $this->getMethod(),
                 ];

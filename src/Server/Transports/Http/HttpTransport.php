@@ -14,7 +14,7 @@ use Dtyq\PhpMcp\Shared\Auth\AuthenticatorInterface;
 use Dtyq\PhpMcp\Shared\Auth\NullAuthenticator;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Constants\TransportTypes;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -186,7 +186,7 @@ class HttpTransport extends AbstractTransport
 
     protected function getTransportType(): string
     {
-        return ProtocolConstants::TRANSPORT_TYPE_HTTP;
+        return TransportTypes::TRANSPORT_TYPE_HTTP;
     }
 
     /**

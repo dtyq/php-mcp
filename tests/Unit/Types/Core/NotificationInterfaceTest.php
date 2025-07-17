@@ -7,8 +7,8 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Core;
 
+use Dtyq\PhpMcp\Types\Constants\ProtocolVersions;
 use Dtyq\PhpMcp\Types\Core\NotificationInterface;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -36,7 +36,7 @@ class NotificationInterfaceTest extends TestCase
             public function toJsonRpc(): array
             {
                 return [
-                    'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
+                    'jsonrpc' => ProtocolVersions::JSONRPC_VERSION,
                     'method' => $this->getMethod(),
                     'params' => $this->getParams(),
                 ];
@@ -79,7 +79,7 @@ class NotificationInterfaceTest extends TestCase
             public function toJsonRpc(): array
             {
                 return [
-                    'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
+                    'jsonrpc' => ProtocolVersions::JSONRPC_VERSION,
                     'method' => $this->getMethod(),
                 ];
             }
@@ -118,7 +118,7 @@ class NotificationInterfaceTest extends TestCase
             public function toJsonRpc(): array
             {
                 $result = [
-                    'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
+                    'jsonrpc' => ProtocolVersions::JSONRPC_VERSION,
                     'method' => $this->getMethod(),
                 ];
 
@@ -146,7 +146,7 @@ class NotificationInterfaceTest extends TestCase
         $this->assertArrayHasKey('jsonrpc', $jsonRpc);
         $this->assertArrayHasKey('method', $jsonRpc);
         $this->assertArrayHasKey('params', $jsonRpc);
-        $this->assertEquals(ProtocolConstants::JSONRPC_VERSION, $jsonRpc['jsonrpc']);
+        $this->assertEquals(ProtocolVersions::JSONRPC_VERSION, $jsonRpc['jsonrpc']);
         $this->assertEquals('test/method', $jsonRpc['method']);
         $this->assertEquals(['param1' => 'value1', 'param2' => 42], $jsonRpc['params']);
     }
@@ -170,7 +170,7 @@ class NotificationInterfaceTest extends TestCase
             public function toJsonRpc(): array
             {
                 return [
-                    'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
+                    'jsonrpc' => ProtocolVersions::JSONRPC_VERSION,
                     'method' => $this->getMethod(),
                 ];
             }

@@ -9,6 +9,7 @@ namespace Dtyq\PhpMcp\Types\Core;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
+use Dtyq\PhpMcp\Types\Constants\ProtocolVersions;
 use Exception;
 
 /**
@@ -127,12 +128,12 @@ final class MessageValidator
             throw ValidationError::requiredFieldMissing('jsonrpc', 'JSON-RPC message', $message);
         }
 
-        if ($message['jsonrpc'] !== ProtocolConstants::JSONRPC_VERSION) {
+        if ($message['jsonrpc'] !== ProtocolVersions::JSONRPC_VERSION) {
             throw ValidationError::invalidFieldValue(
                 'jsonrpc',
-                'must be "' . ProtocolConstants::JSONRPC_VERSION . '"',
+                'must be "' . ProtocolVersions::JSONRPC_VERSION . '"',
                 [
-                    'expected' => ProtocolConstants::JSONRPC_VERSION,
+                    'expected' => ProtocolVersions::JSONRPC_VERSION,
                     'actual' => $message['jsonrpc'],
                     'message' => $message,
                 ]

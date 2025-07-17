@@ -8,9 +8,10 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Content;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
+use Dtyq\PhpMcp\Types\Constants\MimeTypes;
 use Dtyq\PhpMcp\Types\Content\Annotations;
 use Dtyq\PhpMcp\Types\Content\AudioContent;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -30,12 +31,12 @@ class AudioContentTest extends TestCase
     {
         $content = new AudioContent(
             $this->validBase64Audio,
-            ProtocolConstants::MIME_TYPE_AUDIO_MP3
+            MimeTypes::MIME_TYPE_AUDIO_MP3
         );
 
-        $this->assertEquals(ProtocolConstants::CONTENT_TYPE_AUDIO, $content->getType());
+        $this->assertEquals(MessageConstants::CONTENT_TYPE_AUDIO, $content->getType());
         $this->assertEquals($this->validBase64Audio, $content->getData());
-        $this->assertEquals(ProtocolConstants::MIME_TYPE_AUDIO_MP3, $content->getMimeType());
+        $this->assertEquals(MimeTypes::MIME_TYPE_AUDIO_MP3, $content->getMimeType());
         $this->assertNull($content->getAnnotations());
     }
 
@@ -44,7 +45,7 @@ class AudioContentTest extends TestCase
         $annotations = new Annotations(['user'], 0.8);
         $content = new AudioContent(
             $this->validBase64Audio,
-            ProtocolConstants::MIME_TYPE_AUDIO_WAV,
+            MimeTypes::MIME_TYPE_AUDIO_WAV,
             $annotations
         );
 
@@ -59,7 +60,7 @@ class AudioContentTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('must be valid base64-encoded audio data');
 
-        new AudioContent('invalid base64!@#', ProtocolConstants::MIME_TYPE_AUDIO_MP3);
+        new AudioContent('invalid base64!@#', MimeTypes::MIME_TYPE_AUDIO_MP3);
     }
 
     public function testSetDataWithEmptyData(): void
@@ -67,7 +68,7 @@ class AudioContentTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('audio data cannot be empty');
 
-        new AudioContent('', ProtocolConstants::MIME_TYPE_AUDIO_MP3);
+        new AudioContent('', MimeTypes::MIME_TYPE_AUDIO_MP3);
     }
 
     public function testSetMimeTypeWithInvalidType(): void
@@ -90,7 +91,7 @@ class AudioContentTest extends TestCase
     {
         $content = new AudioContent(
             $this->validBase64Audio,
-            ProtocolConstants::MIME_TYPE_AUDIO_MP3
+            MimeTypes::MIME_TYPE_AUDIO_MP3
         );
 
         $decoded = $content->getDecodedData();
@@ -101,7 +102,7 @@ class AudioContentTest extends TestCase
     {
         $content = new AudioContent(
             $this->validBase64Audio,
-            ProtocolConstants::MIME_TYPE_AUDIO_MP3
+            MimeTypes::MIME_TYPE_AUDIO_MP3
         );
 
         $expectedSize = (int) (strlen($this->validBase64Audio) * 3 / 4);
@@ -112,7 +113,7 @@ class AudioContentTest extends TestCase
     {
         $content = new AudioContent(
             $this->validBase64Audio,
-            ProtocolConstants::MIME_TYPE_AUDIO_MP3
+            MimeTypes::MIME_TYPE_AUDIO_MP3
         );
 
         $summary = $content->getSummary();
@@ -126,16 +127,16 @@ class AudioContentTest extends TestCase
         $annotations = new Annotations(['user'], 0.5);
         $content = new AudioContent(
             $this->validBase64Audio,
-            ProtocolConstants::MIME_TYPE_AUDIO_WAV,
+            MimeTypes::MIME_TYPE_AUDIO_WAV,
             $annotations
         );
 
         $array = $content->toArray();
 
         $this->assertEquals([
-            'type' => ProtocolConstants::CONTENT_TYPE_AUDIO,
+            'type' => MessageConstants::CONTENT_TYPE_AUDIO,
             'data' => $this->validBase64Audio,
-            'mimeType' => ProtocolConstants::MIME_TYPE_AUDIO_WAV,
+            'mimeType' => MimeTypes::MIME_TYPE_AUDIO_WAV,
             'annotations' => $annotations->toArray(),
         ], $array);
     }
@@ -144,15 +145,15 @@ class AudioContentTest extends TestCase
     {
         $content = new AudioContent(
             $this->validBase64Audio,
-            ProtocolConstants::MIME_TYPE_AUDIO_MP3
+            MimeTypes::MIME_TYPE_AUDIO_MP3
         );
 
         $array = $content->toArray();
 
         $this->assertEquals([
-            'type' => ProtocolConstants::CONTENT_TYPE_AUDIO,
+            'type' => MessageConstants::CONTENT_TYPE_AUDIO,
             'data' => $this->validBase64Audio,
-            'mimeType' => ProtocolConstants::MIME_TYPE_AUDIO_MP3,
+            'mimeType' => MimeTypes::MIME_TYPE_AUDIO_MP3,
         ], $array);
     }
 
@@ -160,7 +161,7 @@ class AudioContentTest extends TestCase
     {
         $data = [
             'data' => $this->validBase64Audio,
-            'mimeType' => ProtocolConstants::MIME_TYPE_AUDIO_OGG,
+            'mimeType' => MimeTypes::MIME_TYPE_AUDIO_OGG,
             'annotations' => [
                 'audience' => ['assistant'],
                 'priority' => 0.7,
@@ -170,7 +171,7 @@ class AudioContentTest extends TestCase
         $content = AudioContent::fromArray($data);
 
         $this->assertEquals($this->validBase64Audio, $content->getData());
-        $this->assertEquals(ProtocolConstants::MIME_TYPE_AUDIO_OGG, $content->getMimeType());
+        $this->assertEquals(MimeTypes::MIME_TYPE_AUDIO_OGG, $content->getMimeType());
         $this->assertTrue($content->hasAnnotations());
         $this->assertEquals(0.7, $content->getPriority());
     }
@@ -181,7 +182,7 @@ class AudioContentTest extends TestCase
         $this->expectExceptionMessage('Required field \'data\' is missing');
 
         AudioContent::fromArray([
-            'mimeType' => ProtocolConstants::MIME_TYPE_AUDIO_MP3,
+            'mimeType' => MimeTypes::MIME_TYPE_AUDIO_MP3,
         ]);
     }
 
@@ -202,18 +203,18 @@ class AudioContentTest extends TestCase
 
         AudioContent::fromArray([
             'data' => 123,
-            'mimeType' => ProtocolConstants::MIME_TYPE_AUDIO_MP3,
+            'mimeType' => MimeTypes::MIME_TYPE_AUDIO_MP3,
         ]);
     }
 
     public function testSupportedAudioMimeTypes(): void
     {
         $supportedTypes = [
-            ProtocolConstants::MIME_TYPE_AUDIO_MP3,
-            ProtocolConstants::MIME_TYPE_AUDIO_WAV,
-            ProtocolConstants::MIME_TYPE_AUDIO_OGG,
-            ProtocolConstants::MIME_TYPE_AUDIO_M4A,
-            ProtocolConstants::MIME_TYPE_AUDIO_WEBM,
+            MimeTypes::MIME_TYPE_AUDIO_MP3,
+            MimeTypes::MIME_TYPE_AUDIO_WAV,
+            MimeTypes::MIME_TYPE_AUDIO_OGG,
+            MimeTypes::MIME_TYPE_AUDIO_M4A,
+            MimeTypes::MIME_TYPE_AUDIO_WEBM,
         ];
 
         foreach ($supportedTypes as $mimeType) {
@@ -233,7 +234,7 @@ class AudioContentTest extends TestCase
     {
         $content = new AudioContent(
             $this->validBase64Audio,
-            ProtocolConstants::MIME_TYPE_AUDIO_MP3
+            MimeTypes::MIME_TYPE_AUDIO_MP3
         );
 
         $json = $content->toJson();

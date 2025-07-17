@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Requests;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Constants\ProtocolVersions;
 use Dtyq\PhpMcp\Types\Core\RequestInterface;
 
 /**
@@ -108,7 +108,7 @@ class SubscribeRequest implements RequestInterface
     public function toJsonRpc(): array
     {
         return [
-            'jsonrpc' => ProtocolConstants::JSONRPC_VERSION,
+            'jsonrpc' => ProtocolVersions::JSONRPC_VERSION,
             'id' => $this->id,
             'method' => $this->method,
             'params' => $this->getParams(),

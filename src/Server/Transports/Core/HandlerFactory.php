@@ -22,7 +22,7 @@ use Dtyq\PhpMcp\Server\Transports\Core\Handlers\PingMessageHandler;
 use Dtyq\PhpMcp\Server\Transports\Core\Handlers\ProgressNotificationMessageHandler;
 use Dtyq\PhpMcp\Server\Transports\Core\Handlers\ReadResourceMessageHandler;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Constants\MethodConstants;
 
 /**
  * Unified factory for creating and managing message handlers.
@@ -37,26 +37,26 @@ class HandlerFactory
     /** @var array<string, class-string<MessageHandlerInterface|NotificationHandlerInterface>> */
     private array $handlers = [
         // Core MCP protocol methods
-        ProtocolConstants::METHOD_INITIALIZE => InitializeMessageHandler::class,
-        ProtocolConstants::METHOD_PING => PingMessageHandler::class,
+        MethodConstants::METHOD_INITIALIZE => InitializeMessageHandler::class,
+        MethodConstants::METHOD_PING => PingMessageHandler::class,
 
         // Tool-related methods
-        ProtocolConstants::METHOD_TOOLS_LIST => ListToolsMessageHandler::class,
-        ProtocolConstants::METHOD_TOOLS_CALL => CallToolMessageHandler::class,
+        MethodConstants::METHOD_TOOLS_LIST => ListToolsMessageHandler::class,
+        MethodConstants::METHOD_TOOLS_CALL => CallToolMessageHandler::class,
 
         // Prompt-related methods
-        ProtocolConstants::METHOD_PROMPTS_LIST => ListPromptsMessageHandler::class,
-        ProtocolConstants::METHOD_PROMPTS_GET => GetPromptMessageHandler::class,
+        MethodConstants::METHOD_PROMPTS_LIST => ListPromptsMessageHandler::class,
+        MethodConstants::METHOD_PROMPTS_GET => GetPromptMessageHandler::class,
 
         // Resource methods
-        ProtocolConstants::METHOD_RESOURCES_LIST => ListResourcesMessageHandler::class,
-        ProtocolConstants::METHOD_RESOURCES_TEMPLATES_LIST => ListResourceTemplatesMessageHandler::class,
-        ProtocolConstants::METHOD_RESOURCES_READ => ReadResourceMessageHandler::class,
+        MethodConstants::METHOD_RESOURCES_LIST => ListResourcesMessageHandler::class,
+        MethodConstants::METHOD_RESOURCES_TEMPLATES_LIST => ListResourceTemplatesMessageHandler::class,
+        MethodConstants::METHOD_RESOURCES_READ => ReadResourceMessageHandler::class,
 
         // Core notification methods
-        ProtocolConstants::NOTIFICATION_INITIALIZED => InitializedNotificationMessageHandler::class,
-        ProtocolConstants::NOTIFICATION_PROGRESS => ProgressNotificationMessageHandler::class,
-        ProtocolConstants::NOTIFICATION_CANCELLED => CancelledNotificationMessageHandler::class,
+        MethodConstants::NOTIFICATION_INITIALIZED => InitializedNotificationMessageHandler::class,
+        MethodConstants::NOTIFICATION_PROGRESS => ProgressNotificationMessageHandler::class,
+        MethodConstants::NOTIFICATION_CANCELLED => CancelledNotificationMessageHandler::class,
     ];
 
     /**

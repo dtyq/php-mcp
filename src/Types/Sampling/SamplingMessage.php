@@ -9,11 +9,11 @@ namespace Dtyq\PhpMcp\Types\Sampling;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\ContentInterface;
 use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
 use Dtyq\PhpMcp\Types\Content\ImageContent;
 use Dtyq\PhpMcp\Types\Content\TextContent;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 
 /**
  * Represents a message used in LLM sampling requests.
@@ -77,7 +77,7 @@ class SamplingMessage
      */
     public static function createUserMessage(string $text): self
     {
-        return new self(ProtocolConstants::ROLE_USER, new TextContent($text));
+        return new self(MessageConstants::ROLE_USER, new TextContent($text));
     }
 
     /**
@@ -87,7 +87,7 @@ class SamplingMessage
      */
     public static function createAssistantMessage(string $text): self
     {
-        return new self(ProtocolConstants::ROLE_ASSISTANT, new TextContent($text));
+        return new self(MessageConstants::ROLE_ASSISTANT, new TextContent($text));
     }
 
     /**
@@ -98,7 +98,7 @@ class SamplingMessage
      */
     public static function createUserImageMessage(string $data, string $mimeType): self
     {
-        return new self(ProtocolConstants::ROLE_USER, new ImageContent($data, $mimeType));
+        return new self(MessageConstants::ROLE_USER, new ImageContent($data, $mimeType));
     }
 
     /**
@@ -122,7 +122,7 @@ class SamplingMessage
      */
     public function isUserMessage(): bool
     {
-        return $this->role === ProtocolConstants::ROLE_USER;
+        return $this->role === MessageConstants::ROLE_USER;
     }
 
     /**
@@ -130,7 +130,7 @@ class SamplingMessage
      */
     public function isAssistantMessage(): bool
     {
-        return $this->role === ProtocolConstants::ROLE_ASSISTANT;
+        return $this->role === MessageConstants::ROLE_ASSISTANT;
     }
 
     /**
@@ -204,7 +204,7 @@ class SamplingMessage
             throw ValidationError::emptyField('role');
         }
 
-        if (! in_array($role, [ProtocolConstants::ROLE_USER, ProtocolConstants::ROLE_ASSISTANT], true)) {
+        if (! in_array($role, [MessageConstants::ROLE_USER, MessageConstants::ROLE_ASSISTANT], true)) {
             throw ValidationError::invalidFieldValue('role', 'must be either "user" or "assistant"');
         }
 

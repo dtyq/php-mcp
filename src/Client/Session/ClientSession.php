@@ -12,10 +12,10 @@ use Dtyq\PhpMcp\Client\Core\SessionInterface;
 use Dtyq\PhpMcp\Client\Core\TransportInterface;
 use Dtyq\PhpMcp\Shared\Exceptions\ProtocolError;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
+use Dtyq\PhpMcp\Types\Constants\ProtocolVersions;
 use Dtyq\PhpMcp\Types\Core\JsonRpcRequest;
 use Dtyq\PhpMcp\Types\Core\JsonRpcResponse;
 use Dtyq\PhpMcp\Types\Core\NotificationInterface;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Core\RequestInterface;
 use Dtyq\PhpMcp\Types\Notifications\InitializedNotification;
 use Dtyq\PhpMcp\Types\Prompts\GetPromptResult;
@@ -91,7 +91,7 @@ class ClientSession extends AbstractSession implements SessionInterface
         try {
             $response = $this->sendRequestAndWaitForResponse(
                 new InitializeRequest(
-                    ProtocolConstants::LATEST_PROTOCOL_VERSION,
+                    ProtocolVersions::LATEST_PROTOCOL_VERSION,
                     $this->clientCapabilities,
                     $this->metadata->createClientInfo()
                 ),
@@ -387,9 +387,9 @@ class ClientSession extends AbstractSession implements SessionInterface
      */
     private function validateProtocolVersion(string $serverVersion): void
     {
-        if (! in_array($serverVersion, ProtocolConstants::getSupportedProtocolVersions())) {
+        if (! in_array($serverVersion, ProtocolVersions::getSupportedProtocolVersions())) {
             throw new ProtocolError(
-                'Protocol version mismatch. Client: ' . ProtocolConstants::LATEST_PROTOCOL_VERSION
+                'Protocol version mismatch. Client: ' . ProtocolVersions::LATEST_PROTOCOL_VERSION
                 . ', Server: ' . $serverVersion
             );
         }

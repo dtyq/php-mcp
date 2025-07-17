@@ -17,7 +17,7 @@ use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Constants\TransportTypes;
 use Exception;
 
 /**
@@ -197,10 +197,10 @@ class McpClient
     private function createSession(string $transportType, array $config): ClientSession
     {
         switch ($transportType) {
-            case ProtocolConstants::TRANSPORT_TYPE_STDIO:
+            case TransportTypes::TRANSPORT_TYPE_STDIO:
                 $session = $this->createStdioSession($config);
                 break;
-            case ProtocolConstants::TRANSPORT_TYPE_HTTP:
+            case TransportTypes::TRANSPORT_TYPE_HTTP:
                 $session = $this->createHttpSession($config);
                 break;
             default:
@@ -210,8 +210,8 @@ class McpClient
                     [
                         'type' => $transportType,
                         'supported' => [
-                            ProtocolConstants::TRANSPORT_TYPE_STDIO,
-                            ProtocolConstants::TRANSPORT_TYPE_HTTP,
+                            TransportTypes::TRANSPORT_TYPE_STDIO,
+                            TransportTypes::TRANSPORT_TYPE_HTTP,
                         ],
                     ]
                 );
@@ -255,13 +255,13 @@ class McpClient
 
         // Create client config
         $clientConfig = new ClientConfig(
-            ProtocolConstants::TRANSPORT_TYPE_STDIO,
+            TransportTypes::TRANSPORT_TYPE_STDIO,
             $transportConfig
         );
 
         // Create transport using factory
         $transport = TransportFactory::create(
-            ProtocolConstants::TRANSPORT_TYPE_STDIO,
+            TransportTypes::TRANSPORT_TYPE_STDIO,
             $clientConfig,
             $this->application
         );
@@ -315,13 +315,13 @@ class McpClient
 
         // Create client config
         $clientConfig = new ClientConfig(
-            ProtocolConstants::TRANSPORT_TYPE_HTTP,
+            TransportTypes::TRANSPORT_TYPE_HTTP,
             $transportConfig
         );
 
         // Create transport using factory
         $transport = TransportFactory::create(
-            ProtocolConstants::TRANSPORT_TYPE_HTTP,
+            TransportTypes::TRANSPORT_TYPE_HTTP,
             $clientConfig,
             $this->application
         );

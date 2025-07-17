@@ -8,8 +8,8 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Resources;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\Annotations;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Resources\ResourceTemplate;
 use PHPUnit\Framework\TestCase;
 
@@ -200,12 +200,12 @@ class ResourceTemplateTest extends TestCase
     public function testIsTargetedTo(): void
     {
         $template = new ResourceTemplate('file:///valid/{id}', 'Test');
-        $this->assertTrue($template->isTargetedTo(ProtocolConstants::ROLE_USER));
+        $this->assertTrue($template->isTargetedTo(MessageConstants::ROLE_USER));
 
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER]);
+        $annotations = new Annotations([MessageConstants::ROLE_USER]);
         $template->setAnnotations($annotations);
-        $this->assertTrue($template->isTargetedTo(ProtocolConstants::ROLE_USER));
-        $this->assertFalse($template->isTargetedTo(ProtocolConstants::ROLE_ASSISTANT));
+        $this->assertTrue($template->isTargetedTo(MessageConstants::ROLE_USER));
+        $this->assertFalse($template->isTargetedTo(MessageConstants::ROLE_ASSISTANT));
     }
 
     public function testGetPriority(): void
@@ -271,7 +271,7 @@ class ResourceTemplateTest extends TestCase
         $name = 'File Template';
         $description = 'A template for files';
         $mimeType = 'text/plain';
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER], 0.5);
+        $annotations = new Annotations([MessageConstants::ROLE_USER], 0.5);
 
         $template = new ResourceTemplate($uriTemplate, $name, $description, $mimeType, $annotations);
 
@@ -281,7 +281,7 @@ class ResourceTemplateTest extends TestCase
             'description' => $description,
             'mimeType' => $mimeType,
             'annotations' => [
-                'audience' => [ProtocolConstants::ROLE_USER],
+                'audience' => [MessageConstants::ROLE_USER],
                 'priority' => 0.5,
             ],
         ];

@@ -8,6 +8,8 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Core;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Constants\LogLevels;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 
 /**
  * Basic type definitions for MCP protocol.
@@ -53,10 +55,10 @@ final class BaseTypes
      */
     public static function validateRole(string $role): void
     {
-        if (! ProtocolConstants::isValidRole($role)) {
+        if (! MessageConstants::isValidRole($role)) {
             throw ValidationError::invalidFieldValue(
                 'role',
-                'must be one of: ' . implode(', ', ProtocolConstants::getValidRoles())
+                'must be one of: ' . implode(', ', MessageConstants::getValidRoles())
             );
         }
     }
@@ -114,10 +116,10 @@ final class BaseTypes
      */
     public static function validateLogLevel(string $level): void
     {
-        if (! ProtocolConstants::isValidLogLevel($level)) {
+        if (! LogLevels::isValidLogLevel($level)) {
             throw ValidationError::invalidFieldValue(
                 'logLevel',
-                'must be one of: ' . implode(', ', ProtocolConstants::getValidLogLevels())
+                'must be one of: ' . implode(', ', LogLevels::getValidLogLevels())
             );
         }
     }
@@ -130,10 +132,10 @@ final class BaseTypes
     public static function validateContentType(string $type): void
     {
         $validTypes = [
-            ProtocolConstants::CONTENT_TYPE_TEXT,
-            ProtocolConstants::CONTENT_TYPE_IMAGE,
-            ProtocolConstants::CONTENT_TYPE_RESOURCE,
-            ProtocolConstants::CONTENT_TYPE_AUDIO,
+            MessageConstants::CONTENT_TYPE_TEXT,
+            MessageConstants::CONTENT_TYPE_IMAGE,
+            MessageConstants::CONTENT_TYPE_RESOURCE,
+            MessageConstants::CONTENT_TYPE_AUDIO,
         ];
 
         if (! in_array($type, $validTypes, true)) {
@@ -152,8 +154,8 @@ final class BaseTypes
     public static function validateReferenceType(string $type): void
     {
         $validTypes = [
-            ProtocolConstants::REF_TYPE_RESOURCE,
-            ProtocolConstants::REF_TYPE_PROMPT,
+            MessageConstants::REF_TYPE_RESOURCE,
+            MessageConstants::REF_TYPE_PROMPT,
         ];
 
         if (! in_array($type, $validTypes, true)) {
@@ -176,10 +178,10 @@ final class BaseTypes
         }
 
         $validReasons = [
-            ProtocolConstants::STOP_REASON_END_TURN,
-            ProtocolConstants::STOP_REASON_MAX_TOKENS,
-            ProtocolConstants::STOP_REASON_STOP_SEQUENCE,
-            ProtocolConstants::STOP_REASON_TOOL_USE,
+            MessageConstants::STOP_REASON_END_TURN,
+            MessageConstants::STOP_REASON_MAX_TOKENS,
+            MessageConstants::STOP_REASON_STOP_SEQUENCE,
+            MessageConstants::STOP_REASON_TOOL_USE,
         ];
 
         if (! in_array($reason, $validReasons, true)) {

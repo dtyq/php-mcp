@@ -15,7 +15,7 @@ use Dtyq\PhpMcp\Client\Transport\Http\HttpTransport;
 use Dtyq\PhpMcp\Client\Transport\Stdio\StdioTransport;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Constants\TransportTypes;
 
 /**
  * Factory for creating transport instances.
@@ -28,8 +28,8 @@ class TransportFactory
 {
     /** @var array<string, class-string<TransportInterface>> */
     private static array $transportTypes = [
-        ProtocolConstants::TRANSPORT_TYPE_STDIO => StdioTransport::class,
-        ProtocolConstants::TRANSPORT_TYPE_HTTP => HttpTransport::class,
+        TransportTypes::TRANSPORT_TYPE_STDIO => StdioTransport::class,
+        TransportTypes::TRANSPORT_TYPE_HTTP => HttpTransport::class,
     ];
 
     /**
@@ -51,9 +51,9 @@ class TransportFactory
 
         // Create transport based on type
         switch ($type) {
-            case ProtocolConstants::TRANSPORT_TYPE_STDIO:
+            case TransportTypes::TRANSPORT_TYPE_STDIO:
                 return self::createStdioTransport($transportConfig, $application);
-            case ProtocolConstants::TRANSPORT_TYPE_HTTP:
+            case TransportTypes::TRANSPORT_TYPE_HTTP:
                 return self::createHttpTransport($transportConfig, $application);
             default:
                 throw ValidationError::invalidFieldValue(
@@ -73,8 +73,8 @@ class TransportFactory
     {
         // Combine built-in types with dynamically registered ones
         $builtInTypes = [
-            ProtocolConstants::TRANSPORT_TYPE_STDIO,
-            ProtocolConstants::TRANSPORT_TYPE_HTTP,
+            TransportTypes::TRANSPORT_TYPE_STDIO,
+            TransportTypes::TRANSPORT_TYPE_HTTP,
         ];
 
         $registeredTypes = array_keys(self::$transportTypes);
@@ -136,10 +136,10 @@ class TransportFactory
         self::validateTransportType($type);
 
         switch ($type) {
-            case ProtocolConstants::TRANSPORT_TYPE_STDIO:
+            case TransportTypes::TRANSPORT_TYPE_STDIO:
                 $defaults = StdioConfig::getDefaults();
                 break;
-            case ProtocolConstants::TRANSPORT_TYPE_HTTP:
+            case TransportTypes::TRANSPORT_TYPE_HTTP:
                 $defaults = HttpConfig::DEFAULTS;
                 break;
             default:
@@ -229,8 +229,8 @@ class TransportFactory
 
         // Use protocol constants for validation
         $knownTypes = [
-            ProtocolConstants::TRANSPORT_TYPE_STDIO,
-            ProtocolConstants::TRANSPORT_TYPE_HTTP,
+            TransportTypes::TRANSPORT_TYPE_STDIO,
+            TransportTypes::TRANSPORT_TYPE_HTTP,
         ];
 
         if (! in_array($type, $knownTypes, true)) {

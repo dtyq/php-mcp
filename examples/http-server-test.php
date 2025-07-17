@@ -12,8 +12,8 @@ use Dtyq\PhpMcp\Server\FastMcp\Resources\RegisteredResourceTemplate;
 use Dtyq\PhpMcp\Server\FastMcp\Tools\RegisteredTool;
 use Dtyq\PhpMcp\Server\McpServer;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\TextContent;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Prompts\GetPromptResult;
 use Dtyq\PhpMcp\Types\Prompts\Prompt;
 use Dtyq\PhpMcp\Types\Prompts\PromptArgument;
@@ -38,6 +38,7 @@ function generateSessionId(): string
 
 /**
  * Extract session ID from request headers.
+ * @param array<string, array<string>|string> $headers
  */
 function getSessionIdFromHeaders(array $headers): ?string
 {
@@ -175,11 +176,17 @@ echo $response->getBody()->getContents();
 function createContainer(): ContainerInterface
 {
     return new class implements ContainerInterface {
+        /** @var array<string, mixed> */
         private array $services = [];
 
         public function __construct()
         {
             $this->services[LoggerInterface::class] = new class extends AbstractLogger {
+                /**
+                 * @param mixed $level
+                 * @param mixed $message
+                 * @param array<string, mixed> $context
+                 */
                 public function log($level, $message, array $context = []): void
                 {
                     $timestamp = date('Y-m-d H:i:s');
@@ -213,6 +220,9 @@ function createContainer(): ContainerInterface
 
 /**
  * Get server configuration.
+ */
+/**
+ * @return array<string, mixed>
  */
 function getConfig(): array
 {
@@ -364,7 +374,7 @@ function createGreetingPrompt(): RegisteredPrompt
         ];
 
         $greeting = $greetings[$language] ?? $greetings['english'];
-        $message = new PromptMessage(ProtocolConstants::ROLE_USER, new TextContent($greeting));
+        $message = new PromptMessage(MessageConstants::ROLE_USER, new TextContent($greeting));
 
         return new GetPromptResult("Streamable HTTP greeting for {$name}", [$message]);
     });

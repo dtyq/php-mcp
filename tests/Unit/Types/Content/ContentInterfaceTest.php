@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Content;
 
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\Annotations;
 use Dtyq\PhpMcp\Types\Content\ContentInterface;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -28,7 +28,7 @@ class ContentInterfaceTest extends TestCase
 
             public function getType(): string
             {
-                return ProtocolConstants::CONTENT_TYPE_TEXT;
+                return MessageConstants::CONTENT_TYPE_TEXT;
             }
 
             public function getAnnotations(): ?Annotations
@@ -74,11 +74,11 @@ class ContentInterfaceTest extends TestCase
         };
 
         $this->assertInstanceOf(ContentInterface::class, $content);
-        $this->assertEquals(ProtocolConstants::CONTENT_TYPE_TEXT, $content->getType());
+        $this->assertEquals(MessageConstants::CONTENT_TYPE_TEXT, $content->getType());
         $this->assertNull($content->getAnnotations());
         $this->assertFalse($content->hasAnnotations());
         $this->assertNull($content->getPriority());
-        $this->assertFalse($content->isTargetedTo(ProtocolConstants::ROLE_USER));
+        $this->assertFalse($content->isTargetedTo(MessageConstants::ROLE_USER));
     }
 
     /**
@@ -91,7 +91,7 @@ class ContentInterfaceTest extends TestCase
 
             public function getType(): string
             {
-                return ProtocolConstants::CONTENT_TYPE_TEXT;
+                return MessageConstants::CONTENT_TYPE_TEXT;
             }
 
             public function getAnnotations(): ?Annotations
@@ -132,13 +132,13 @@ class ContentInterfaceTest extends TestCase
 
         $this->assertFalse($content->hasAnnotations());
 
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER], 0.8);
+        $annotations = new Annotations([MessageConstants::ROLE_USER], 0.8);
         $content->setAnnotations($annotations);
 
         $this->assertTrue($content->hasAnnotations());
         $this->assertSame($annotations, $content->getAnnotations());
         $this->assertEquals(0.8, $content->getPriority());
-        $this->assertTrue($content->isTargetedTo(ProtocolConstants::ROLE_USER));
+        $this->assertTrue($content->isTargetedTo(MessageConstants::ROLE_USER));
 
         $content->setAnnotations(null);
         $this->assertFalse($content->hasAnnotations());
@@ -156,7 +156,7 @@ class ContentInterfaceTest extends TestCase
 
             public function getType(): string
             {
-                return ProtocolConstants::CONTENT_TYPE_IMAGE;
+                return MessageConstants::CONTENT_TYPE_IMAGE;
             }
 
             public function getAnnotations(): ?Annotations
@@ -208,11 +208,11 @@ class ContentInterfaceTest extends TestCase
 
         $this->assertIsArray($array);
         $this->assertArrayHasKey('type', $array);
-        $this->assertEquals(ProtocolConstants::CONTENT_TYPE_IMAGE, $array['type']);
+        $this->assertEquals(MessageConstants::CONTENT_TYPE_IMAGE, $array['type']);
         $this->assertArrayNotHasKey('annotations', $array);
 
         // Test with annotations
-        $annotations = new Annotations([ProtocolConstants::ROLE_ASSISTANT], 0.5);
+        $annotations = new Annotations([MessageConstants::ROLE_ASSISTANT], 0.5);
         $content->setAnnotations($annotations);
 
         $arrayWithAnnotations = $content->toArray();
@@ -227,7 +227,7 @@ class ContentInterfaceTest extends TestCase
         $content = new class implements ContentInterface {
             public function getType(): string
             {
-                return ProtocolConstants::CONTENT_TYPE_TEXT;
+                return MessageConstants::CONTENT_TYPE_TEXT;
             }
 
             public function getAnnotations(): ?Annotations
@@ -275,7 +275,7 @@ class ContentInterfaceTest extends TestCase
         $this->assertJson($json);
 
         $decoded = json_decode($json, true);
-        $this->assertEquals(ProtocolConstants::CONTENT_TYPE_TEXT, $decoded['type']);
+        $this->assertEquals(MessageConstants::CONTENT_TYPE_TEXT, $decoded['type']);
         $this->assertEquals('Hello world', $decoded['text']);
     }
 }

@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Content;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 
 /**
  * Image content for MCP messages.
@@ -19,7 +19,7 @@ use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 class ImageContent implements ContentInterface
 {
     /** @var string Content type identifier */
-    private string $type = ProtocolConstants::CONTENT_TYPE_IMAGE;
+    private string $type = MessageConstants::CONTENT_TYPE_IMAGE;
 
     /** @var string Base64-encoded image data */
     private string $data;
@@ -44,8 +44,8 @@ class ImageContent implements ContentInterface
      */
     public static function fromArray(array $data): self
     {
-        if (! isset($data['type']) || $data['type'] !== ProtocolConstants::CONTENT_TYPE_IMAGE) {
-            throw ValidationError::invalidContentType(ProtocolConstants::CONTENT_TYPE_IMAGE, $data['type'] ?? 'unknown');
+        if (! isset($data['type']) || $data['type'] !== MessageConstants::CONTENT_TYPE_IMAGE) {
+            throw ValidationError::invalidContentType(MessageConstants::CONTENT_TYPE_IMAGE, $data['type'] ?? 'unknown');
         }
 
         if (! isset($data['data'])) {

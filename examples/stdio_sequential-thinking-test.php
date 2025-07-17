@@ -57,6 +57,11 @@ $container = new class implements ContainerInterface {
     {
         // Register logger
         $this->services[LoggerInterface::class] = new class extends AbstractLogger {
+            /**
+             * @param mixed $level
+             * @param mixed $message
+             * @param array<string, mixed> $context
+             */
             public function log($level, $message, array $context = []): void
             {
                 // Silent logger for this test

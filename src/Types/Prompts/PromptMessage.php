@@ -8,12 +8,12 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Prompts;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\ContentInterface;
 use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
 use Dtyq\PhpMcp\Types\Content\ImageContent;
 use Dtyq\PhpMcp\Types\Content\TextContent;
 use Dtyq\PhpMcp\Types\Core\BaseTypes;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 
 /**
  * A message within a prompt template.
@@ -103,7 +103,7 @@ class PromptMessage
      */
     public function isUserMessage(): bool
     {
-        return $this->role === ProtocolConstants::ROLE_USER;
+        return $this->role === MessageConstants::ROLE_USER;
     }
 
     /**
@@ -111,7 +111,7 @@ class PromptMessage
      */
     public function isAssistantMessage(): bool
     {
-        return $this->role === ProtocolConstants::ROLE_ASSISTANT;
+        return $this->role === MessageConstants::ROLE_ASSISTANT;
     }
 
     /**
@@ -200,7 +200,7 @@ class PromptMessage
     public static function createUserMessage(string $text): self
     {
         return new self(
-            ProtocolConstants::ROLE_USER,
+            MessageConstants::ROLE_USER,
             new TextContent($text)
         );
     }
@@ -211,7 +211,7 @@ class PromptMessage
     public static function createAssistantMessage(string $text): self
     {
         return new self(
-            ProtocolConstants::ROLE_ASSISTANT,
+            MessageConstants::ROLE_ASSISTANT,
             new TextContent($text)
         );
     }
@@ -222,7 +222,7 @@ class PromptMessage
     public static function createUserResourceMessage(EmbeddedResource $resource): self
     {
         return new self(
-            ProtocolConstants::ROLE_USER,
+            MessageConstants::ROLE_USER,
             $resource
         );
     }
@@ -233,7 +233,7 @@ class PromptMessage
     public static function createUserImageMessage(ImageContent $image): self
     {
         return new self(
-            ProtocolConstants::ROLE_USER,
+            MessageConstants::ROLE_USER,
             $image
         );
     }
@@ -252,11 +252,11 @@ class PromptMessage
         $type = $contentData['type'];
 
         switch ($type) {
-            case ProtocolConstants::CONTENT_TYPE_TEXT:
+            case MessageConstants::CONTENT_TYPE_TEXT:
                 return TextContent::fromArray($contentData);
-            case ProtocolConstants::CONTENT_TYPE_IMAGE:
+            case MessageConstants::CONTENT_TYPE_IMAGE:
                 return ImageContent::fromArray($contentData);
-            case ProtocolConstants::CONTENT_TYPE_RESOURCE:
+            case MessageConstants::CONTENT_TYPE_RESOURCE:
                 return EmbeddedResource::fromArray($contentData);
             default:
                 throw ValidationError::invalidContentType('text, image, or resource', $type);

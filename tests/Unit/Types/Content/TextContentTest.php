@@ -8,9 +8,9 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Content;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\Annotations;
 use Dtyq\PhpMcp\Types\Content\TextContent;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -24,7 +24,7 @@ class TextContentTest extends TestCase
         $content = new TextContent($text);
 
         $this->assertSame($text, $content->getText());
-        $this->assertSame(ProtocolConstants::CONTENT_TYPE_TEXT, $content->getType());
+        $this->assertSame(MessageConstants::CONTENT_TYPE_TEXT, $content->getType());
         $this->assertNull($content->getAnnotations());
         $this->assertFalse($content->hasAnnotations());
     }
@@ -32,7 +32,7 @@ class TextContentTest extends TestCase
     public function testConstructorWithAnnotations(): void
     {
         $text = 'Test content';
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER], 0.5);
+        $annotations = new Annotations([MessageConstants::ROLE_USER], 0.5);
         $content = new TextContent($text, $annotations);
 
         $this->assertSame($text, $content->getText());
@@ -51,10 +51,10 @@ class TextContentTest extends TestCase
     public function testFromArrayWithValidData(): void
     {
         $data = [
-            'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
+            'type' => MessageConstants::CONTENT_TYPE_TEXT,
             'text' => 'Test content',
             'annotations' => [
-                'audience' => [ProtocolConstants::ROLE_USER],
+                'audience' => [MessageConstants::ROLE_USER],
                 'priority' => 0.7,
             ],
         ];
@@ -63,7 +63,7 @@ class TextContentTest extends TestCase
 
         $this->assertSame($data['text'], $content->getText());
         $this->assertTrue($content->hasAnnotations());
-        $this->assertSame([ProtocolConstants::ROLE_USER], $content->getAnnotations()->getAudience());
+        $this->assertSame([MessageConstants::ROLE_USER], $content->getAnnotations()->getAudience());
         $this->assertSame(0.7, $content->getAnnotations()->getPriority());
     }
 
@@ -84,7 +84,7 @@ class TextContentTest extends TestCase
         $this->expectExceptionMessage('Required field \'text\' is missing for TextContent');
 
         TextContent::fromArray([
-            'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
+            'type' => MessageConstants::CONTENT_TYPE_TEXT,
         ]);
     }
 
@@ -94,7 +94,7 @@ class TextContentTest extends TestCase
         $this->expectExceptionMessage('Invalid type for field \'text\': expected string, got integer');
 
         TextContent::fromArray([
-            'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
+            'type' => MessageConstants::CONTENT_TYPE_TEXT,
             'text' => 123,
         ]);
     }
@@ -152,12 +152,12 @@ class TextContentTest extends TestCase
     public function testIsTargetedTo(): void
     {
         $content = new TextContent('Test');
-        $this->assertTrue($content->isTargetedTo(ProtocolConstants::ROLE_USER));
+        $this->assertTrue($content->isTargetedTo(MessageConstants::ROLE_USER));
 
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER]);
+        $annotations = new Annotations([MessageConstants::ROLE_USER]);
         $content->setAnnotations($annotations);
-        $this->assertTrue($content->isTargetedTo(ProtocolConstants::ROLE_USER));
-        $this->assertFalse($content->isTargetedTo(ProtocolConstants::ROLE_ASSISTANT));
+        $this->assertTrue($content->isTargetedTo(MessageConstants::ROLE_USER));
+        $this->assertFalse($content->isTargetedTo(MessageConstants::ROLE_ASSISTANT));
     }
 
     public function testGetPriority(): void
@@ -173,14 +173,14 @@ class TextContentTest extends TestCase
     public function testToArray(): void
     {
         $text = 'Test content';
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER], 0.5);
+        $annotations = new Annotations([MessageConstants::ROLE_USER], 0.5);
         $content = new TextContent($text, $annotations);
 
         $expected = [
-            'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
+            'type' => MessageConstants::CONTENT_TYPE_TEXT,
             'text' => $text,
             'annotations' => [
-                'audience' => [ProtocolConstants::ROLE_USER],
+                'audience' => [MessageConstants::ROLE_USER],
                 'priority' => 0.5,
             ],
         ];
@@ -194,7 +194,7 @@ class TextContentTest extends TestCase
         $content = new TextContent($text);
 
         $expected = [
-            'type' => ProtocolConstants::CONTENT_TYPE_TEXT,
+            'type' => MessageConstants::CONTENT_TYPE_TEXT,
             'text' => $text,
         ];
 
@@ -207,7 +207,7 @@ class TextContentTest extends TestCase
         $json = $content->toJson();
         $decoded = json_decode($json, true);
 
-        $this->assertSame(ProtocolConstants::CONTENT_TYPE_TEXT, $decoded['type']);
+        $this->assertSame(MessageConstants::CONTENT_TYPE_TEXT, $decoded['type']);
         $this->assertSame('Test content', $decoded['text']);
     }
 
@@ -226,7 +226,7 @@ class TextContentTest extends TestCase
     public function testWithAnnotations(): void
     {
         $original = new TextContent('Test text');
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER]);
+        $annotations = new Annotations([MessageConstants::ROLE_USER]);
 
         $copy = $original->withAnnotations($annotations);
 

@@ -11,3 +11,5 @@
 .log
 runtime
 examples/local*
+.cursor/
+AGENTS.md

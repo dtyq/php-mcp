@@ -8,8 +8,8 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Resources;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\Annotations;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Dtyq\PhpMcp\Types\Resources\Resource;
 use PHPUnit\Framework\TestCase;
 
@@ -25,7 +25,7 @@ class ResourceTest extends TestCase
         $description = 'A test file';
         $mimeType = 'text/plain';
         $size = 1024;
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER], 0.5);
+        $annotations = new Annotations([MessageConstants::ROLE_USER], 0.5);
 
         $resource = new Resource($uri, $name, $description, $mimeType, $size, $annotations);
 
@@ -63,7 +63,7 @@ class ResourceTest extends TestCase
             'mimeType' => 'text/plain',
             'size' => 1024,
             'annotations' => [
-                'audience' => [ProtocolConstants::ROLE_USER],
+                'audience' => [MessageConstants::ROLE_USER],
                 'priority' => 0.7,
             ],
         ];
@@ -76,7 +76,7 @@ class ResourceTest extends TestCase
         $this->assertSame($data['mimeType'], $resource->getMimeType());
         $this->assertSame($data['size'], $resource->getSize());
         $this->assertTrue($resource->hasAnnotations());
-        $this->assertSame([ProtocolConstants::ROLE_USER], $resource->getAnnotations()->getAudience());
+        $this->assertSame([MessageConstants::ROLE_USER], $resource->getAnnotations()->getAudience());
         $this->assertSame(0.7, $resource->getAnnotations()->getPriority());
     }
 
@@ -230,12 +230,12 @@ class ResourceTest extends TestCase
     public function testIsTargetedTo(): void
     {
         $resource = new Resource('file:///valid.txt', 'Test');
-        $this->assertTrue($resource->isTargetedTo(ProtocolConstants::ROLE_USER));
+        $this->assertTrue($resource->isTargetedTo(MessageConstants::ROLE_USER));
 
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER]);
+        $annotations = new Annotations([MessageConstants::ROLE_USER]);
         $resource->setAnnotations($annotations);
-        $this->assertTrue($resource->isTargetedTo(ProtocolConstants::ROLE_USER));
-        $this->assertFalse($resource->isTargetedTo(ProtocolConstants::ROLE_ASSISTANT));
+        $this->assertTrue($resource->isTargetedTo(MessageConstants::ROLE_USER));
+        $this->assertFalse($resource->isTargetedTo(MessageConstants::ROLE_ASSISTANT));
     }
 
     public function testGetPriority(): void
@@ -255,7 +255,7 @@ class ResourceTest extends TestCase
         $description = 'A test resource';
         $mimeType = 'text/plain';
         $size = 1024;
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER], 0.5);
+        $annotations = new Annotations([MessageConstants::ROLE_USER], 0.5);
 
         $resource = new Resource($uri, $name, $description, $mimeType, $size, $annotations);
 
@@ -266,7 +266,7 @@ class ResourceTest extends TestCase
             'mimeType' => $mimeType,
             'size' => $size,
             'annotations' => [
-                'audience' => [ProtocolConstants::ROLE_USER],
+                'audience' => [MessageConstants::ROLE_USER],
                 'priority' => 0.5,
             ],
         ];

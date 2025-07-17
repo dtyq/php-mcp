@@ -9,11 +9,11 @@ namespace Dtyq\PhpMcp\Types\Sampling;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\ContentInterface;
 use Dtyq\PhpMcp\Types\Content\EmbeddedResource;
 use Dtyq\PhpMcp\Types\Content\ImageContent;
 use Dtyq\PhpMcp\Types\Content\TextContent;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 
 /**
  * Represents the result of a message creation request through LLM sampling.
@@ -106,7 +106,7 @@ class CreateMessageResult
     {
         return new self(
             $model,
-            ProtocolConstants::ROLE_ASSISTANT,
+            MessageConstants::ROLE_ASSISTANT,
             new TextContent($text),
             $stopReason
         );
@@ -128,7 +128,7 @@ class CreateMessageResult
     ): self {
         return new self(
             $model,
-            ProtocolConstants::ROLE_ASSISTANT,
+            MessageConstants::ROLE_ASSISTANT,
             new ImageContent($data, $mimeType),
             $stopReason
         );
@@ -171,7 +171,7 @@ class CreateMessageResult
      */
     public function isUserMessage(): bool
     {
-        return $this->role === ProtocolConstants::ROLE_USER;
+        return $this->role === MessageConstants::ROLE_USER;
     }
 
     /**
@@ -179,7 +179,7 @@ class CreateMessageResult
      */
     public function isAssistantMessage(): bool
     {
-        return $this->role === ProtocolConstants::ROLE_ASSISTANT;
+        return $this->role === MessageConstants::ROLE_ASSISTANT;
     }
 
     /**
@@ -300,7 +300,7 @@ class CreateMessageResult
             throw ValidationError::emptyField('role');
         }
 
-        if (! in_array($role, [ProtocolConstants::ROLE_USER, ProtocolConstants::ROLE_ASSISTANT], true)) {
+        if (! in_array($role, [MessageConstants::ROLE_USER, MessageConstants::ROLE_ASSISTANT], true)) {
             throw ValidationError::invalidFieldValue('role', 'must be either "user" or "assistant"');
         }
 

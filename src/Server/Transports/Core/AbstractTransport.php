@@ -11,8 +11,8 @@ use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
+use Dtyq\PhpMcp\Types\Constants\TransportTypes;
 use Dtyq\PhpMcp\Types\Core\MessageValidator;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use Exception;
 
 /**
@@ -93,7 +93,7 @@ abstract class AbstractTransport implements TransportInterface
         try {
             // Use MessageValidator for comprehensive validation
             // Apply strict stdio validation for stdio transports
-            $strictMode = $this->getTransportType() === ProtocolConstants::TRANSPORT_TYPE_STDIO;
+            $strictMode = $this->getTransportType() === TransportTypes::TRANSPORT_TYPE_STDIO;
             MessageValidator::validateMessage($message, $strictMode);
         } catch (ValidationError $e) {
             // Convert ValidationError to TransportError for consistency

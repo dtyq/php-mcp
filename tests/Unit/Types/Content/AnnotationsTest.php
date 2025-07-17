@@ -8,8 +8,8 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Content;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\Annotations;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -19,7 +19,7 @@ class AnnotationsTest extends TestCase
 {
     public function testConstructorWithValidData(): void
     {
-        $audience = [ProtocolConstants::ROLE_USER, ProtocolConstants::ROLE_ASSISTANT];
+        $audience = [MessageConstants::ROLE_USER, MessageConstants::ROLE_ASSISTANT];
         $priority = 0.8;
 
         $annotations = new Annotations($audience, $priority);
@@ -45,7 +45,7 @@ class AnnotationsTest extends TestCase
     public function testFromArray(): void
     {
         $data = [
-            'audience' => [ProtocolConstants::ROLE_USER],
+            'audience' => [MessageConstants::ROLE_USER],
             'priority' => 0.5,
         ];
 
@@ -67,7 +67,7 @@ class AnnotationsTest extends TestCase
     public function testSetAudienceWithValidRoles(): void
     {
         $annotations = new Annotations();
-        $audience = [ProtocolConstants::ROLE_USER, ProtocolConstants::ROLE_ASSISTANT];
+        $audience = [MessageConstants::ROLE_USER, MessageConstants::ROLE_ASSISTANT];
 
         $annotations->setAudience($audience);
 
@@ -115,23 +115,23 @@ class AnnotationsTest extends TestCase
 
     public function testIsTargetedToWithAudience(): void
     {
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER]);
+        $annotations = new Annotations([MessageConstants::ROLE_USER]);
 
-        $this->assertTrue($annotations->isTargetedTo(ProtocolConstants::ROLE_USER));
-        $this->assertFalse($annotations->isTargetedTo(ProtocolConstants::ROLE_ASSISTANT));
+        $this->assertTrue($annotations->isTargetedTo(MessageConstants::ROLE_USER));
+        $this->assertFalse($annotations->isTargetedTo(MessageConstants::ROLE_ASSISTANT));
     }
 
     public function testIsTargetedToWithoutAudience(): void
     {
         $annotations = new Annotations();
 
-        $this->assertTrue($annotations->isTargetedTo(ProtocolConstants::ROLE_USER));
-        $this->assertTrue($annotations->isTargetedTo(ProtocolConstants::ROLE_ASSISTANT));
+        $this->assertTrue($annotations->isTargetedTo(MessageConstants::ROLE_USER));
+        $this->assertTrue($annotations->isTargetedTo(MessageConstants::ROLE_ASSISTANT));
     }
 
     public function testToArray(): void
     {
-        $audience = [ProtocolConstants::ROLE_USER];
+        $audience = [MessageConstants::ROLE_USER];
         $priority = 0.6;
         $annotations = new Annotations($audience, $priority);
 
@@ -152,12 +152,12 @@ class AnnotationsTest extends TestCase
 
     public function testToJson(): void
     {
-        $annotations = new Annotations([ProtocolConstants::ROLE_USER], 0.5);
+        $annotations = new Annotations([MessageConstants::ROLE_USER], 0.5);
 
         $json = $annotations->toJson();
         $decoded = json_decode($json, true);
 
-        $this->assertSame([ProtocolConstants::ROLE_USER], $decoded['audience']);
+        $this->assertSame([MessageConstants::ROLE_USER], $decoded['audience']);
         $this->assertSame(0.5, $decoded['priority']);
     }
 

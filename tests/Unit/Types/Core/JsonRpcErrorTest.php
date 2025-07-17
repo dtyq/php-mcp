@@ -8,8 +8,9 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Tests\Unit\Types\Core;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ErrorData;
+use Dtyq\PhpMcp\Types\Constants\JsonRpcErrors;
+use Dtyq\PhpMcp\Types\Constants\McpErrors;
 use Dtyq\PhpMcp\Types\Core\JsonRpcError;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 use InvalidArgumentException;
 use Mockery;
 use PHPUnit\Framework\TestCase;
@@ -265,45 +266,45 @@ class JsonRpcErrorTest extends TestCase
 
     public function testIsErrorCodeWithMatchingCode(): void
     {
-        $errorData = new ErrorData(ProtocolConstants::INVALID_PARAMS, 'Invalid params');
+        $errorData = new ErrorData(JsonRpcErrors::INVALID_PARAMS, 'Invalid params');
         $error = new JsonRpcError('test-id', $errorData);
 
-        $this->assertTrue($error->isErrorCode(ProtocolConstants::INVALID_PARAMS));
+        $this->assertTrue($error->isErrorCode(JsonRpcErrors::INVALID_PARAMS));
         $this->assertTrue($error->isErrorCode(-32602));
     }
 
     public function testIsErrorCodeWithNonMatchingCode(): void
     {
-        $errorData = new ErrorData(ProtocolConstants::INVALID_PARAMS, 'Invalid params');
+        $errorData = new ErrorData(JsonRpcErrors::INVALID_PARAMS, 'Invalid params');
         $error = new JsonRpcError('test-id', $errorData);
 
-        $this->assertFalse($error->isErrorCode(ProtocolConstants::METHOD_NOT_FOUND));
+        $this->assertFalse($error->isErrorCode(JsonRpcErrors::METHOD_NOT_FOUND));
         $this->assertFalse($error->isErrorCode(-32000));
         $this->assertFalse($error->isErrorCode(0));
     }
 
     public function testStandardErrorCodes(): void
     {
-        $parseError = JsonRpcError::fromError('test', ProtocolConstants::PARSE_ERROR, 'Parse error');
-        $this->assertTrue($parseError->isErrorCode(ProtocolConstants::PARSE_ERROR));
+        $parseError = JsonRpcError::fromError('test', JsonRpcErrors::PARSE_ERROR, 'Parse error');
+        $this->assertTrue($parseError->isErrorCode(JsonRpcErrors::PARSE_ERROR));
 
-        $invalidRequest = JsonRpcError::fromError('test', ProtocolConstants::INVALID_REQUEST, 'Invalid request');
-        $this->assertTrue($invalidRequest->isErrorCode(ProtocolConstants::INVALID_REQUEST));
+        $invalidRequest = JsonRpcError::fromError('test', JsonRpcErrors::INVALID_REQUEST, 'Invalid request');
+        $this->assertTrue($invalidRequest->isErrorCode(JsonRpcErrors::INVALID_REQUEST));
 
-        $methodNotFound = JsonRpcError::fromError('test', ProtocolConstants::METHOD_NOT_FOUND, 'Method not found');
-        $this->assertTrue($methodNotFound->isErrorCode(ProtocolConstants::METHOD_NOT_FOUND));
+        $methodNotFound = JsonRpcError::fromError('test', JsonRpcErrors::METHOD_NOT_FOUND, 'Method not found');
+        $this->assertTrue($methodNotFound->isErrorCode(JsonRpcErrors::METHOD_NOT_FOUND));
     }
 
     public function testMcpSpecificErrorCodes(): void
     {
-        $mcpError = JsonRpcError::fromError('test', ProtocolConstants::MCP_ERROR, 'MCP error');
-        $this->assertTrue($mcpError->isErrorCode(ProtocolConstants::MCP_ERROR));
+        $mcpError = JsonRpcError::fromError('test', McpErrors::MCP_ERROR, 'MCP error');
+        $this->assertTrue($mcpError->isErrorCode(McpErrors::MCP_ERROR));
 
-        $authError = JsonRpcError::fromError('test', ProtocolConstants::AUTHENTICATION_ERROR, 'Auth error');
-        $this->assertTrue($authError->isErrorCode(ProtocolConstants::AUTHENTICATION_ERROR));
+        $authError = JsonRpcError::fromError('test', McpErrors::AUTHENTICATION_ERROR, 'Auth error');
+        $this->assertTrue($authError->isErrorCode(McpErrors::AUTHENTICATION_ERROR));
 
-        $resourceError = JsonRpcError::fromError('test', ProtocolConstants::RESOURCE_NOT_FOUND, 'Resource not found');
-        $this->assertTrue($resourceError->isErrorCode(ProtocolConstants::RESOURCE_NOT_FOUND));
+        $resourceError = JsonRpcError::fromError('test', McpErrors::RESOURCE_NOT_FOUND, 'Resource not found');
+        $this->assertTrue($resourceError->isErrorCode(McpErrors::RESOURCE_NOT_FOUND));
     }
 
     public function testComplexErrorData(): void
@@ -317,7 +318,7 @@ class JsonRpcErrorTest extends TestCase
             'code' => 'VALIDATION_FAILED',
         ];
 
-        $errorData = new ErrorData(ProtocolConstants::VALIDATION_ERROR, 'Validation failed', $complexData);
+        $errorData = new ErrorData(McpErrors::VALIDATION_ERROR, 'Validation failed', $complexData);
         $error = new JsonRpcError('complex-id', $errorData);
 
         $this->assertEquals($complexData, $error->getData());

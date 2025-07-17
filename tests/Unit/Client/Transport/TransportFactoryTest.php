@@ -14,7 +14,7 @@ use Dtyq\PhpMcp\Client\Transport\Stdio\StdioTransport;
 use Dtyq\PhpMcp\Client\Transport\TransportFactory;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
+use Dtyq\PhpMcp\Types\Constants\TransportTypes;
 use Exception;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -42,16 +42,16 @@ class TransportFactoryTest extends TestCase
     public function testCreateStdioTransport(): void
     {
         $config = new ClientConfig(
-            ProtocolConstants::TRANSPORT_TYPE_STDIO,
+            TransportTypes::TRANSPORT_TYPE_STDIO,
             [
                 'command' => ['php', '-v'], // Simple command that should work
             ]
         );
 
-        $transport = TransportFactory::create(ProtocolConstants::TRANSPORT_TYPE_STDIO, $config, $this->application);
+        $transport = TransportFactory::create(TransportTypes::TRANSPORT_TYPE_STDIO, $config, $this->application);
 
         $this->assertInstanceOf(StdioTransport::class, $transport);
-        $this->assertEquals(ProtocolConstants::TRANSPORT_TYPE_STDIO, $transport->getType());
+        $this->assertEquals(TransportTypes::TRANSPORT_TYPE_STDIO, $transport->getType());
     }
 
     public function testCreateWithInvalidTransportType(): void
@@ -69,7 +69,7 @@ class TransportFactoryTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('transportType');
 
-        $config = new ClientConfig(ProtocolConstants::TRANSPORT_TYPE_STDIO, []);
+        $config = new ClientConfig(TransportTypes::TRANSPORT_TYPE_STDIO, []);
 
         TransportFactory::create('', $config, $this->application);
     }
@@ -79,9 +79,9 @@ class TransportFactoryTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('Stdio transport requires command array');
 
-        $config = new ClientConfig(ProtocolConstants::TRANSPORT_TYPE_STDIO, []);
+        $config = new ClientConfig(TransportTypes::TRANSPORT_TYPE_STDIO, []);
 
-        TransportFactory::create(ProtocolConstants::TRANSPORT_TYPE_STDIO, $config, $this->application);
+        TransportFactory::create(TransportTypes::TRANSPORT_TYPE_STDIO, $config, $this->application);
     }
 
     public function testCreateStdioWithInvalidCommand(): void
@@ -89,11 +89,11 @@ class TransportFactoryTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('Stdio transport requires command array');
 
-        $config = new ClientConfig(ProtocolConstants::TRANSPORT_TYPE_STDIO, [
+        $config = new ClientConfig(TransportTypes::TRANSPORT_TYPE_STDIO, [
             'command' => 'not-an-array', // Should be arrayed
         ]);
 
-        TransportFactory::create(ProtocolConstants::TRANSPORT_TYPE_STDIO, $config, $this->application);
+        TransportFactory::create(TransportTypes::TRANSPORT_TYPE_STDIO, $config, $this->application);
     }
 
     public function testCreateHttpWithoutBaseUrl(): void
@@ -101,9 +101,9 @@ class TransportFactoryTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('HTTP transport requires base_url');
 
-        $config = new ClientConfig(ProtocolConstants::TRANSPORT_TYPE_HTTP, []);
+        $config = new ClientConfig(TransportTypes::TRANSPORT_TYPE_HTTP, []);
 
-        TransportFactory::create(ProtocolConstants::TRANSPORT_TYPE_HTTP, $config, $this->application);
+        TransportFactory::create(TransportTypes::TRANSPORT_TYPE_HTTP, $config, $this->application);
     }
 
     public function testCreateHttpWithInvalidBaseUrl(): void
@@ -111,17 +111,17 @@ class TransportFactoryTest extends TestCase
         $this->expectException(ValidationError::class);
         $this->expectExceptionMessage('HTTP transport requires base_url');
 
-        $config = new ClientConfig(ProtocolConstants::TRANSPORT_TYPE_HTTP, [
+        $config = new ClientConfig(TransportTypes::TRANSPORT_TYPE_HTTP, [
             'base_url' => 123, // Should be string
         ]);
 
-        TransportFactory::create(ProtocolConstants::TRANSPORT_TYPE_HTTP, $config, $this->application);
+        TransportFactory::create(TransportTypes::TRANSPORT_TYPE_HTTP, $config, $this->application);
     }
 
     public function testCreateHttpTransport(): void
     {
         $config = new ClientConfig(
-            ProtocolConstants::TRANSPORT_TYPE_HTTP,
+            TransportTypes::TRANSPORT_TYPE_HTTP,
             [
                 'base_url' => 'https://example.com/mcp',
                 'timeout' => 60.0,
@@ -130,25 +130,25 @@ class TransportFactoryTest extends TestCase
             ]
         );
 
-        $transport = TransportFactory::create(ProtocolConstants::TRANSPORT_TYPE_HTTP, $config, $this->application);
+        $transport = TransportFactory::create(TransportTypes::TRANSPORT_TYPE_HTTP, $config, $this->application);
 
         $this->assertInstanceOf(HttpTransport::class, $transport);
-        $this->assertEquals(ProtocolConstants::TRANSPORT_TYPE_HTTP, $transport->getType());
+        $this->assertEquals(TransportTypes::TRANSPORT_TYPE_HTTP, $transport->getType());
     }
 
     public function testCreateHttpTransportWithMinimalConfig(): void
     {
         $config = new ClientConfig(
-            ProtocolConstants::TRANSPORT_TYPE_HTTP,
+            TransportTypes::TRANSPORT_TYPE_HTTP,
             [
                 'base_url' => 'https://example.com/mcp',
             ]
         );
 
-        $transport = TransportFactory::create(ProtocolConstants::TRANSPORT_TYPE_HTTP, $config, $this->application);
+        $transport = TransportFactory::create(TransportTypes::TRANSPORT_TYPE_HTTP, $config, $this->application);
 
         $this->assertInstanceOf(HttpTransport::class, $transport);
-        $this->assertEquals(ProtocolConstants::TRANSPORT_TYPE_HTTP, $transport->getType());
+        $this->assertEquals(TransportTypes::TRANSPORT_TYPE_HTTP, $transport->getType());
     }
 
     public function testGetSupportedTypes(): void
@@ -156,14 +156,14 @@ class TransportFactoryTest extends TestCase
         $types = TransportFactory::getSupportedTypes();
 
         $this->assertIsArray($types);
-        $this->assertContains(ProtocolConstants::TRANSPORT_TYPE_STDIO, $types);
-        $this->assertContains(ProtocolConstants::TRANSPORT_TYPE_HTTP, $types);
+        $this->assertContains(TransportTypes::TRANSPORT_TYPE_STDIO, $types);
+        $this->assertContains(TransportTypes::TRANSPORT_TYPE_HTTP, $types);
     }
 
     public function testIsSupported(): void
     {
-        $this->assertTrue(TransportFactory::isSupported(ProtocolConstants::TRANSPORT_TYPE_STDIO));
-        $this->assertTrue(TransportFactory::isSupported(ProtocolConstants::TRANSPORT_TYPE_HTTP));
+        $this->assertTrue(TransportFactory::isSupported(TransportTypes::TRANSPORT_TYPE_STDIO));
+        $this->assertTrue(TransportFactory::isSupported(TransportTypes::TRANSPORT_TYPE_HTTP));
         $this->assertFalse(TransportFactory::isSupported('invalid-type'));
         $this->assertFalse(TransportFactory::isSupported('websocket')); // Not implemented yet
     }
@@ -226,7 +226,7 @@ class TransportFactoryTest extends TestCase
 
     public function testCreateDefaultConfigStdio(): void
     {
-        $config = TransportFactory::createDefaultConfig(ProtocolConstants::TRANSPORT_TYPE_STDIO);
+        $config = TransportFactory::createDefaultConfig(TransportTypes::TRANSPORT_TYPE_STDIO);
 
         $this->assertIsArray($config);
         $this->assertArrayHasKey('read_timeout', $config);
@@ -236,7 +236,7 @@ class TransportFactoryTest extends TestCase
 
     public function testCreateDefaultConfigHttp(): void
     {
-        $config = TransportFactory::createDefaultConfig(ProtocolConstants::TRANSPORT_TYPE_HTTP);
+        $config = TransportFactory::createDefaultConfig(TransportTypes::TRANSPORT_TYPE_HTTP);
 
         $this->assertIsArray($config);
         $this->assertArrayHasKey('timeout', $config);
@@ -259,7 +259,7 @@ class TransportFactoryTest extends TestCase
             'custom_option' => 'value',
         ];
 
-        $config = TransportFactory::createDefaultConfig(ProtocolConstants::TRANSPORT_TYPE_STDIO, $overrides);
+        $config = TransportFactory::createDefaultConfig(TransportTypes::TRANSPORT_TYPE_STDIO, $overrides);
 
         $this->assertIsArray($config);
         $this->assertEquals(60.0, $config['read_timeout']);
@@ -277,7 +277,7 @@ class TransportFactoryTest extends TestCase
             'custom_option' => 'value',
         ];
 
-        $config = TransportFactory::createDefaultConfig(ProtocolConstants::TRANSPORT_TYPE_HTTP, $overrides);
+        $config = TransportFactory::createDefaultConfig(TransportTypes::TRANSPORT_TYPE_HTTP, $overrides);
 
         $this->assertIsArray($config);
         $this->assertEquals(60.0, $config['timeout']);

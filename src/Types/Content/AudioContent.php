@@ -8,8 +8,9 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Types\Content;
 
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Types\Constants\MessageConstants;
+use Dtyq\PhpMcp\Types\Constants\MimeTypes;
 use Dtyq\PhpMcp\Types\Core\BaseTypes;
-use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
 
 /**
  * Audio content for MCP messages.
@@ -19,7 +20,7 @@ use Dtyq\PhpMcp\Types\Core\ProtocolConstants;
  */
 class AudioContent implements ContentInterface
 {
-    private string $type = ProtocolConstants::CONTENT_TYPE_AUDIO;
+    private string $type = MessageConstants::CONTENT_TYPE_AUDIO;
 
     private string $data;
 
@@ -254,16 +255,16 @@ class AudioContent implements ContentInterface
 
         switch ($extension) {
             case 'mp3':
-                return ProtocolConstants::MIME_TYPE_AUDIO_MP3;
+                return MimeTypes::MIME_TYPE_AUDIO_MP3;
             case 'wav':
-                return ProtocolConstants::MIME_TYPE_AUDIO_WAV;
+                return MimeTypes::MIME_TYPE_AUDIO_WAV;
             case 'ogg':
-                return ProtocolConstants::MIME_TYPE_AUDIO_OGG;
+                return MimeTypes::MIME_TYPE_AUDIO_OGG;
             case 'm4a':
             case 'mp4':
-                return ProtocolConstants::MIME_TYPE_AUDIO_M4A;
+                return MimeTypes::MIME_TYPE_AUDIO_M4A;
             case 'webm':
-                return ProtocolConstants::MIME_TYPE_AUDIO_WEBM;
+                return MimeTypes::MIME_TYPE_AUDIO_WEBM;
             default:
                 throw ValidationError::invalidFieldValue('filePath', "unsupported audio file extension: {$extension}");
         }
@@ -275,11 +276,11 @@ class AudioContent implements ContentInterface
     private function isValidAudioMimeType(string $mimeType): bool
     {
         $supportedTypes = [
-            ProtocolConstants::MIME_TYPE_AUDIO_MP3,
-            ProtocolConstants::MIME_TYPE_AUDIO_WAV,
-            ProtocolConstants::MIME_TYPE_AUDIO_OGG,
-            ProtocolConstants::MIME_TYPE_AUDIO_M4A,
-            ProtocolConstants::MIME_TYPE_AUDIO_WEBM,
+            MimeTypes::MIME_TYPE_AUDIO_MP3,
+            MimeTypes::MIME_TYPE_AUDIO_WAV,
+            MimeTypes::MIME_TYPE_AUDIO_OGG,
+            MimeTypes::MIME_TYPE_AUDIO_M4A,
+            MimeTypes::MIME_TYPE_AUDIO_WEBM,
         ];
 
         return in_array($mimeType, $supportedTypes, true) || substr($mimeType, 0, 6) === 'audio/';
