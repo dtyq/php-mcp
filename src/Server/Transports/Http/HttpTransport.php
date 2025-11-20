@@ -18,6 +18,7 @@ use Dtyq\PhpMcp\Types\Constants\TransportTypes;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use stdClass;
 use Throwable;
 
 class HttpTransport extends AbstractTransport
@@ -133,6 +134,15 @@ class HttpTransport extends AbstractTransport
             }
 
             $responseBody = $this->handleMessage($body);
+            if (! $responseBody) {
+                return new Response(200, [
+                    'Content-Type' => 'application/json',
+                ], JsonUtils::encode([
+                    'jsonrpc' => '2.0',
+                    'result' => new StdClass(),
+                    'id' => $jsonData['id'] ?? null,
+                ]));
+            }
 
             return new Response(200, $headers, $responseBody);
         } catch (Throwable $exception) {
