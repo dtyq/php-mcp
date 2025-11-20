@@ -139,7 +139,7 @@ class HttpTransport extends AbstractTransport
                     'Content-Type' => 'application/json',
                 ], JsonUtils::encode([
                     'jsonrpc' => '2.0',
-                    'result' => new StdClass(),
+                    'result' => new stdClass(),
                     'id' => $jsonData['id'] ?? null,
                 ]));
             }
