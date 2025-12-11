@@ -13,12 +13,14 @@ use Dtyq\PhpMcp\Server\FastMcp\Tools\RegisteredTool;
 use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpPrompt;
 use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpResource;
 use Dtyq\PhpMcp\Server\Framework\Hyperf\Collector\Annotations\McpTool;
+use Dtyq\PhpMcp\Shared\Exceptions\SystemException;
+use Dtyq\PhpMcp\Shared\Utilities\StaticMethodCall;
 use Dtyq\PhpMcp\Types\Prompts\Prompt;
 use Dtyq\PhpMcp\Types\Resources\Resource;
 use Dtyq\PhpMcp\Types\Tools\Tool;
 use Hyperf\Context\ApplicationContext;
 use Hyperf\Di\Annotation\AnnotationCollector;
-use Dtyq\PhpMcp\Shared\Exceptions\SystemException;
+use ReflectionMethod;
 
 class McpCollector
 {
@@ -114,23 +116,36 @@ class McpCollector
             if (! $mcpTool->isEnabled()) {
                 continue;
             }
-            $registeredTool = new RegisteredTool(
-                new Tool(
-                    $mcpTool->getName(),
-                    $mcpTool->getInputSchema(),
-                    $mcpTool->getDescription()
-                ),
-                function (array $arguments) use ($class, $method) {
-                    $container = ApplicationContext::getContainer();
-                    if (method_exists($container, 'make')) {
-                        $instance = $container->make($class);
-                    }
-                    if (! isset($instance) || ! method_exists($instance, $method)) {
-                        throw new SystemException("Method {$method} does not exist in class {$class}");
-                    }
-                    return $instance->{$method}(...$arguments);
-                }
+
+            $tool = new Tool(
+                $mcpTool->getName(),
+                $mcpTool->getInputSchema(),
+                $mcpTool->getDescription()
             );
+
+            // Check if method is static - use StaticMethodCall for better serialization
+            if (self::isStaticMethod($class, $method)) {
+                $registeredTool = RegisteredTool::withStaticMethod(
+                    $tool,
+                    new StaticMethodCall($class, $method)
+                );
+            } else {
+                // Use closure for instance methods (Hyperf DI container support)
+                $registeredTool = RegisteredTool::withCallable(
+                    $tool,
+                    function (array $arguments) use ($class, $method) {
+                        $container = ApplicationContext::getContainer();
+                        if (method_exists($container, 'make')) {
+                            $instance = $container->make($class);
+                        }
+                        if (! isset($instance) || ! method_exists($instance, $method)) {
+                            throw new SystemException("Method {$method} does not exist in class {$class}");
+                        }
+                        return $instance->{$method}(...$arguments);
+                    }
+                );
+            }
+
             if ($mcpTool->getServer()) {
                 self::$tools[self::createGroup($mcpTool->getServer(), $mcpTool->getVersion())][$mcpTool->getName()] = $registeredTool;
             } else {
@@ -153,24 +168,36 @@ class McpCollector
             if (! $mcpPrompt->isEnabled()) {
                 continue;
             }
+
             $prompt = new Prompt(
                 $mcpPrompt->getName(),
                 $mcpPrompt->getDescription(),
                 $mcpPrompt->getArguments(),
             );
-            $registeredPrompt = new RegisteredPrompt(
-                $prompt,
-                function (array $arguments) use ($class, $method) {
-                    $container = ApplicationContext::getContainer();
-                    if (method_exists($container, 'make')) {
-                        $instance = $container->make($class);
+
+            // Check if method is static - use StaticMethodCall for better serialization
+            if (self::isStaticMethod($class, $method)) {
+                $registeredPrompt = RegisteredPrompt::withStaticMethod(
+                    $prompt,
+                    new StaticMethodCall($class, $method)
+                );
+            } else {
+                // Use closure for instance methods (Hyperf DI container support)
+                $registeredPrompt = RegisteredPrompt::withCallable(
+                    $prompt,
+                    function (array $arguments) use ($class, $method) {
+                        $container = ApplicationContext::getContainer();
+                        if (method_exists($container, 'make')) {
+                            $instance = $container->make($class);
+                        }
+                        if (! isset($instance) || ! method_exists($instance, $method)) {
+                            throw new SystemException("Method {$method} does not exist in class {$class}");
+                        }
+                        return $instance->{$method}(...$arguments);
                     }
-                    if (! isset($instance) || ! method_exists($instance, $method)) {
-                        throw new SystemException("Method {$method} does not exist in class {$class}");
-                    }
-                    return $instance->{$method}(...$arguments);
-                }
-            );
+                );
+            }
+
             if ($mcpPrompt->getServer()) {
                 self::$prompts[self::createGroup($mcpPrompt->getServer(), $mcpPrompt->getVersion())][$mcpPrompt->getName()] = $registeredPrompt;
             } else {
@@ -193,28 +220,54 @@ class McpCollector
             if (! $mcpResource->isEnabled()) {
                 continue;
             }
-            $resource = new RegisteredResource(
-                new Resource(
-                    $mcpResource->getUri(),
-                    $mcpResource->getName(),
-                    $mcpResource->getDescription()
-                ),
-                function () use ($class, $method) {
-                    $container = ApplicationContext::getContainer();
-                    if (method_exists($container, 'make')) {
-                        $instance = $container->make($class);
-                    }
-                    if (! isset($instance) || ! method_exists($instance, $method)) {
-                        throw new SystemException("Method {$method} does not exist in class {$class}");
-                    }
-                    return $instance->{$method}();
-                }
+
+            $resourceMeta = new Resource(
+                $mcpResource->getUri(),
+                $mcpResource->getName(),
+                $mcpResource->getDescription()
             );
+
+            // Check if method is static - use StaticMethodCall for better serialization
+            if (self::isStaticMethod($class, $method)) {
+                $resource = RegisteredResource::withStaticMethod(
+                    $resourceMeta,
+                    new StaticMethodCall($class, $method)
+                );
+            } else {
+                // Use closure for instance methods (Hyperf DI container support)
+                $resource = RegisteredResource::withCallable(
+                    $resourceMeta,
+                    function () use ($class, $method) {
+                        $container = ApplicationContext::getContainer();
+                        if (method_exists($container, 'make')) {
+                            $instance = $container->make($class);
+                        }
+                        if (! isset($instance) || ! method_exists($instance, $method)) {
+                            throw new SystemException("Method {$method} does not exist in class {$class}");
+                        }
+                        return $instance->{$method}();
+                    }
+                );
+            }
+
             if ($mcpResource->getServer()) {
                 self::$resources[self::createGroup($mcpResource->getServer(), $mcpResource->getVersion())][$mcpResource->getName()] = $resource;
             } else {
                 self::$globalResources[$mcpResource->getUri()] = $resource;
             }
+        }
+    }
+
+    /**
+     * Check if a method is static.
+     */
+    protected static function isStaticMethod(string $class, string $method): bool
+    {
+        try {
+            $reflection = new ReflectionMethod($class, $method);
+            return $reflection->isStatic() && $reflection->isPublic();
+        } catch (\ReflectionException $e) {
+            return false;
         }
     }
 

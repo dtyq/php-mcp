@@ -11,6 +11,8 @@ use Closure;
 use Dtyq\PhpMcp\Server\FastMcp\Resources\RegisteredResource;
 use Dtyq\PhpMcp\Shared\Exceptions\ResourceError;
 use Dtyq\PhpMcp\Shared\Exceptions\SystemException;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Shared\Utilities\StaticMethodCall;
 use Dtyq\PhpMcp\Types\Content\Annotations;
 use Dtyq\PhpMcp\Types\Resources\BlobResourceContents;
 use Dtyq\PhpMcp\Types\Resources\Resource;
@@ -53,6 +55,36 @@ class RegisteredResourceTest extends TestCase
         $this->assertEquals('A test text file', $registeredResource->getDescription());
     }
 
+    public function testConstructorWithNeitherCallableNorStaticMethod(): void
+    {
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('callable/staticMethod');
+
+        new RegisteredResource($this->sampleResource, null, null);
+    }
+
+    public function testWithCallableFactoryMethod(): void
+    {
+        $registeredResource = RegisteredResource::withCallable($this->sampleResource, $this->sampleCallable);
+
+        $this->assertTrue($registeredResource->hasCallable());
+        $this->assertFalse($registeredResource->hasStaticMethod());
+    }
+
+    public function testWithStaticMethodFactoryMethod(): void
+    {
+        $staticMethod = new StaticMethodCall(
+            RegisteredResourceTestHelper::class,
+            'getResourceContent'
+        );
+
+        $registeredResource = RegisteredResource::withStaticMethod($this->sampleResource, $staticMethod);
+
+        $this->assertFalse($registeredResource->hasCallable());
+        $this->assertTrue($registeredResource->hasStaticMethod());
+        $this->assertSame($staticMethod, $registeredResource->getStaticMethod());
+    }
+
     public function testGetContentSuccess(): void
     {
         $registeredResource = new RegisteredResource($this->sampleResource, $this->sampleCallable);
@@ -62,6 +94,39 @@ class RegisteredResourceTest extends TestCase
         $this->assertEquals('file:///test.txt', $content->getUri());
         $this->assertEquals('Hello, World!', $content->getText());
         $this->assertEquals('text/plain', $content->getMimeType());
+    }
+
+    public function testGetContentWithStaticMethod(): void
+    {
+        $staticMethod = new StaticMethodCall(
+            RegisteredResourceTestHelper::class,
+            'getResourceContent'
+        );
+
+        $registeredResource = RegisteredResource::withStaticMethod($this->sampleResource, $staticMethod);
+        $content = $registeredResource->getContent();
+
+        $this->assertInstanceOf(TextResourceContents::class, $content);
+        $this->assertEquals('file:///test.txt', $content->getUri());
+        $this->assertEquals('Static content for file:///test.txt', $content->getText());
+    }
+
+    public function testStaticMethodTakesPrecedence(): void
+    {
+        $staticMethod = new StaticMethodCall(
+            RegisteredResourceTestHelper::class,
+            'getResourceContent'
+        );
+
+        $callableThatReturnsDifferent = function (string $uri): TextResourceContents {
+            return new TextResourceContents($uri, 'Callable content', 'text/plain');
+        };
+
+        $registeredResource = new RegisteredResource($this->sampleResource, $callableThatReturnsDifferent, $staticMethod);
+        $content = $registeredResource->getContent();
+
+        // Should use static method instead of callable
+        $this->assertEquals('Static content for file:///test.txt', $content->getText());
     }
 
     public function testGetContentWithCallableException(): void
@@ -74,6 +139,21 @@ class RegisteredResourceTest extends TestCase
 
         $this->expectException(ResourceError::class);
         $this->expectExceptionMessage('Error accessing resource file:///test.txt: File not found');
+
+        $registeredResource->getContent();
+    }
+
+    public function testGetContentWithStaticMethodException(): void
+    {
+        $staticMethod = new StaticMethodCall(
+            RegisteredResourceTestHelper::class,
+            'throwException'
+        );
+
+        $registeredResource = RegisteredResource::withStaticMethod($this->sampleResource, $staticMethod);
+
+        $this->expectException(ResourceError::class);
+        $this->expectExceptionMessage('Error accessing resource file:///test.txt: Static method failed');
 
         $registeredResource->getContent();
     }
@@ -272,5 +352,42 @@ class RegisteredResourceTest extends TestCase
         $logContent = $registeredLog->getContent();
         $this->assertEquals('[INFO] Application started', $logContent->getText());
         $this->assertEquals('text/plain', $logContent->getMimeType());
+    }
+
+    public function testHasStaticMethodReturnsFalseForCallableOnly(): void
+    {
+        $registeredResource = new RegisteredResource($this->sampleResource, $this->sampleCallable);
+
+        $this->assertFalse($registeredResource->hasStaticMethod());
+        $this->assertTrue($registeredResource->hasCallable());
+        $this->assertNull($registeredResource->getStaticMethod());
+    }
+}
+
+/**
+ * Helper class for testing RegisteredResource with static methods.
+ * @internal
+ */
+class RegisteredResourceTestHelper
+{
+    /**
+     * Static method that returns resource content.
+     *
+     * @param array<string, mixed> $args
+     */
+    public static function getResourceContent(array $args): TextResourceContents
+    {
+        $uri = $args['uri'] ?? 'unknown';
+        return new TextResourceContents($uri, "Static content for {$uri}", 'text/plain');
+    }
+
+    /**
+     * Static method that throws an exception.
+     *
+     * @param array<string, mixed> $args
+     */
+    public static function throwException(array $args): void
+    {
+        throw new SystemException('Static method failed');
     }
 }

@@ -11,6 +11,8 @@ use Closure;
 use Dtyq\PhpMcp\Server\FastMcp\Prompts\RegisteredPrompt;
 use Dtyq\PhpMcp\Shared\Exceptions\PromptError;
 use Dtyq\PhpMcp\Shared\Exceptions\SystemException;
+use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Shared\Utilities\StaticMethodCall;
 use Dtyq\PhpMcp\Types\Constants\MessageConstants;
 use Dtyq\PhpMcp\Types\Content\TextContent;
 use Dtyq\PhpMcp\Types\Prompts\GetPromptResult;
@@ -65,6 +67,36 @@ class RegisteredPromptTest extends TestCase
         $this->assertEquals('Generate a greeting message', $registeredPrompt->getDescription());
     }
 
+    public function testConstructorWithNeitherCallableNorStaticMethod(): void
+    {
+        $this->expectException(ValidationError::class);
+        $this->expectExceptionMessage('callable/staticMethod');
+
+        new RegisteredPrompt($this->samplePrompt, null, null);
+    }
+
+    public function testWithCallableFactoryMethod(): void
+    {
+        $registeredPrompt = RegisteredPrompt::withCallable($this->samplePrompt, $this->sampleCallable);
+
+        $this->assertTrue($registeredPrompt->hasCallable());
+        $this->assertFalse($registeredPrompt->hasStaticMethod());
+    }
+
+    public function testWithStaticMethodFactoryMethod(): void
+    {
+        $staticMethod = new StaticMethodCall(
+            RegisteredPromptTestHelper::class,
+            'generateGreeting'
+        );
+
+        $registeredPrompt = RegisteredPrompt::withStaticMethod($this->samplePrompt, $staticMethod);
+
+        $this->assertFalse($registeredPrompt->hasCallable());
+        $this->assertTrue($registeredPrompt->hasStaticMethod());
+        $this->assertSame($staticMethod, $registeredPrompt->getStaticMethod());
+    }
+
     public function testExecuteSuccess(): void
     {
         $registeredPrompt = new RegisteredPrompt($this->samplePrompt, $this->sampleCallable);
@@ -77,6 +109,45 @@ class RegisteredPromptTest extends TestCase
         $message = $result->getMessages()[0];
         $this->assertEquals(MessageConstants::ROLE_USER, $message->getRole());
         $this->assertEquals('Good day, Alice.', $message->getTextContent());
+    }
+
+    public function testExecuteWithStaticMethod(): void
+    {
+        $staticMethod = new StaticMethodCall(
+            RegisteredPromptTestHelper::class,
+            'generateGreeting'
+        );
+
+        $registeredPrompt = RegisteredPrompt::withStaticMethod($this->samplePrompt, $staticMethod);
+        $result = $registeredPrompt->execute(['name' => 'Bob']);
+
+        $this->assertInstanceOf(GetPromptResult::class, $result);
+        $this->assertEquals('Static greeting', $result->getDescription());
+
+        $message = $result->getMessages()[0];
+        $this->assertEquals('Static hello to Bob!', $message->getTextContent());
+    }
+
+    public function testStaticMethodTakesPrecedence(): void
+    {
+        $staticMethod = new StaticMethodCall(
+            RegisteredPromptTestHelper::class,
+            'generateGreeting'
+        );
+
+        $callableThatReturnsDifferent = function (array $args): GetPromptResult {
+            $message = new PromptMessage(
+                MessageConstants::ROLE_USER,
+                new TextContent('Callable greeting')
+            );
+            return new GetPromptResult('Callable generated', [$message]);
+        };
+
+        $registeredPrompt = new RegisteredPrompt($this->samplePrompt, $callableThatReturnsDifferent, $staticMethod);
+        $result = $registeredPrompt->execute(['name' => 'Test']);
+
+        // Should use static method instead of callable
+        $this->assertEquals('Static greeting', $result->getDescription());
     }
 
     public function testExecuteWithDefaultArgument(): void
@@ -110,6 +181,21 @@ class RegisteredPromptTest extends TestCase
 
         $this->expectException(PromptError::class);
         $this->expectExceptionMessage('Error executing prompt greeting: Callable failed');
+
+        $registeredPrompt->execute(['name' => 'Alice']);
+    }
+
+    public function testExecuteWithStaticMethodException(): void
+    {
+        $staticMethod = new StaticMethodCall(
+            RegisteredPromptTestHelper::class,
+            'throwException'
+        );
+
+        $registeredPrompt = RegisteredPrompt::withStaticMethod($this->samplePrompt, $staticMethod);
+
+        $this->expectException(PromptError::class);
+        $this->expectExceptionMessage('Error executing prompt greeting: Static method failed');
 
         $registeredPrompt->execute(['name' => 'Alice']);
     }
@@ -220,5 +306,48 @@ class RegisteredPromptTest extends TestCase
 
         $this->assertCount(3, $result->getMessages());
         $this->assertEquals('Code review conversation', $result->getDescription());
+    }
+
+    public function testHasStaticMethodReturnsFalseForCallableOnly(): void
+    {
+        $registeredPrompt = new RegisteredPrompt($this->samplePrompt, $this->sampleCallable);
+
+        $this->assertFalse($registeredPrompt->hasStaticMethod());
+        $this->assertTrue($registeredPrompt->hasCallable());
+        $this->assertNull($registeredPrompt->getStaticMethod());
+    }
+}
+
+/**
+ * Helper class for testing RegisteredPrompt with static methods.
+ * @internal
+ */
+class RegisteredPromptTestHelper
+{
+    /**
+     * Static method that generates a greeting.
+     *
+     * @param array<string, mixed> $args
+     */
+    public static function generateGreeting(array $args): GetPromptResult
+    {
+        $name = $args['name'] ?? 'World';
+
+        $message = new PromptMessage(
+            MessageConstants::ROLE_USER,
+            new TextContent("Static hello to {$name}!")
+        );
+
+        return new GetPromptResult('Static greeting', [$message]);
+    }
+
+    /**
+     * Static method that throws an exception.
+     *
+     * @param array<string, mixed> $args
+     */
+    public static function throwException(array $args): void
+    {
+        throw new SystemException('Static method failed');
     }
 }
