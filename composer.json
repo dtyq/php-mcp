@@ -52,6 +52,9 @@
     "extra": {
         "hyperf": {
             "config": "Dtyq\\PhpMcp\\Server\\Framework\\Hyperf\\ConfigProvider"
+        },
+        "branch-alias": {
+            "dev-master": "0.1.x-dev"
         }
     }
 }
