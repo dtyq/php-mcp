@@ -9,6 +9,7 @@ namespace Dtyq\PhpMcp\Shared\Utilities\SSE;
 
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use ErrorException;
 use Generator;
 
 /**
@@ -122,7 +123,17 @@ final class SSEClient
         $port = $urlParts['port'] ?? ($scheme === 'https' ? 443 : 80);
         $transport = $scheme === 'https' ? 'ssl' : 'tcp';
 
-        $this->socket = @fsockopen("{$transport}://{$host}", $port, $errno, $errstr, $this->timeout);
+        set_error_handler(static function (int $code, string $message): bool {
+            throw new ErrorException($message, $code);
+        });
+
+        try {
+            $this->socket = stream_socket_client("{$transport}://{$host}:{$port}", $errno, $errstr, $this->timeout);
+        } catch (ErrorException $e) {
+            throw TransportError::connectionRefused('SSE', "{$host}:{$port}. Error: {$e->getMessage()}");
+        } finally {
+            restore_error_handler();
+        }
 
         if (! $this->socket) {
             throw TransportError::connectionRefused('SSE', "{$host}:{$port}. Error: {$errstr} ({$errno})");
