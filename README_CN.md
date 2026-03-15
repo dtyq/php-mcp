@@ -33,7 +33,7 @@ composer require dtyq/php-mcp
 ```php
 // 只需一行代码！
 Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp', function () {
-    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler();
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handle('default');
 });
 ```
 

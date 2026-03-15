@@ -20,7 +20,7 @@ use Hyperf\HttpServer\Router\Router;
 use Dtyq\PhpMcp\Server\Framework\Hyperf\HyperfMcpServer;
 
 Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp', function () {
-    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler();
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handle('default');
 });
 ```
 
@@ -67,7 +67,7 @@ class CalculatorService
     #[McpTool(
         name: 'advanced_calc',
         description: 'Advanced mathematical calculations',
-        group: 'math'
+        server: 'math'
     )]
     public function advancedCalculate(string $formula, array $variables = []): float
     {
@@ -81,7 +81,8 @@ class CalculatorService
 - `name`: Tool name (defaults to method name)
 - `description`: Tool description
 - `inputSchema`: Custom input schema (auto-generated if empty)
-- `group`: Tool group for organization
+- `server`: MCP server name used for registration
+- `version`: MCP server version used for registration
 - `enabled`: Whether the tool is enabled (default: true)
 
 #### `#[McpPrompt]` - Register Prompts
@@ -123,7 +124,7 @@ class PromptService
     #[McpPrompt(
         name: 'code_review',
         description: 'Generate code review prompts',
-        group: 'development'
+        server: 'development'
     )]
     public function codeReview(string $code, string $language = 'php'): GetPromptResult
     {
@@ -143,7 +144,8 @@ class PromptService
 - `name`: Prompt name (defaults to method name)
 - `description`: Prompt description
 - `arguments`: Custom arguments schema (auto-generated if empty)
-- `group`: Prompt group for organization
+- `server`: MCP server name used for registration
+- `version`: MCP server version used for registration
 - `enabled`: Whether the prompt is enabled (default: true)
 
 #### `#[McpResource]` - Register Resources
@@ -208,7 +210,8 @@ class SystemService
 - `description`: Resource description
 - `mimeType`: Resource MIME type
 - `size`: Resource size in bytes
-- `group`: Resource group for organization
+- `server`: MCP server name used for registration
+- `version`: MCP server version used for registration
 - `enabled`: Whether the resource is enabled (default: true)
 - `isTemplate`: Whether the resource is a template
 - `uriTemplate`: URI template parameters
@@ -268,24 +271,24 @@ This generates the following schema:
 
 > **Note**: Complex types (classes, interfaces, union types) are not supported. Only basic PHP types are allowed for automatic schema generation.
 
-### Group-Based Registration
+### Server-Based Registration
 
-You can organize your annotations using groups and load specific groups:
+You can organize your annotations by server name and load a specific MCP server on each route:
 
 ```php
-// Register only math-related tools
+// Register the math MCP server
 Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp/math', function () {
-    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler('math');
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handle('math');
 });
 
-// Register development tools
+// Register the development MCP server
 Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp/dev', function () {
-    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler('development');
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handle('development');
 });
 
-// Register all tools (default group)
+// Register the default MCP server
 Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp', function () {
-    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler();
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handle('default');
 });
 ```
 
@@ -623,7 +626,7 @@ use Dtyq\PhpMcp\Server\Framework\Hyperf\HyperfMcpServer;
 
 // MCP server endpoint - just one line of code!
 Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp', function () {
-    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler();
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handle('default');
 });
 ```
 
