@@ -20,7 +20,7 @@ use Hyperf\HttpServer\Router\Router;
 use Dtyq\PhpMcp\Server\Framework\Hyperf\HyperfMcpServer;
 
 Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp', function () {
-    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler();
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handle('default');
 });
 ```
 
@@ -67,7 +67,7 @@ class CalculatorService
     #[McpTool(
         name: 'advanced_calc',
         description: '高级数学计算',
-        group: 'math'
+        server: 'math'
     )]
     public function advancedCalculate(string $formula, array $variables = []): float
     {
@@ -81,7 +81,8 @@ class CalculatorService
 - `name`: 工具名称（默认为方法名）
 - `description`: 工具描述
 - `inputSchema`: 自定义输入 schema（为空时自动生成）
-- `group`: 工具分组，用于组织
+- `server`: 注册到的 MCP 服务名称
+- `version`: 注册到的 MCP 服务版本
 - `enabled`: 是否启用工具（默认：true）
 
 #### `#[McpPrompt]` - 注册提示
@@ -123,7 +124,7 @@ class PromptService
     #[McpPrompt(
         name: 'code_review',
         description: '生成代码审查提示',
-        group: 'development'
+        server: 'development'
     )]
     public function codeReview(string $code, string $language = 'php'): GetPromptResult
     {
@@ -143,7 +144,8 @@ class PromptService
 - `name`: 提示名称（默认为方法名）
 - `description`: 提示描述
 - `arguments`: 自定义参数 schema（为空时自动生成）
-- `group`: 提示分组，用于组织
+- `server`: 注册到的 MCP 服务名称
+- `version`: 注册到的 MCP 服务版本
 - `enabled`: 是否启用提示（默认：true）
 
 #### `#[McpResource]` - 注册资源
@@ -208,7 +210,8 @@ class SystemService
 - `description`: 资源描述
 - `mimeType`: 资源 MIME 类型
 - `size`: 资源大小（字节）
-- `group`: 资源分组，用于组织
+- `server`: 注册到的 MCP 服务名称
+- `version`: 注册到的 MCP 服务版本
 - `enabled`: 是否启用资源（默认：true）
 - `isTemplate`: 是否为模板资源
 - `uriTemplate`: URI 模板参数
@@ -268,24 +271,24 @@ public function processUser(
 
 > **注意**: 不支持复杂类型（类、接口、联合类型）。自动 schema 生成只允许基本 PHP 类型。
 
-### 基于分组的注册
+### 基于服务名的注册
 
-您可以使用分组来组织注解并加载特定分组：
+您可以按服务名组织注解，并在不同路由上加载指定的 MCP 服务：
 
 ```php
-// 只注册数学相关工具
+// 注册 math MCP 服务
 Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp/math', function () {
-    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler('math');
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handle('math');
 });
 
-// 注册开发工具
+// 注册 development MCP 服务
 Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp/dev', function () {
-    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler('development');
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handle('development');
 });
 
-// 注册所有工具（默认分组）
+// 注册默认 MCP 服务
 Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp', function () {
-    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler();
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handle('default');
 });
 ```
 
@@ -623,7 +626,7 @@ use Dtyq\PhpMcp\Server\Framework\Hyperf\HyperfMcpServer;
 
 // MCP 服务端点 - 只需一行代码！
 Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp', function () {
-    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler();
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handle('default');
 });
 ```
 

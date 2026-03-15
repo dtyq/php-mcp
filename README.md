@@ -33,7 +33,7 @@ If you're using Hyperf framework, integration is extremely simple:
 ```php
 // Just one line of code!
 Router::addRoute(['POST', 'GET', 'DELETE'], '/mcp', function () {
-    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handler();
+    return \Hyperf\Context\ApplicationContext::getContainer()->get(HyperfMcpServer::class)->handle('default');
 });
 ```
 
