@@ -724,7 +724,8 @@ class HttpTransport implements TransportInterface
         }
 
         $headers = [
-            'Content-Type' => 'application/json',
+            HttpConstants::HTTP_HEADER_CONTENT_TYPE => HttpConstants::HTTP_CONTENT_TYPE_JSON,
+            HttpConstants::HTTP_HEADER_ACCEPT => HttpConstants::HTTP_ACCEPT_SSE_JSON,
             'Mcp-Session-Id' => $this->sessionId ?? '',
         ];
 
@@ -776,9 +777,9 @@ class HttpTransport implements TransportInterface
         }
 
         $headers = [
-            'Content-Type' => 'application/json',
+            HttpConstants::HTTP_HEADER_CONTENT_TYPE => HttpConstants::HTTP_CONTENT_TYPE_JSON,
+            HttpConstants::HTTP_HEADER_ACCEPT => HttpConstants::HTTP_ACCEPT_SSE_JSON,
             'Mcp-Session-Id' => $this->sessionId ?? '',
-            'Accept' => 'application/json', // For new protocol, we expect JSON responses for sync messages
         ];
 
         $headers = $this->authenticator->addAuthHeaders($headers);
