@@ -9,6 +9,7 @@ namespace Dtyq\PhpMcp\Client\Transport\Http;
 
 use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
 use Dtyq\PhpMcp\Client\Core\TransportInterface;
+use Dtyq\PhpMcp\Shared\Exceptions\SsrfException;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Kernel\Application;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
@@ -89,7 +90,9 @@ class HttpTransport implements TransportInterface
      */
     public function __construct(HttpConfig $config, Application $application)
     {
-        $this->config = $config;
+        $this->config = $config->getSsrf() === null && $application->getConfig()->has('ssrf')
+            ? $config->withChanges(['ssrf' => $application->getConfig()->get('ssrf', [])])
+            : $config;
         $this->application = $application;
         $this->logger = $application->getLogger();
     }
@@ -146,6 +149,10 @@ class HttpTransport implements TransportInterface
                 'connected_at' => $this->connectedAt,
             ]);
         } catch (Exception $e) {
+            if ($e instanceof SsrfException) {
+                $this->cleanup();
+                throw $e;
+            }
             $this->logger->error('Failed to connect HTTP transport', [
                 'error' => $e->getMessage(),
                 'base_url' => $this->config->getBaseUrl(),
@@ -172,6 +179,9 @@ class HttpTransport implements TransportInterface
 
             ++$this->stats['messages_sent'];
         } catch (Exception $e) {
+            if ($e instanceof SsrfException) {
+                throw $e;
+            }
             $this->logger->error('Failed to send message', [
                 'direction' => 'outgoing',
                 'error' => $e->getMessage(),
@@ -219,6 +229,9 @@ class HttpTransport implements TransportInterface
             ++$this->stats['messages_received'];
             return $message;
         } catch (Exception $e) {
+            if ($e instanceof SsrfException) {
+                throw $e;
+            }
             $this->logger->error('Failed to receive message', [
                 'direction' => 'incoming',
                 'error' => $e->getMessage(),
@@ -262,6 +275,9 @@ class HttpTransport implements TransportInterface
 
             $this->logger->info('HTTP transport disconnected successfully');
         } catch (Exception $e) {
+            if ($e instanceof SsrfException) {
+                throw $e;
+            }
             $this->logger->error('Error during disconnect', [
                 'error' => $e->getMessage(),
             ]);
@@ -444,6 +460,9 @@ class HttpTransport implements TransportInterface
             // For other error codes, try legacy protocol
             $this->logger->info('Server returned status ' . $response['status_code'] . ', falling back to legacy protocol');
         } catch (Exception $e) {
+            if ($e instanceof SsrfException) {
+                throw $e;
+            }
             // Protocol detection failed, continue to fallback
         }
 
@@ -603,6 +622,9 @@ class HttpTransport implements TransportInterface
 
             $this->logger->info('Connection resumption successful');
         } catch (Exception $e) {
+            if ($e instanceof SsrfException) {
+                throw $e;
+            }
             $this->logger->warning('Connection resumption failed, using regular connection', [
                 'error' => $e->getMessage(),
             ]);
@@ -881,6 +903,9 @@ class HttpTransport implements TransportInterface
                 $headers
             );
         } catch (Exception $e) {
+            if ($e instanceof SsrfException) {
+                throw $e;
+            }
             $this->logger->warning('Failed to send session termination request', [
                 'error' => $e->getMessage(),
             ]);

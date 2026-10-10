@@ -21,8 +21,12 @@ class ConfigProvider
     public function __invoke(): array
     {
         return [
-            'publish' => [
-            ],
+            'publish' => [[
+                'id' => 'php-mcp-config',
+                'description' => 'MCP 配置',
+                'source' => __DIR__ . '/publish/php-mcp.php',
+                'destination' => BASE_PATH . '/config/autoload/php-mcp.php',
+            ]],
             'dependencies' => [
                 PackerInterface::class => OpisClosurePacker::class,
                 AuthenticatorInterface::class => NullAuthenticator::class,

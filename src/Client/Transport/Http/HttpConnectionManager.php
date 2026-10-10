@@ -8,8 +8,11 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Client\Transport\Http;
 
 use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
+use Dtyq\PhpMcp\Shared\Exceptions\SsrfException;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
+use Dtyq\PhpMcp\Shared\Security\SsrfConfig;
+use Dtyq\PhpMcp\Shared\Security\UrlSecurityValidator;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 use Exception;
 
@@ -24,15 +27,22 @@ class HttpConnectionManager
 {
     private HttpConfig $config;
 
+    private SsrfConfig $security;
+
+    private UrlSecurityValidator $validator;
+
     private LoggerProxy $logger;
 
     /**
      * @param HttpConfig $config HTTP configuration
      * @param LoggerProxy $logger Logger instance
+     * @param null|UrlSecurityValidator $validator 用于测试的 URL 校验器
      */
-    public function __construct(HttpConfig $config, LoggerProxy $logger)
+    public function __construct(HttpConfig $config, LoggerProxy $logger, ?UrlSecurityValidator $validator = null)
     {
         $this->config = $config;
+        $this->security = new SsrfConfig($config->getSsrf() ?? []);
+        $this->validator = $validator ?? new UrlSecurityValidator($this->security);
         $this->logger = $logger;
     }
 
@@ -107,6 +117,39 @@ class HttpConnectionManager
     {
         $curlOptions = $this->buildCurlOptions($method, $url, $headers, $data);
 
+        [$response, $httpCode, $info] = $this->performRequest($curlOptions);
+        if ($this->security->isEnabled() && $httpCode >= 300 && $httpCode < 400) {
+            throw new SsrfException('Redirects are not allowed');
+        }
+
+        // Parse response headers if available
+        $responseHeaders = [];
+        if (isset($info['header_size']) && $info['header_size'] > 0) {
+            $headerString = substr($response, 0, $info['header_size']);
+            $responseHeaders = $this->parseResponseHeaders($headerString);
+            $body = substr($response, $info['header_size']);
+        } else {
+            $body = $response;
+        }
+
+        return [
+            'success' => $httpCode >= 200 && $httpCode < 300,
+            'status_code' => $httpCode,
+            'headers' => $responseHeaders,
+            'body' => $body,
+            'data' => $this->parseResponseBody($body),
+            'info' => $info,
+        ];
+    }
+
+    /**
+     * 执行底层请求，允许测试使用 Mock 响应而不访问网络。
+     *
+     * @param array<int, mixed> $curlOptions
+     * @return array{string, int, array<string, mixed>}
+     */
+    protected function performRequest(array $curlOptions): array
+    {
         $ch = curl_init();
         if ($ch === false) {
             throw new TransportError('Failed to initialize cURL');
@@ -129,24 +172,7 @@ class HttpConnectionManager
             throw new TransportError('Invalid response type received');
         }
 
-        // Parse response headers if available
-        $responseHeaders = [];
-        if (isset($info['header_size']) && $info['header_size'] > 0) {
-            $headerString = substr($response, 0, $info['header_size']);
-            $responseHeaders = $this->parseResponseHeaders($headerString);
-            $body = substr($response, $info['header_size']);
-        } else {
-            $body = $response;
-        }
-
-        return [
-            'success' => $httpCode >= 200 && $httpCode < 300,
-            'status_code' => $httpCode,
-            'headers' => $responseHeaders,
-            'body' => $body,
-            'data' => $this->parseResponseBody($body),
-            'info' => $info,
-        ];
+        return [$response, $httpCode, $info];
     }
 
     /**
@@ -187,6 +213,24 @@ class HttpConnectionManager
             $curlOptions[CURLOPT_HTTPHEADER] = $this->buildHeaderArray($mergedHeaders);
         }
 
+        if ($this->security->isEnabled()) {
+            $target = $this->validator->validate($url);
+            $this->validator->validateHeaders(array_merge($headers, $configHeaders));
+            $this->validator->validateHeaders(['User-Agent' => $this->config->getUserAgent()]);
+            $curlOptions[CURLOPT_FOLLOWLOCATION] = false;
+            $curlOptions[CURLOPT_MAXREDIRS] = 0;
+            $curlOptions[CURLOPT_PROXY] = '';
+            if (defined('CURLOPT_PRE_PROXY')) {
+                $curlOptions[CURLOPT_PRE_PROXY] = '';
+            }
+            $curlOptions[CURLOPT_PROTOCOLS] = CURLPROTO_HTTP | CURLPROTO_HTTPS;
+            $curlOptions[CURLOPT_SSL_VERIFYPEER] = true;
+            $curlOptions[CURLOPT_SSL_VERIFYHOST] = 2;
+            if (filter_var($target['host'], FILTER_VALIDATE_IP) === false) {
+                $ip = strpos($target['ip'], ':') === false ? $target['ip'] : '[' . $target['ip'] . ']';
+                $curlOptions[CURLOPT_RESOLVE] = [$target['host'] . ':' . $target['port'] . ':' . $ip];
+            }
+        }
         return $curlOptions;
     }
 
@@ -362,6 +406,9 @@ class HttpConnectionManager
 
                 return $response;
             } catch (TransportError $e) {
+                if ($e instanceof SsrfException) {
+                    throw $e;
+                }
                 // If it's the last attempt, re-throw the error
                 if ($attempt === $maxRetries) {
                     throw $e;

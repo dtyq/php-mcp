@@ -7,8 +7,11 @@ declare(strict_types=1);
 
 namespace Dtyq\PhpMcp\Shared\Utilities\SSE;
 
+use Dtyq\PhpMcp\Shared\Exceptions\SsrfException;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Exceptions\ValidationError;
+use Dtyq\PhpMcp\Shared\Security\SsrfConfig;
+use Dtyq\PhpMcp\Shared\Security\UrlSecurityValidator;
 use ErrorException;
 use Generator;
 
@@ -27,6 +30,12 @@ final class SSEClient
      * @var string The URL of the SSE stream
      */
     private string $url;
+
+    private SsrfConfig $security;
+
+    private UrlSecurityValidator $validator;
+
+    private SocketConnector $connector;
 
     /**
      * @var int Connection timeout in seconds
@@ -64,10 +73,16 @@ final class SSEClient
      * @param string $url The URL of the SSE stream
      * @param int $timeout Connection timeout in seconds
      * @param array<string, string> $headers Custom headers to send with the request
+     * @param null|SsrfConfig $security 当前连接的 SSRF 防护配置
+     * @param null|UrlSecurityValidator $validator 用于测试的 URL 校验器
+     * @param null|SocketConnector $connector 用于测试的底层连接器
      */
-    public function __construct(string $url, int $timeout = 10, array $headers = [])
+    public function __construct(string $url, int $timeout = 10, array $headers = [], ?SsrfConfig $security = null, ?UrlSecurityValidator $validator = null, ?SocketConnector $connector = null)
     {
         $this->url = $url;
+        $this->security = $security ?? new SsrfConfig();
+        $this->validator = $validator ?? new UrlSecurityValidator($this->security);
+        $this->connector = $connector ?? new SocketConnector();
         $this->timeout = $timeout;
         $this->headers = $headers;
     }
@@ -111,6 +126,11 @@ final class SSEClient
         if ($this->socket) {
             return;
         }
+        $target = null;
+        if ($this->security->isEnabled()) {
+            $target = $this->validator->validate($this->url);
+            $this->validator->validateHeaders($this->headers);
+        }
         $urlParts = parse_url($this->url);
         if ($urlParts === false) {
             throw ValidationError::invalidFieldValue('url', "Invalid URL provided: {$this->url}");
@@ -120,15 +140,35 @@ final class SSEClient
         $path = $urlParts['path'] ?? '/';
         $query = isset($urlParts['query']) ? "?{$urlParts['query']}" : '';
         $scheme = $urlParts['scheme'] ?? 'http';
+        if ($target !== null) {
+            $scheme = strtolower($scheme);
+        }
         $port = $urlParts['port'] ?? ($scheme === 'https' ? 443 : 80);
         $transport = $scheme === 'https' ? 'ssl' : 'tcp';
 
+        $addressHost = $host;
+        $context = [];
+        if ($target !== null) {
+            $addressHost = strpos($target['ip'], ':') === false ? $target['ip'] : '[' . $target['ip'] . ']';
+            $context = ['ssl' => [
+                'verify_peer' => true,
+                'verify_peer_name' => true,
+                'peer_name' => $target['host'],
+                'SNI_enabled' => true,
+            ]];
+            $host = strpos($target['host'], ':') === false ? $target['host'] : '[' . $target['host'] . ']';
+            if ($port !== ($scheme === 'https' ? 443 : 80)) {
+                $host .= ':' . $port;
+            }
+        }
         set_error_handler(static function (int $code, string $message): bool {
             throw new ErrorException($message, $code);
         });
 
+        $errno = 0;
+        $errstr = '';
         try {
-            $this->socket = stream_socket_client("{$transport}://{$host}:{$port}", $errno, $errstr, $this->timeout);
+            $this->socket = $this->connector->connect("{$transport}://{$addressHost}:{$port}", $this->timeout, $context, $errno, $errstr);
         } catch (ErrorException $e) {
             throw TransportError::connectionRefused('SSE', "{$host}:{$port}. Error: {$e->getMessage()}");
         } finally {
@@ -190,8 +230,16 @@ final class SSEClient
             }
         }
 
+        if ($this->security->isEnabled() && preg_match('/^HTTP\/\d\.\d\s+3\d\d\b/i', $headers)) {
+            $this->closeConnection();
+            throw new SsrfException('Redirects are not allowed');
+        }
+
         if (! preg_match('/^HTTP\/\d\.\d\s+200\s+OK/i', $headers)) {
             $this->closeConnection();
+            if ($this->security->isEnabled()) {
+                throw new TransportError('SSE server returned a non-200 status');
+            }
             throw new TransportError("Server returned a non-200 status. Full headers:\n{$headers}");
         }
 

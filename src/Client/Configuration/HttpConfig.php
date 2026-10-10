@@ -33,6 +33,9 @@ class HttpConfig implements TransportConfigInterface
      */
     private string $baseUrl;
 
+    /** @var null|array<string, mixed> 未设置时继承 Application 配置。 */
+    private ?array $ssrf;
+
     /**
      * Request timeout in seconds.
      * 请求超时时间（秒）。
@@ -265,6 +268,7 @@ class HttpConfig implements TransportConfigInterface
      * @param string $eventStoreType Event store type / 事件存储类型
      * @param array<string, mixed> $eventStoreConfig Event store configuration / 事件存储配置
      * @param bool $jsonResponseMode Use JSON response instead of SSE / 使用 JSON 响应而不是 SSE
+     * @param null|array<string, mixed> $ssrf SSRF 防护配置
      * @param bool $terminateOnClose Send termination request on close / 关闭时发送终止请求
      */
     public function __construct(
@@ -282,7 +286,8 @@ class HttpConfig implements TransportConfigInterface
         string $eventStoreType = 'memory',
         array $eventStoreConfig = [],
         bool $jsonResponseMode = false,
-        bool $terminateOnClose = true
+        bool $terminateOnClose = true,
+        ?array $ssrf = null
     ) {
         $this->setBaseUrl($baseUrl);
         $this->setTimeout($timeout);
@@ -299,6 +304,7 @@ class HttpConfig implements TransportConfigInterface
         $this->setEventStoreConfig($eventStoreConfig);
         $this->setJsonResponseMode($jsonResponseMode);
         $this->setTerminateOnClose($terminateOnClose);
+        $this->ssrf = $ssrf;
     }
 
     /**
@@ -325,6 +331,7 @@ class HttpConfig implements TransportConfigInterface
      * @param string $eventStoreType Event store type / 事件存储类型
      * @param array<string, mixed> $eventStoreConfig Event store configuration / 事件存储配置
      * @param bool $jsonResponseMode Use JSON response instead of SSE / 使用 JSON 响应而不是 SSE
+     * @param null|array<string, mixed> $ssrf SSRF 防护配置
      * @param bool $terminateOnClose Send termination request on close / 关闭时发送终止请求
      * @return self New configuration instance / 新的配置实例
      */
@@ -343,7 +350,8 @@ class HttpConfig implements TransportConfigInterface
         string $eventStoreType = 'memory',
         array $eventStoreConfig = [],
         bool $jsonResponseMode = false,
-        bool $terminateOnClose = true
+        bool $terminateOnClose = true,
+        ?array $ssrf = null
     ): self {
         return new self(
             $baseUrl,
@@ -360,7 +368,8 @@ class HttpConfig implements TransportConfigInterface
             $eventStoreType,
             $eventStoreConfig,
             $jsonResponseMode,
-            $terminateOnClose
+            $terminateOnClose,
+            $ssrf
         );
     }
 
@@ -401,7 +410,8 @@ class HttpConfig implements TransportConfigInterface
             $config['event_store_type'] ?? 'memory',
             $config['event_store_config'] ?? [],
             $config['json_response_mode'] ?? false,
-            $config['terminate_on_close'] ?? true
+            $config['terminate_on_close'] ?? true,
+            $config['ssrf'] ?? null
         );
     }
 
@@ -428,7 +438,17 @@ class HttpConfig implements TransportConfigInterface
             'event_store_config' => $this->eventStoreConfig,
             'json_response_mode' => $this->jsonResponseMode,
             'terminate_on_close' => $this->terminateOnClose,
-        ];
+        ] + ($this->ssrf === null ? [] : ['ssrf' => $this->ssrf]);
+    }
+
+    /**
+     * 获取连接级防护配置；null 表示继承 Application。
+     *
+     * @return null|array<string, mixed>
+     */
+    public function getSsrf(): ?array
+    {
+        return $this->ssrf;
     }
 
     // Getters

@@ -8,9 +8,11 @@ declare(strict_types=1);
 namespace Dtyq\PhpMcp\Client\Transport\Http;
 
 use Dtyq\PhpMcp\Client\Configuration\HttpConfig;
+use Dtyq\PhpMcp\Shared\Exceptions\SsrfException;
 use Dtyq\PhpMcp\Shared\Exceptions\TransportError;
 use Dtyq\PhpMcp\Shared\Kernel\Logger\LoggerProxy;
 use Dtyq\PhpMcp\Shared\Message\JsonRpcMessage;
+use Dtyq\PhpMcp\Shared\Security\SsrfConfig;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 use Dtyq\PhpMcp\Shared\Utilities\SSE\SSEClient;
 use Dtyq\PhpMcp\Shared\Utilities\SSE\SSEEvent;
@@ -180,6 +182,9 @@ class SseStreamHandler
                 return $message;
             }
         } catch (Exception $e) {
+            if ($e instanceof SsrfException) {
+                throw $e;
+            }
             $this->logger->error('Error receiving SSE events', [
                 'error' => $e->getMessage(),
             ]);
@@ -293,6 +298,9 @@ class SseStreamHandler
                 }
             }
         } catch (Exception $e) {
+            if ($e instanceof SsrfException) {
+                throw $e;
+            }
             $this->logger->error('Error while waiting for endpoint event', [
                 'error' => $e->getMessage(),
             ]);
@@ -397,6 +405,6 @@ class SseStreamHandler
             $headers['User-Agent'] = $this->config->getUserAgent();
         }
 
-        $this->sseClient = new SSEClient($baseUrl, $this->connectionTimeout, $headers);
+        $this->sseClient = new SSEClient($baseUrl, $this->connectionTimeout, $headers, new SsrfConfig($this->config->getSsrf() ?? []));
     }
 }

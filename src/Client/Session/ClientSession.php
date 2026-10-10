@@ -11,6 +11,7 @@ use Dtyq\PhpMcp\Client\Core\AbstractSession;
 use Dtyq\PhpMcp\Client\Core\SessionInterface;
 use Dtyq\PhpMcp\Client\Core\TransportInterface;
 use Dtyq\PhpMcp\Shared\Exceptions\ProtocolError;
+use Dtyq\PhpMcp\Shared\Exceptions\SsrfException;
 use Dtyq\PhpMcp\Shared\Utilities\JsonUtils;
 use Dtyq\PhpMcp\Types\Constants\ProtocolVersions;
 use Dtyq\PhpMcp\Types\Core\JsonRpcRequest;
@@ -117,6 +118,9 @@ class ClientSession extends AbstractSession implements SessionInterface
             $this->state->setState(SessionState::STATE_READY);
         } catch (Exception $e) {
             $this->state->setState(SessionState::STATE_ERROR);
+            if ($e instanceof SsrfException) {
+                throw $e;
+            }
             throw ProtocolError::invalidState('initialize', 'error', 'ready', $e->getMessage());
         }
     }
