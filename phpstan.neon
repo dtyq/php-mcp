@@ -17,11 +17,7 @@ parameters:
         -
             message: '~Unreachable statement - code above always terminates\.~'
             path: tests/*
-        # Ignore undefined method errors in test mocks
-        -
-            message: '~Call to an undefined method .*Mockery.*::.*\(\)\.~'
-            path: tests/*
         # Ignore method parameter count mismatches in tests - testing magic method behavior
         -
             message: '~Method .* invoked with \d+ parameters, \d+.*required\.~'
-            path: tests/* 
+            path: tests/*
