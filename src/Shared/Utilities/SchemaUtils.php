@@ -176,7 +176,6 @@ class SchemaUtils
                 break;
             case 'array':
                 $schema['type'] = 'array';
-                $schema['items'] = ['type' => 'string']; // Default to string items
                 break;
             default:
                 // For any other type (classes, interfaces, etc.), throw an error

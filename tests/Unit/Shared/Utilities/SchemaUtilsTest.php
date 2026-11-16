@@ -42,7 +42,6 @@ class SchemaUtilsTest extends TestCase
                 ],
                 'tags' => [
                     'type' => 'array',
-                    'items' => ['type' => 'string'],
                     'description' => 'Parameter: tags',
                 ],
             ],
@@ -173,7 +172,6 @@ class SchemaUtilsTest extends TestCase
                 ],
                 'array_with_default' => [
                     'type' => 'array',
-                    'items' => ['type' => 'string'],
                     'description' => 'Parameter: array_with_default',
                     'default' => [],
                 ],
